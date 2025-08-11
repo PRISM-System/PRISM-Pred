@@ -7,7 +7,7 @@ from layers.Autoformer_EncDec import Encoder, Decoder, EncoderLayer, DecoderLaye
 import math
 import numpy as np
 
-
+# cited from "https://github.com/thuml/Time-Series-Library/blob/main/models/Autoformer.py"
 class Model(nn.Module):
     """
     Autoformer is the first method to achieve the series-wise connection,
