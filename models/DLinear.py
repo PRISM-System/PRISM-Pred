@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from layers.Autoformer_EncDec import series_decomp
 
-
+# cited from https://github.com/thuml/Time-Series-Library/blob/main/models/DLinear.py
 class Model(nn.Module):
     """
     Paper link: https://arxiv.org/pdf/2205.13504.pdf
