@@ -31,4 +31,12 @@
 | **신뢰도 관리** | 예측 위험 평가 상관계수 | 0.5 이상 |
 
 ## 3. 실행 방법
-- 환경 설치
+- 시계열 전용 후보 모델 학습 과정 업데이트
+- 아래 예시 코드로 실행 가능
+
+    python prediction.py \
+    --modality timeseries_only \
+    --seq_len 48 --label_len 24 --pred_len 12 \
+    --enc_in 4 --c_out 4 \
+    --epochs 10 --device cuda:0 \
+    --eval_channel_idx 0 
