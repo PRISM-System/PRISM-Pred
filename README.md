@@ -34,11 +34,11 @@
 - 시계열 전용 후보 모델 학습 과정 업데이트
 - 아래 예시 코드로 실행 가능
 
-'''
+```
     python prediction.py \
     --modality timeseries_only \
     --seq_len 48 --label_len 24 --pred_len 12 \
     --enc_in 4 --c_out 4 \
     --epochs 10 --device cuda:0 \
     --eval_channel_idx 0 
-'''
+```
