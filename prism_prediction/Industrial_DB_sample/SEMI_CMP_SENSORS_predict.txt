@@ -1,0 +1,1 @@
+SEMI_CMP_SENSORS_prediction.csv는 예측 모듈에 넣기 위해 길이를 늘려서 적용한 MOCK DATASET입니다.

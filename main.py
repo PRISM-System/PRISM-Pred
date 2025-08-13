@@ -1,6 +1,6 @@
 # main.py
 from prism_prediction.models import *
-from prism_prediction import predictor  # (현재는 직접 사용 안하지만, 패키지 초기화 시 필요하면 유지)
+from AGI.legacy import predictor  # (현재는 직접 사용 안하지만, 패키지 초기화 시 필요하면 유지)
 import logging
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime, timezone

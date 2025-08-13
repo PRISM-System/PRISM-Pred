@@ -7,17 +7,12 @@ import uuid
 from fastapi import FastAPI, Query, Path, Body, HTTPException
 from pydantic import BaseModel, Field
 
-# -------------------------
-# 공통 유틸
-# -------------------------
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 def _rid() -> str:
     return f"req_{uuid.uuid4().hex[:8]}"
 
-# -------------------------
-# 로깅
-# -------------------------
 logger = logging.getLogger("prism_prediction_stub")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
