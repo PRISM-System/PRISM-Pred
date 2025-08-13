@@ -41,12 +41,13 @@ pip install -r requirements.txt
 
 ```
 ### 3-2. API 서버 실행
-FastAPI 서버를 띄웁니다.
+> FastAPI 서버를 띄웁니다.
 ```
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 ### 3-3. 예측 API 호출
+> 다른 터미널에서 예측 엔드포인트를 호출합니다. jq가 없다면 마지막 | jq .는 생략해도 됩니다.
 ```
 curl -s -X POST "http://127.0.0.1:8001/api/v1/prediction/run-direct" -H "Content-Type: application/json" -d '{"taskId":"1","fromAgent":"orchestration","objective":"prediction","timeRange":"2025-08-20 09:00:00 - 09:10:00","sensor_name":"CMP","target_cols":"MOTOR_CURRENT","constraints":null,"userRole":"engineer"}' | jq .
 
