@@ -34,11 +34,25 @@
 - 시계열 전용 후보 모델 학습 과정 업데이트
 - 아래 예시 코드로 실행 가능
 
+### 3-1. 의존성 설치
+> 프로젝트 루트에서 아래 명령으로 필요한 패키지를 설치합니다.
 ```
-    python prediction.py \
-    --modality timeseries_only \
-    --seq_len 48 --label_len 24 --pred_len 12 \
-    --enc_in 4 --c_out 4 \
-    --epochs 10 --device cuda:0 \
-    --eval_channel_idx 0 
+pip install -r requirements.txt
+
 ```
+### 3-2. API 서버 실행
+FastAPI 서버를 띄웁니다.
+```
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+### 3-3. 예측 API 호출
+```
+curl -s -X POST "http://127.0.0.1:8001/api/v1/prediction/run-direct" -H "Content-Type: application/json" -d '{"taskId":"1","fromAgent":"orchestration","objective":"prediction","timeRange":"2025-08-20 09:00:00 - 09:10:00","sensor_name":"CMP","target_cols":"MOTOR_CURRENT","constraints":null,"userRole":"engineer"}' | jq .
+
+```
+#### 참고
+
+- 기본 CSV 매핑은 prism_prediction/Industrial_DB_sample 하위 파일을 사용합니다.
+
+- 서버 로그는 uvicorn을 실행한 터미널에서 확인할 수 있습니다.
