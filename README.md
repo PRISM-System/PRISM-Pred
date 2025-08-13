@@ -57,3 +57,34 @@ curl -s -X POST "http://127.0.0.1:8001/api/v1/prediction/run-direct" -H "Content
 - 기본 CSV 매핑은 prism_prediction/Industrial_DB_sample 하위 파일을 사용합니다.
 
 - 서버 로그는 uvicorn을 실행한 터미널에서 확인할 수 있습니다.
+
+## 3-4. 샘플 응답 (예상 출력)
+
+아래는 예측 API 호출 시의 예시 응답입니다.  
+모델/버전/데이터에 따라 수치는 달라질 수 있습니다.
+
+```
+{
+  "mode": "csv",
+  "csv_path": "prism_prediction/Industrial_DB_sample/SEMI_CMP_SENSORS_predict.csv",
+  "seq_len": 48,
+  "label_len": 24,
+  "pred_len": 11,
+  "enc_in": 11,
+  "c_out": 11,
+  "eval_channel_idx": 8,
+  "selection_metric": "val_rmse_focus",
+  "best_model": "TimesNet",
+  "best_val_rmse_focus": 3.2319672107696533,
+  "best_val_rmse_all": 235.93780517578125,
+  "results": {
+    "Autoformer": { "val_rmse_all": 248.3970184326172, "val_rmse_focus": 108.75589752197266 },
+    "DLinear":    { "val_rmse_all": 255.54910278320312, "val_rmse_focus": 3.3810741901397705 },
+    "TimesNet":   { "val_rmse_all": 235.93780517578125, "val_rmse_focus": 3.2319672107696533 },
+    "LightTS":    { "val_rmse_all": 1152.325439453125, "val_rmse_focus": 19.069955825805664 }
+  },
+  "prediction": [18.095299, 16.372711, 18.664963, 14.825407, 16.47625, 16.487608, 17.424318, 16.602634, 17.291752, 15.002139, 18.01297],
+  "target_col_name": "MOTOR_CURRENT",
+  "feature_start_col": 5
+}
+```
