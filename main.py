@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime, timezone
 import uuid
 import os
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, Query, Path
 from pydantic import BaseModel, Field
 import pandas as pd
 import subprocess, sys, json
@@ -15,27 +15,37 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from dotenv import load_dotenv
 import requests
 
+# ── module.py의 함수 직접 사용 ────────────────────────────────────────────────
+# module.py 내부에 def explain(feature_df, target_col, preds) -> dict
+#                 def risk(feature_df, target_col, preds) -> dict
+from module import explain as explain_module
+from module import risk as risk_module
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 def _rid() -> str:
     return f"req_{uuid.uuid4().hex[:8]}"
 
+
 # ── 로거 ───────────────────────────────────────────────────────────────────────
-logger = logging.getLogger("prism_prediction_demo")
+logger = logging.getLogger("prism_prediction")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s'))
 if not logger.handlers:
     logger.addHandler(handler)
 
+
 # ── .env 로드 & ENV 읽기 ───────────────────────────────────────────────────────
 load_dotenv()
-LLM_API_URL = os.getenv("LLM_API_URL")   # 예: http://147.47.39.144/api/agents
-DB_API_URL  = os.getenv("DB_API_URL")    # 예: http://147.47.39.144/api/db
+LLM_API_URL = os.getenv("LLM_API_URL")   # 예: http://147.47.39.144:8000/api/agents
+DB_API_URL  = os.getenv("DB_API_URL")    # 예: http://147.47.39.144:8000/api/db
 logger.info(f"ENV Loaded: LLM_API_URL={LLM_API_URL}, DB_API_URL={DB_API_URL}")
 
+
 # ── FastAPI ───────────────────────────────────────────────────────────────────
-app = FastAPI(title="PRISM Prediction API (demo)", version="0.0.3")
+app = FastAPI(title="PRISM Prediction API", version="0.0.4")
 
 # 루트 → /ui 로 바로 연결 (예쁜 UI)
 @app.get("/")
@@ -46,6 +56,7 @@ def root_redirect():
 @app.get("/favicon.ico")
 def favicon():
     return HTMLResponse(status_code=204, content="")
+
 
 # ── 공용 스키마 ────────────────────────────────────────────────────────────────
 class NLRequest(BaseModel):
@@ -61,6 +72,7 @@ class NLResponse(BaseModel):
         timestamp: str
         request_id: str
     metadata: Metadata
+
 
 # “오케스트레이션→예측” 스키마
 class DirectRunRequest(BaseModel):
@@ -89,11 +101,16 @@ class DirectRunResponse(BaseModel):
         pred_len: int
         modelSelected: str
         prediction: List[float]
+        # 추가: 설명/리스크/액션
+        explanation: Optional[Dict[str, Any]] = None
+        risk: Optional[Dict[str, Any]] = None
+        suggestedActions: Optional[List[str]] = None
     data: Data
     class Metadata(BaseModel):
         timestamp: str
         request_id: str
     metadata: Metadata
+
 
 # ── CSV 매핑 ──────────────────────────────────────────────────────────────────
 CSV_BASE = "prism_prediction/Industrial_DB_sample"
@@ -105,6 +122,7 @@ SENSOR_TO_FILE = {
 def _notice(events: List[str], msg: str):
     logger.info(msg)
     events.append(f"[{_now_iso()}] {msg}")
+
 
 # ── predictor(run.py) 호출 유틸 ────────────────────────────────────────────────
 RUN_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run.py")
@@ -169,11 +187,24 @@ def run_predictor_with_csv(
 
     return summary
 
-# ── 예측 엔드포인트 ───────────────────────────────────────────────────────────
+
+# ── 제안 액션 룰(데모) ────────────────────────────────────────────────────────
+def suggest_actions_by_risk(risk_dict: Dict[str, Any]) -> List[str]:
+    level = (risk_dict or {}).get("riskLevel", "unknown")
+    if level == "high":
+        return ["increase_cooling_flow", "reduce_platen_rotation", "issue_operator_alert"]
+    if level == "medium":
+        return ["monitor_closely_15min", "schedule_maintenance_check"]
+    if level == "low":
+        return ["no_action_required"]
+    return ["review_manually"]
+
+
+# ── 예측 엔드포인트(파이프라인: 예측 → 설명 → 리스크/액션) ───────────────────
 @app.post(
     "/api/v1/prediction/run-direct",
     response_model=DirectRunResponse,
-    summary="오케스트레이션 JSON을 받아 Industrial DB에서 피처/타깃 구성 후 예측값 반환",
+    summary="오케스트레이션 JSON을 받아 Industrial DB에서 피처/타깃 구성 후 예측→설명→리스크/액션까지 반환",
     tags=["Prediction"]
 )
 def run_direct(body: DirectRunRequest):
@@ -219,17 +250,15 @@ def run_direct(body: DirectRunRequest):
     # 6) (옵션) DB/LLM API 연동 테스트
     if DB_API_URL:
         try:
-            # SELECT 전용 엔드포인트가 있다면 거기에 맞춰 변경하세요.
             db_test = requests.get(f"{DB_API_URL.rstrip('/')}/tables", timeout=5)
-            _notice(events, f"DB 연결 확인 성공: 테이블 수={len(db_test.json()) if db_test.ok else 'N/A'}")
+            _notice(events, f"DB 연결 확인: status={db_test.status_code}")
         except Exception as e:
             _notice(events, f"DB 호출 실패: {e}")
 
     if LLM_API_URL:
         try:
-            # 에이전트 목록 확인(연결 확인용)
             llm_agents = requests.get(LLM_API_URL, timeout=5)
-            _notice(events, f"LLM 연결 확인 성공: status={llm_agents.status_code}")
+            _notice(events, f"LLM 연결 확인: status={llm_agents.status_code}")
         except Exception as e:
             _notice(events, f"LLM 호출 실패: {e}")
 
@@ -241,7 +270,7 @@ def run_direct(body: DirectRunRequest):
         target_col_name=target_col,
         seq_len=48, label_len=24, pred_len=11,
         epochs=1, batch_size=8,
-        models="Autoformer,DLinear,TimesNet,LightTS",  # 필요 시 추가
+        models="Autoformer,DLinear,TimesNet,LightTS",
         device="cpu",
         auto_eval_idx=True
     )
@@ -259,6 +288,23 @@ def run_direct(body: DirectRunRequest):
     preds = [round(start + (i+1)*delta, 4) for i in range(pred_len)]
     _notice(events, f"예측 수행 완료(나이브 외삽): pred_len={pred_len}, last={start}, delta={delta}")
 
+    # 9) 설명(모듈 함수 호출)
+    _notice(events, "설명(explain) 계산 시작")
+    try:
+        explanation = explain_module(feature_df, target_col, preds)  # module.py의 함수
+    except Exception as e:
+        explanation = {"error": str(e)}
+    _notice(events, f"설명 계산 완료: keys={list(explanation.keys())}")
+
+    # 10) 리스크(모듈 함수 호출) + 액션
+    _notice(events, "리스크(risk) 평가 시작")
+    try:
+        risk_dict = risk_module(feature_df, target_col, preds)       # module.py의 함수
+    except Exception as e:
+        risk_dict = {"riskLevel": "unknown", "error": str(e), "exceedsThreshold": False}
+    actions = suggest_actions_by_risk(risk_dict)
+    _notice(events, f"리스크 평가 완료: level={risk_dict.get('riskLevel')} → actions={actions}")
+
     return {
         "code": "SUCCESS",
         "data": {
@@ -275,9 +321,13 @@ def run_direct(body: DirectRunRequest):
             "pred_len": pred_len,
             "modelSelected": best_model,
             "prediction": preds,
+            "explanation": explanation,
+            "risk": risk_dict,
+            "suggestedActions": actions,
         },
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
+
 
 # ── NL 스텁 ───────────────────────────────────────────────────────────────────
 @app.post(
@@ -294,6 +344,7 @@ def predict_by_nl(body: NLRequest = Body(...)):
         "data": {"prediction": preds, "length": len(preds), "note": "stub response (no real model)"},
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
+
 
 # ── 간단 UI (/ui) ─────────────────────────────────────────────────────────────
 @app.get("/ui", response_class=HTMLResponse)
@@ -437,6 +488,8 @@ form.addEventListener('submit', async (e) => {
       <div><b>pred_len</b>: ${d.pred_len}</div>
       <div><b>csv</b>: ${d.csv_path}</div>
       <div><b>df</b>: ${d.df_info?.rows} rows × ${d.df_info?.cols} cols</div>
+      <div><b>risk</b>: ${d.risk ? (d.risk.riskLevel || 'unknown') : 'n/a'}</div>
+      <div><b>actions</b>: ${d.suggestedActions ? d.suggestedActions.join(', ') : 'n/a'}</div>
     `;
 
     eventsEl.innerHTML = '';
@@ -481,6 +534,78 @@ form.addEventListener('submit', async (e) => {
 </body>
 </html>
     """
+
+
+# ── (옵션) 2~10번 오케스트레이션 호환용 간단 엔드포인트 스텁 ───────────────
+# 필요 시 활성화; 여기서는 최소한의 호환만 유지(실제 파이프라인은 run-direct에서 수행)
+
+@app.get("/api/v1/prediction/orchestration-request", tags=["Orchestration"])
+def orchestration_request(taskId: str = Query(...)):
+    return {
+        "taskId": taskId,
+        "fromAgent": "orchestration",
+        "objective": "30분 내 과열 위험 탐지",
+        "timeRange": "2025-07-17T13:00:00~13:30:00",
+        "context": {"process_id":"line01","domain":"온도제어","constraints":[{"type":"time","value":"30분 이내"}]},
+        "userRole": "engineer"
+    }
+
+@app.post("/api/v1/prediction/tasks", tags=["Orchestration"])
+def init_task(body: Dict[str, Any]):
+    return {
+        "code":"SUCCESS",
+        "data":{"taskId":"abc123","requiredData":["sensor1","sensor5","camera1"],"status":"pending"},
+        "metadata":{"timestamp":_now_iso(),"request_id":_rid()}
+    }
+
+@app.post("/api/v1/prediction/tasks/{taskId}/fetch-data", tags=["Orchestration"])
+def fetch_data(taskId: str = Path(...), body: Dict[str, Any] = Body(...)):
+    return {
+        "code":"SUCCESS",
+        "data":{"status":"data_ready","numRecords":1280},
+        "metadata":{"timestamp":_now_iso(),"request_id":_rid()}
+    }
+
+@app.post("/api/v1/prediction/tasks/{taskId}/run", tags=["Orchestration"])
+def run_task(taskId: str = Path(...), body: Dict[str, Any] = Body(...)):
+    return {
+        "code":"SUCCESS",
+        "data":{"prediction":[1.2,1.4,1.6],"modelUsed":"TS-CNN","uncertainty":0.08},
+        "metadata":{"timestamp":_now_iso(),"request_id":_rid()}
+    }
+
+@app.post("/api/v1/prediction/tasks/{taskId}/explain", tags=["Orchestration"])
+def explain_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
+    # 데모: 고정 CSV/타깃 사용
+    csv_path = SENSOR_TO_FILE["CMP"]
+    df = pd.read_csv(csv_path)
+    feature_df = df.iloc[:,4:]
+    result = explain_module(feature_df, "MOTOR_CURRENT", preds=[])
+    return {"code":"SUCCESS","data":result,"metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
+
+@app.post("/api/v1/prediction/tasks/{taskId}/risk-assess", tags=["Orchestration"])
+def risk_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
+    csv_path = SENSOR_TO_FILE["CMP"]
+    df = pd.read_csv(csv_path)
+    feature_df = df.iloc[:,4:]
+    r = risk_module(feature_df, "MOTOR_CURRENT", preds=[])
+    return {"code":"SUCCESS","data":r,"metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
+
+@app.get("/api/v1/prediction/tasks/{taskId}/result-summary", tags=["Orchestration"])
+def result_summary(taskId: str = Path(...)):
+    return {"code":"SUCCESS","data":{"summary":"위험 감지됨 - 냉각 조치 필요","historyComparison":"consistent","userView":"작업자용 요약 제공됨"},
+            "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
+
+@app.post("/api/v1/prediction/tasks/{taskId}/log", tags=["Orchestration"])
+def task_log(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
+    return {"code":"SUCCESS","data":{"processLog":["step1","step2"],"timestamp":_now_iso()},
+            "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
+
+@app.post("/api/v1/prediction/tasks/{taskId}/interrupt", tags=["Orchestration"])
+def task_interrupt(taskId: str = Path(...), body: Dict[str, Any] = Body(...)):
+    return {"code":"SUCCESS","data":{"status":"interrupted","message":"예측 중단 완료"},
+            "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
+
 
 # ── 로컬 실행 ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
