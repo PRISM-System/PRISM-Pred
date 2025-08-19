@@ -10,6 +10,7 @@ from fastapi import FastAPI, Query, Path, Body, HTTPException
 from pydantic import BaseModel, Field
 import pandas as pd
 import subprocess, sys, json
+from fastapi.responses import HTMLResponse
 
 
 def _now_iso() -> str:
@@ -283,9 +284,207 @@ def predict_by_nl(body: NLRequest = Body(...)):
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
 
+# ui
+
+
+@app.get("/ui", response_class=HTMLResponse)
+
+def prediction_ui():
+    return """
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PRISM Prediction UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50">
+  <div class="max-w-5xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold">PRISM Prediction</h1>
+      <p class="text-slate-600">오케스트레이션 JSON 없이 폼으로 예측 요청하고, 결과를 표/차트로 확인해요.</p>
+    </header>
+
+    <section class="bg-white rounded-2xl shadow p-6 mb-6">
+      <form id="predForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">Task ID</label>
+          <input name="taskId" value="1" class="w-full border rounded-xl px-3 py-2 outline-none focus:ring" />
+        </div>
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">From Agent</label>
+          <select name="fromAgent" class="w-full border rounded-xl px-3 py-2">
+            <option value="orchestration" selected>orchestration</option>
+            <option value="monitoring">monitoring</option>
+            <option value="ui">ui</option>
+            <option value="external">external</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">Objective</label>
+          <select name="objective" class="w-full border rounded-xl px-3 py-2">
+            <option value="prediction" selected>prediction</option>
+            <option value="forecast">forecast</option>
+            <option value="예측">예측</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">Time Range</label>
+          <input name="timeRange" value="2025-08-20 09:00:00 - 09:10:00" class="w-full border rounded-xl px-3 py-2"/>
+        </div>
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">Sensor Name</label>
+          <select name="sensor_name" class="w-full border rounded-xl px-3 py-2">
+            <option value="CMP" selected>CMP</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-slate-700 mb-1">Target Column</label>
+          <input name="target_cols" value="MOTOR_CURRENT" class="w-full border rounded-xl px-3 py-2"/>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-slate-700 mb-1">User Role</label>
+          <input name="userRole" value="engineer" class="w-full border rounded-xl px-3 py-2"/>
+        </div>
+        <div class="md:col-span-2 flex gap-3">
+          <button id="runBtn" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition">예측 실행</button>
+          <span id="status" class="text-sm text-slate-600"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="resultCard" class="hidden bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="text-lg font-semibold mb-2">결과</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-medium mb-2">요약</h3>
+          <div class="text-sm text-slate-700 space-y-1" id="summary"></div>
+        </div>
+        <div>
+          <h3 class="font-medium mb-2">예측 차트</h3>
+          <canvas id="predChart" height="140"></canvas>
+        </div>
+      </div>
+      <div class="mt-6">
+        <h3 class="font-medium mb-2">이벤트 로그</h3>
+        <ul id="events" class="list-disc pl-6 text-sm text-slate-700 space-y-1"></ul>
+      </div>
+      <div class="mt-6">
+        <h3 class="font-medium mb-2">Raw JSON</h3>
+        <pre id="raw" class="text-xs bg-slate-50 border rounded-xl p-3 overflow-auto"></pre>
+      </div>
+    </section>
+  </div>
+
+<script>
+const form = document.getElementById('predForm');
+const runBtn = document.getElementById('runBtn');
+const statusEl = document.getElementById('status');
+const resultCard = document.getElementById('resultCard');
+const summaryEl = document.getElementById('summary');
+const eventsEl = document.getElementById('events');
+const rawEl = document.getElementById('raw');
+let chart;
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusEl.textContent = "요청 중...";
+  runBtn.disabled = true;
+  resultCard.classList.add('hidden');
+
+  const fd = new FormData(form);
+  const payload = {
+    taskId: fd.get('taskId'),
+    fromAgent: fd.get('fromAgent'),
+    objective: fd.get('objective'),
+    timeRange: fd.get('timeRange'),
+    sensor_name: fd.get('sensor_name'),
+    target_cols: fd.get('target_cols'),
+    constraints: null,
+    userRole: fd.get('userRole')
+  };
+
+  try {
+    const res = await fetch('/api/v1/prediction/run-direct', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    statusEl.textContent = "";
+    runBtn.disabled = false;
+
+    if (!res.ok) {
+      alert('에러: ' + (data.detail || res.statusText));
+      return;
+    }
+
+    // 요약
+    const d = data.data || {};
+    summaryEl.innerHTML = `
+      <div><b>code</b>: ${data.code}</div>
+      <div><b>modelSelected</b>: ${d.modelSelected}</div>
+      <div><b>target</b>: ${d.target_col} (idx ${d.target_idx_in_features})</div>
+      <div><b>pred_len</b>: ${d.pred_len}</div>
+      <div><b>csv</b>: ${d.csv_path}</div>
+      <div><b>df</b>: ${d.df_info?.rows} rows × ${d.df_info?.cols} cols</div>
+    `;
+
+    // 이벤트
+    eventsEl.innerHTML = '';
+    (d.events || []).forEach(ev => {
+      const li = document.createElement('li');
+      li.textContent = ev;
+      eventsEl.appendChild(li);
+    });
+
+    // 차트
+    const preds = d.prediction || [];
+    const labels = preds.map((_, i) => 't+' + (i+1));
+    const ctx = document.getElementById('predChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Prediction',
+          data: preds,
+          borderWidth: 2,
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true }},
+        scales: { x: { grid: { display: false }}, y: { grid: { color: '#eef2ff' }}}
+      }
+    });
+
+    // RAW
+    rawEl.textContent = JSON.stringify(data, null, 2);
+    resultCard.classList.remove('hidden');
+
+  } catch (err) {
+    statusEl.textContent = "";
+    runBtn.disabled = false;
+    alert('요청 실패: ' + err);
+  }
+});
+</script>
+</body>
+</html>
+    """
+
+
+
+
 # --------------------------------------------------
 # 로컬 실행
 # --------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+
