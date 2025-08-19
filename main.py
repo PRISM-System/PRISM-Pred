@@ -1,23 +1,26 @@
 # main.py
 from prism_prediction.models import *
-#from AGI.legacy import predictor  # (현재는 직접 사용 안하지만, 패키지 초기화 시 필요하면 유지)
 import logging
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime, timezone
 import uuid
 import os
-from fastapi import FastAPI, Query, Path, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException
 from pydantic import BaseModel, Field
 import pandas as pd
 import subprocess, sys, json
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
+# ── 추가: .env 로드 & 외부 API 호출 ─────────────────────────────────────────────
+from dotenv import load_dotenv
+import requests
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 def _rid() -> str:
     return f"req_{uuid.uuid4().hex[:8]}"
 
+# ── 로거 ───────────────────────────────────────────────────────────────────────
 logger = logging.getLogger("prism_prediction_demo")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
@@ -25,18 +28,26 @@ handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s in %(module)
 if not logger.handlers:
     logger.addHandler(handler)
 
-# --------------------------------------------------
-# FastAPI
-# --------------------------------------------------
+# ── .env 로드 & ENV 읽기 ───────────────────────────────────────────────────────
+load_dotenv()
+LLM_API_URL = os.getenv("LLM_API_URL")   # 예: http://147.47.39.144/api/agents
+DB_API_URL  = os.getenv("DB_API_URL")    # 예: http://147.47.39.144/api/db
+logger.info(f"ENV Loaded: LLM_API_URL={LLM_API_URL}, DB_API_URL={DB_API_URL}")
+
+# ── FastAPI ───────────────────────────────────────────────────────────────────
 app = FastAPI(title="PRISM Prediction API (demo)", version="0.0.3")
 
+# 루트 → /ui 로 바로 연결 (예쁜 UI)
 @app.get("/")
-def root():
-    return {"message": "PRISM Prediction API alive"}
+def root_redirect():
+    return RedirectResponse(url="/ui")
 
-# --------------------------------------------------
-# 공용 스키마
-# --------------------------------------------------
+# favicon(선택) 204로 막기
+@app.get("/favicon.ico")
+def favicon():
+    return HTMLResponse(status_code=204, content="")
+
+# ── 공용 스키마 ────────────────────────────────────────────────────────────────
 class NLRequest(BaseModel):
     query: str = Field(..., example='화학기계연마 공정 센서의 MOTOR_CURRENT 컬럼의 2024-02-04 09:00:00~09:10:00 의 값들을 예측해줘')
 class NLResponse(BaseModel):
@@ -51,9 +62,7 @@ class NLResponse(BaseModel):
         request_id: str
     metadata: Metadata
 
-# --------------------------------------------------
-# “오케스트레이션→예측” 스키마 (요청/응답)
-# --------------------------------------------------
+# “오케스트레이션→예측” 스키마
 class DirectRunRequest(BaseModel):
     taskId: str
     fromAgent: Literal["orchestration","monitoring","ui","external"] = "orchestration"
@@ -86,22 +95,18 @@ class DirectRunResponse(BaseModel):
         request_id: str
     metadata: Metadata
 
-# --------------------------------------------------
-# 유틸: 센서명 → CSV 경로 매핑
-# --------------------------------------------------
+# ── CSV 매핑 ──────────────────────────────────────────────────────────────────
 CSV_BASE = "prism_prediction/Industrial_DB_sample"
 SENSOR_TO_FILE = {
     "CMP": os.path.join(CSV_BASE, "SEMI_CMP_SENSORS_predict.csv"),
-    # 필요 시 여기에 다른 센서도 추가 가능
+    # 필요 시 추가
 }
 
 def _notice(events: List[str], msg: str):
     logger.info(msg)
     events.append(f"[{_now_iso()}] {msg}")
 
-# --------------------------------------------------
-# predictor(run.py) 호출 유틸
-# --------------------------------------------------
+# ── predictor(run.py) 호출 유틸 ────────────────────────────────────────────────
 RUN_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run.py")
 
 def run_predictor_with_csv(
@@ -118,15 +123,13 @@ def run_predictor_with_csv(
     auto_eval_idx: bool = True,
 ) -> Dict[str, Any]:
     """
-    run.py를 서브프로세스로 호출 → run.py가 저장한 outputs/summary.json을 읽어 반환.
-    stdout 파싱은 버리고, 파일을 진실의 원천으로 사용.
+    run.py를 서브프로세스로 호출 → outputs/summary.json 읽어 반환.
     """
-    # run.py가 있는 폴더 기준으로 실행/읽기 (상대경로 문제 예방)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     runpy_path = os.path.join(script_dir, "run.py")
     out_path = os.path.join(script_dir, "outputs", "summary.json")
 
-    # 기존 파일이 남아있으면 지워서 혼동 방지
+    # 이전 결과 제거
     try:
         if os.path.exists(out_path):
             os.remove(out_path)
@@ -149,16 +152,12 @@ def run_predictor_with_csv(
     if auto_eval_idx:
         cmd.append("--auto_eval_idx")
 
-    # run.py를 run.py 위치에서 실행 (cwd 지정)
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=script_dir)
 
     if proc.returncode != 0:
-        # run.py 오류면 stderr 그대로 노출
         raise HTTPException(status_code=500, detail=f"predictor failed: {proc.stderr}")
 
-    # 파일을 읽어 JSON 로드 (stdout은 참고만)
     if not os.path.exists(out_path):
-        # 혹시 파일 생성이 안 된 예외 케이스를 대비해 stdout 일부를 에러 메시지로 남김
         tail = proc.stdout[-400:] if proc.stdout else ""
         raise HTTPException(status_code=500, detail=f"predictor did not produce {out_path}. tail={tail}")
 
@@ -170,10 +169,7 @@ def run_predictor_with_csv(
 
     return summary
 
-
-# --------------------------------------------------
-# 오케스트레이션 JSON → CSV 읽고 → predictor 실행 → (지금은) 나이브 예측값 반환
-# --------------------------------------------------
+# ── 예측 엔드포인트 ───────────────────────────────────────────────────────────
 @app.post(
     "/api/v1/prediction/run-direct",
     response_model=DirectRunResponse,
@@ -183,10 +179,10 @@ def run_predictor_with_csv(
 def run_direct(body: DirectRunRequest):
     events: List[str] = []
 
-    # 1) 수신 ACK
+    # 1) 수신
     _notice(events, f"요청 수신: taskId={body.taskId}, objective={body.objective}, timeRange={body.timeRange}, sensor={body.sensor_name}, target={body.target_cols}")
 
-    # 2) CSV 경로 결정
+    # 2) CSV 경로
     csv_path = SENSOR_TO_FILE.get(body.sensor_name.upper())
     if not csv_path:
         raise HTTPException(status_code=400, detail=f"지원하지 않는 sensor_name: {body.sensor_name}")
@@ -202,10 +198,10 @@ def run_direct(body: DirectRunRequest):
     n_rows, n_cols = int(df.shape[0]), int(df.shape[1])
     _notice(events, f"CSV 로딩 성공: rows={n_rows}, cols={n_cols}")
 
-    # 4) 예측에 사용할 컬럼(시간 무시): 5번째부터 끝까지 피처로 사용
+    # 4) 피처/타깃
     if n_cols < 13:
         raise HTTPException(status_code=400, detail="CSV 컬럼 수가 기대보다 적습니다(최소 13열 필요).")
-    feature_df = df.iloc[:, 4:]   # 5번째 컬럼부터
+    feature_df = df.iloc[:, 4:]   # 5번째부터
     feature_names = list(feature_df.columns)
     enc_in = feature_df.shape[1]
 
@@ -217,10 +213,27 @@ def run_direct(body: DirectRunRequest):
     _notice(events, f"피처 구성 완료: enc_in={enc_in}, feature_names={feature_names}")
     _notice(events, f"타깃 확인: target={target_col}, target_idx_in_features={target_idx_in_features}")
 
-    # 5) timeRange 알림
-    _notice(events, f"timeRange={body.timeRange} 에 대한 예측을 준비 (현 데모는 전체 시퀀스를 사용)")
+    # 5) 참고 알림
+    _notice(events, f"timeRange={body.timeRange} 에 대한 예측 준비(데모는 전체 시퀀스 사용)")
 
-    # 6-a) predictor(run.py)로 베스트 모델 선정/학습 요약
+    # 6) (옵션) DB/LLM API 연동 테스트
+    if DB_API_URL:
+        try:
+            # SELECT 전용 엔드포인트가 있다면 거기에 맞춰 변경하세요.
+            db_test = requests.get(f"{DB_API_URL.rstrip('/')}/tables", timeout=5)
+            _notice(events, f"DB 연결 확인 성공: 테이블 수={len(db_test.json()) if db_test.ok else 'N/A'}")
+        except Exception as e:
+            _notice(events, f"DB 호출 실패: {e}")
+
+    if LLM_API_URL:
+        try:
+            # 에이전트 목록 확인(연결 확인용)
+            llm_agents = requests.get(LLM_API_URL, timeout=5)
+            _notice(events, f"LLM 연결 확인 성공: status={llm_agents.status_code}")
+        except Exception as e:
+            _notice(events, f"LLM 호출 실패: {e}")
+
+    # 7) predictor(run.py)로 베스트 모델 선정/학습 요약
     _notice(events, "predictor(run.py) 실행 시작")
     predictor_summary = run_predictor_with_csv(
         csv_path=csv_path,
@@ -228,7 +241,7 @@ def run_direct(body: DirectRunRequest):
         target_col_name=target_col,
         seq_len=48, label_len=24, pred_len=11,
         epochs=1, batch_size=8,
-        models="Autoformer,DLinear,TimesNet,LightTS",  # 필요 시 "Autoformer,DLinear,TimesNet,LightTS,SegRNN"
+        models="Autoformer,DLinear,TimesNet,LightTS",  # 필요 시 추가
         device="cpu",
         auto_eval_idx=True
     )
@@ -236,7 +249,7 @@ def run_direct(body: DirectRunRequest):
     best_focus = predictor_summary.get("best_val_rmse_focus")
     _notice(events, f"predictor 완료: best_model={best_model}, best_val_rmse_focus={best_focus}")
 
-    # 6-b) (임시) 예측값은 나이브 외삽으로 11개 생성
+    # 8) (임시) 예측값: 나이브 외삽 11개
     series = pd.to_numeric(feature_df[target_col], errors="coerce").dropna().to_numpy()
     if series.size == 0:
         raise HTTPException(status_code=400, detail=f"타깃 컬럼({target_col})에 유효 숫자 데이터가 없습니다.")
@@ -260,15 +273,13 @@ def run_direct(body: DirectRunRequest):
             "target_idx_in_features": target_idx_in_features,
             "enc_in": enc_in,
             "pred_len": pred_len,
-            "modelSelected": best_model,     # predictor가 고른 베스트 모델
-            "prediction": preds,             # (지금은) 나이브 예측 11개
+            "modelSelected": best_model,
+            "prediction": preds,
         },
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
 
-# --------------------------------------------------
-# 기존 NL 스텁(원하면 그대로 유지)
-# --------------------------------------------------
+# ── NL 스텁 ───────────────────────────────────────────────────────────────────
 @app.post(
     "/api/v1/prediction/nl",
     response_model=NLResponse,
@@ -284,11 +295,8 @@ def predict_by_nl(body: NLRequest = Body(...)):
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
 
-# ui
-
-
+# ── 간단 UI (/ui) ─────────────────────────────────────────────────────────────
 @app.get("/ui", response_class=HTMLResponse)
-
 def prediction_ui():
     return """
 <!doctype html>
@@ -421,7 +429,6 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    // 요약
     const d = data.data || {};
     summaryEl.innerHTML = `
       <div><b>code</b>: ${data.code}</div>
@@ -432,7 +439,6 @@ form.addEventListener('submit', async (e) => {
       <div><b>df</b>: ${d.df_info?.rows} rows × ${d.df_info?.cols} cols</div>
     `;
 
-    // 이벤트
     eventsEl.innerHTML = '';
     (d.events || []).forEach(ev => {
       const li = document.createElement('li');
@@ -440,7 +446,6 @@ form.addEventListener('submit', async (e) => {
       eventsEl.appendChild(li);
     });
 
-    // 차트
     const preds = d.prediction || [];
     const labels = preds.map((_, i) => 't+' + (i+1));
     const ctx = document.getElementById('predChart').getContext('2d');
@@ -463,7 +468,6 @@ form.addEventListener('submit', async (e) => {
       }
     });
 
-    // RAW
     rawEl.textContent = JSON.stringify(data, null, 2);
     resultCard.classList.remove('hidden');
 
@@ -478,13 +482,7 @@ form.addEventListener('submit', async (e) => {
 </html>
     """
 
-
-
-
-# --------------------------------------------------
-# 로컬 실행
-# --------------------------------------------------
+# ── 로컬 실행 ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
-
