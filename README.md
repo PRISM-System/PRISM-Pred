@@ -2,7 +2,9 @@
 
 `PRISM-Pred`는 [PRISM-AGI](../README.md) 플랫폼의 예측을 담당하는 AI 에이전트로, 멀티모달 데이터를 통합 분석하여 공정 결과를 예측합니다.
 
-## 1. 주요 기능 ###
+---
+
+## 1. 주요 기능
 
 ### 멀티모달 예측 시스템
 - 정형 데이터를 분석하는 전문가 모델
@@ -23,62 +25,65 @@
 - 새로운 데이터에 스스로 적응하며 성능을 개선하는 자가 발전 기능 (도메인 적응)
 - 예측 결과에 따르는 잠재적 위험을 평가하는 기능
 
+---
+
 ## 2. 성능 목표
 
-| 기능 | 지표 | 목표 |
-| --- | --- | --- |
+| 기능             | 지표                   | 목표     |
+| ---------------- | ---------------------- | -------- |
 | **예측 정확도** | 각 데이터 타입별 예측 오차 | 5% 이내 |
 | **신뢰도 관리** | 예측 위험 평가 상관계수 | 0.5 이상 |
 
+---
+
 ## 3. 실행 방법
-- 시계열 전용 후보 모델 학습 과정 업데이트
-- 아래 예시 코드로 실행 가능
+
+시계열 전용 후보 모델 학습 과정 업데이트 후, 아래 예시 코드로 실행할 수 있습니다.
 
 ### 3-1. 의존성 설치
-> 프로젝트 루트에서 아래 명령으로 필요한 패키지를 설치합니다.
-```
+프로젝트 루트에서 아래 명령으로 필요한 패키지를 설치합니다:
+```bash
 pip install -r requirements.txt
-
 ```
 
 ### 3-2. 환경 설정
-> env파일에 필요 정보들을 채워줍니다.
-```
+`.env` 파일에 필요한 정보를 채워줍니다:
+```env
 LLM_API_URL=http://*/api/agents
 DB_API_URL=http://*/api/db
 OPENAI_API_KEY=*
 ```
+
 ### 3-3. API 서버 실행
-> FastAPI 서버를 띄웁니다.
-```
+FastAPI 서버를 실행합니다:
+```bash
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 ### 3-4. 이후 절차
-> 서버에서 아래의 주소로 예측 모듈의 기능들을 확인해보실 수 있습니다.
+서버 실행 후, 아래 주소에서 예측 모듈 기능을 확인할 수 있습니다:
+
+- UI: [http://localhost:8001/ui] 
+- Swagger 문서: [http://localhost:8001/docs]
+
+또는, 다른 터미널에서 예측 엔드포인트를 호출할 수도 있습니다 (`jq`가 없다면 마지막 `| jq .`는 생략 가능):
+```bash
+curl -s -X POST "http:///api/v1/prediction/run-direct" -H "Content-Type: application/json" -d '{"taskId":"1","fromAgent":"orchestration","objective":"prediction","timeRange":"2025-08-20 09:00:00 - 09:10:00","sensor_name":"CMP","target_cols":"MOTOR_CURRENT","constraints":null,"userRole":"engineer"}' | jq .
 ```
-http://localhost:8001/ui
 
-http://localhost:8001/docs
-
-
-> 혹은, 다른 터미널에서 예측 엔드포인트를 호출 시 예측값을 받아볼 수 있습니다. jq가 없다면 마지막 | jq .는 생략해도 됩니다.
-```
-curl -s -X POST "http://127.0.0.1:8001/api/v1/prediction/run-direct" -H "Content-Type: application/json" -d '{"taskId":"1","fromAgent":"orchestration","objective":"prediction","timeRange":"2025-08-20 09:00:00 - 09:10:00","sensor_name":"CMP","target_cols":"MOTOR_CURRENT","constraints":null,"userRole":"engineer"}' | jq .
-
-```
 #### 참고
 
-- 기본 CSV 매핑은 prism_prediction/Industrial_DB_sample 하위 파일을 사용합니다.
-
+- 기본 CSV 매핑은 `prism_prediction/Industrial_DB_sample` 하위 파일을 사용합니다.
 - 서버 로그는 uvicorn을 실행한 터미널에서 확인할 수 있습니다.
 
-## 3-4. 샘플 응답 (실제 출력)
+---
+
+## 4. 샘플 응답 (실제 출력)
 
 아래는 예측 API 호출 시의 예시 응답입니다.  
 모델/버전/데이터에 따라 수치는 달라질 수 있습니다.
 
-```
+```json
 {
   "mode": "csv",
   "csv_path": "prism_prediction/Industrial_DB_sample/SEMI_CMP_SENSORS_predict.csv",
