@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 import pandas as pd
 import subprocess, sys, json
 from fastapi.responses import HTMLResponse, RedirectResponse
+import base64, hashlib, pathlib
+
 
 # ── 추가: .env 로드 & 외부 API 호출 ─────────────────────────────────────────────
 from dotenv import load_dotenv
@@ -277,8 +279,17 @@ def run_direct(body: DirectRunRequest):
     best_model = predictor_summary.get("best_model") or "Unknown"
     best_focus = predictor_summary.get("best_val_rmse_focus")
     _notice(events, f"predictor 완료: best_model={best_model}, best_val_rmse_focus={best_focus}")
-
-    # 8) (임시) 예측값: 나이브 외삽 11개
+    # BEST MODEL 경로
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_weight_path = os.path.join(script_dir, "outputs", best_model, "ckpt.pt")
+    best_weight_path = (
+        predictor_summary.get("best_weight_path")
+        or predictor_summary.get("ckpt_path")
+        or predictor_summary.get("checkpoint")
+        or default_weight_path
+    )
+        
+    # 8) (임시) 예측값
     series = pd.to_numeric(feature_df[target_col], errors="coerce").dropna().to_numpy()
     if series.size == 0:
         raise HTTPException(status_code=400, detail=f"타깃 컬럼({target_col})에 유효 숫자 데이터가 없습니다.")
@@ -287,9 +298,30 @@ def run_direct(body: DirectRunRequest):
     start = float(series[-1])
     preds = [round(start + (i+1)*delta, 4) for i in range(pred_len)]
     _notice(events, f"예측 수행 완료(나이브 외삽): pred_len={pred_len}, last={start}, delta={delta}")
+    # 자율 제어에 전달하고자 하는 MODEL 가중치 및 METADATA
+    autocontrol_payload = {
+    "taskId": body.taskId,
+    "best_model": best_model,
+    "feature_names": feature_names,
+    "input_time_range": body.timeRange,
+    "output_offsets": list(range(1, pred_len + 1)),
+    "pred_len": pred_len,
+    "target_col": target_col,
+    "prediction": preds,
+    "weight_path": best_weight_path,
+    "saved_at": _now_iso(),
+    }
+    save_path = AUTOCONTROL_DIR / f"best_model_{body.taskId}.json"
+    try:
+        with open(save_path, "w", encoding="utf-8") as f:
+            json.dump(autocontrol_payload, f, ensure_ascii=False, indent=2)
+        _notice(events, f"AutoControl 스냅샷 저장: {save_path}")
+    except Exception as e:
+        _notice(events, f"AutoControl 스냅샷 저장 실패: {e}")
+
 
     # 9) 설명(모듈 함수 호출)
-    _notice(events, "설명(explain) 계산 시작")
+    _notice(events, "변수 상관관계 계산 시작")
     try:
         explanation = explain_module(feature_df, target_col, preds)  # module.py의 함수
     except Exception as e:
@@ -297,13 +329,13 @@ def run_direct(body: DirectRunRequest):
     _notice(events, f"설명 계산 완료: keys={list(explanation.keys())}")
 
     # 10) 리스크(모듈 함수 호출) + 액션
-    _notice(events, "리스크(risk) 평가 시작")
+    _notice(events, "위험 평가 시작")
     try:
         risk_dict = risk_module(feature_df, target_col, preds)       # module.py의 함수
     except Exception as e:
         risk_dict = {"riskLevel": "unknown", "error": str(e), "exceedsThreshold": False}
     actions = suggest_actions_by_risk(risk_dict)
-    _notice(events, f"리스크 평가 완료: level={risk_dict.get('riskLevel')} → actions={actions}")
+    _notice(events, f"위험 평가 완료: level={risk_dict.get('riskLevel')} → actions={actions}")
 
     return {
         "code": "SUCCESS",
@@ -327,6 +359,115 @@ def run_direct(body: DirectRunRequest):
         },
         "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
     }
+
+###### AutoControl 전달 부분 추가
+
+AUTOCONTROL_DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__))) / "outputs" / "autocontrol"
+AUTOCONTROL_DIR.mkdir(parents=True, exist_ok=True)
+
+def _sha256_of_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def _maybe_inline_base64(path: str, do_inline: bool, limit_mb: int = 8) -> tuple[bool, str | None, str | None]:
+    """return (inlined, base64_str, note)"""
+    try:
+        size = os.path.getsize(path)
+        if do_inline and size <= limit_mb * 1024 * 1024:
+            with open(path, "rb") as f:
+                return True, base64.b64encode(f.read()).decode("ascii"), f"inlined base64 (<= {limit_mb}MB)"
+        if do_inline and size > limit_mb * 1024 * 1024:
+            return False, None, f"file too large to inline (> {limit_mb}MB); metadata only"
+        return False, None, None
+    except Exception as e:
+        return False, None, f"inline failed: {e}"
+    
+class AutoControlSnapshotResponse(BaseModel):
+    code: Literal["SUCCESS","ERROR"] = "SUCCESS"
+    class Data(BaseModel):
+        taskId: str
+        best_model: str
+        feature_names: List[str]
+        input_time_range: str
+        output_offsets: List[int]
+        pred_len: int
+        target_col: str
+        prediction: List[float]
+        # weight 메타 + (선택) base64
+        weight_path: Optional[str] = None
+        weight_filename: Optional[str] = None
+        weight_size_bytes: Optional[int] = None
+        weight_sha256: Optional[str] = None
+        weight_inlined: Optional[bool] = None
+        weight_base64: Optional[str] = None
+        note: Optional[str] = None
+    data: Data
+    class Metadata(BaseModel):
+        timestamp: str
+        request_id: str
+    metadata: Metadata
+
+
+@app.get("/api/v1/prediction/activate_autocontrol/{taskId}",
+         response_model=AutoControlSnapshotResponse,
+         tags=["Prediction"])
+def activate_autocontrol_by_task(
+    taskId: str = Path(...),
+    inline_base64: bool = Query(False, description="작은 weight면 base64 인라인 포함")
+):
+    snap_path = AUTOCONTROL_DIR / f"best_model_{taskId}.json"
+    if not snap_path.exists():
+        raise HTTPException(status_code=404, detail=f"snapshot not found for taskId={taskId}. run /api/v1/prediction/run-direct first.")
+    try:
+        snap = json.load(open(snap_path, "r", encoding="utf-8"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"snapshot read error: {e}")
+
+    weight_path = snap.get("weight_path")
+    weight_meta = {
+        "weight_path": weight_path,
+        "weight_filename": None,
+        "weight_size_bytes": None,
+        "weight_sha256": None,
+        "weight_inlined": False,
+        "weight_base64": None,
+        "note": None,
+    }
+
+    if weight_path and os.path.exists(weight_path):
+        try:
+            weight_meta["weight_filename"] = os.path.basename(weight_path)
+            weight_meta["weight_size_bytes"] = os.path.getsize(weight_path)
+            weight_meta["weight_sha256"] = _sha256_of_file(weight_path)
+            inlined, b64, note = _maybe_inline_base64(weight_path, inline_base64, limit_mb=8)
+            weight_meta["weight_inlined"] = inlined
+            weight_meta["weight_base64"] = b64
+            weight_meta["note"] = note
+        except Exception as e:
+            weight_meta["note"] = f"weight meta error: {e}"
+    else:
+        weight_meta["note"] = ("weight path missing" if not weight_path else f"weight not found: {weight_path}")
+
+    return {
+        "code": "SUCCESS",
+        "data": {
+            "taskId": snap["taskId"],
+            "best_model": snap["best_model"],
+            "feature_names": snap["feature_names"],
+            "input_time_range": snap["input_time_range"],
+            "output_offsets": snap["output_offsets"],
+            "pred_len": snap["pred_len"],
+            "target_col": snap["target_col"],
+            "prediction": snap["prediction"],
+            **weight_meta
+        },
+        "metadata": {"timestamp": _now_iso(), "request_id": _rid()}
+    }
+
+
 
 
 # ── NL 스텁 ───────────────────────────────────────────────────────────────────
@@ -550,7 +691,7 @@ def orchestration_request(taskId: str = Query(...)):
         "userRole": "engineer"
     }
 
-@app.post("/api/v1/prediction/tasks", tags=["Orchestration"])
+@app.post("/api/v1/prediction/tasks", tags=["Prediction"])
 def init_task(body: Dict[str, Any]):
     return {
         "code":"SUCCESS",
@@ -574,7 +715,7 @@ def run_task(taskId: str = Path(...), body: Dict[str, Any] = Body(...)):
         "metadata":{"timestamp":_now_iso(),"request_id":_rid()}
     }
 
-@app.post("/api/v1/prediction/tasks/{taskId}/explain", tags=["Orchestration"])
+@app.post("/api/v1/prediction/tasks/{taskId}/explain", tags=["Prediction"])
 def explain_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
     # 데모: 고정 CSV/타깃 사용
     csv_path = SENSOR_TO_FILE["CMP"]
@@ -583,7 +724,7 @@ def explain_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
     result = explain_module(feature_df, "MOTOR_CURRENT", preds=[])
     return {"code":"SUCCESS","data":result,"metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
 
-@app.post("/api/v1/prediction/tasks/{taskId}/risk-assess", tags=["Orchestration"])
+@app.post("/api/v1/prediction/tasks/{taskId}/risk-assess", tags=["Prediction"])
 def risk_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
     csv_path = SENSOR_TO_FILE["CMP"]
     df = pd.read_csv(csv_path)
@@ -591,17 +732,17 @@ def risk_task(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
     r = risk_module(feature_df, "MOTOR_CURRENT", preds=[])
     return {"code":"SUCCESS","data":r,"metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
 
-@app.get("/api/v1/prediction/tasks/{taskId}/result-summary", tags=["Orchestration"])
+@app.get("/api/v1/prediction/tasks/{taskId}/result-summary", tags=["Prediction"])
 def result_summary(taskId: str = Path(...)):
     return {"code":"SUCCESS","data":{"summary":"위험 감지됨 - 냉각 조치 필요","historyComparison":"consistent","userView":"작업자용 요약 제공됨"},
             "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
 
-@app.post("/api/v1/prediction/tasks/{taskId}/log", tags=["Orchestration"])
+@app.post("/api/v1/prediction/tasks/{taskId}/log", tags=["Prediction"])
 def task_log(taskId: str = Path(...), body: Dict[str, Any] = Body(None)):
     return {"code":"SUCCESS","data":{"processLog":["step1","step2"],"timestamp":_now_iso()},
             "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
 
-@app.post("/api/v1/prediction/tasks/{taskId}/interrupt", tags=["Orchestration"])
+@app.post("/api/v1/prediction/tasks/{taskId}/interrupt", tags=["Prediction"])
 def task_interrupt(taskId: str = Path(...), body: Dict[str, Any] = Body(...)):
     return {"code":"SUCCESS","data":{"status":"interrupted","message":"예측 중단 완료"},
             "metadata":{"timestamp":_now_iso(),"request_id":_rid()}}
