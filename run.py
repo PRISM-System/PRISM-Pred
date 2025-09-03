@@ -4,16 +4,18 @@
 #            --feature_start_col 5 --target_col_name MOTOR_CURRENT \
 #            --seq_len 48 --label_len 24 --pred_len 11 --epochs 1 --device cpu --models DLinear --auto_eval_idx
 #   (MOCK) python run.py --seq_len 48 --label_len 24 --pred_len 12 --enc_in 4 --c_out 1 --epochs 1 --device cpu
-import argparse, json, os, random
-from dataclasses import dataclass
+import argparse, json, os, random, math
+from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Tuple
-
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from importlib import import_module
+
+_env = os.getenv("MAX_LENGTH", "").strip()
+MAX_LENGTH = int(_env) if _env.isdigit() and int(_env) > 0 else None
 
 # -----------------------------
 # Utils
@@ -197,8 +199,8 @@ def build_model(name: str, cfg: Configs, device: torch.device):
     return model.to(device)
 
 def forward_for_all(model: nn.Module, x_enc, x_mark_enc, x_dec, x_mark_dec):
-    # 모든 모델이 동일 시그니처를 가진다는 전제
-    return model(x_enc, x_mark_enc, x_dec, x_mark_dec)  # [B, pred_len, C] 기대
+    
+    return model(x_enc, x_mark_enc, x_dec, x_mark_dec)  # [B, pred_len, C] 
 
 # -----------------------------
 # Trainer
@@ -212,10 +214,12 @@ def train_and_validate(
     epochs: int = 1,
     lr: float = 1e-3,
     eval_idx: int = 0,
+    save_dir: Optional[str] = None,
 ):
     model = build_model(name, cfg, device)
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.MSELoss()
+    best_ckpt_path = None
 
     best_focus_rmse = float("inf")
     last_rmse_all = float("inf")
@@ -269,10 +273,24 @@ def train_and_validate(
         last_rmse_all = rmse_all
         if rmse_focus < best_focus_rmse:
             best_focus_rmse = rmse_focus
-            # (필요 시) 체크포인트 저장 가능
+            # save best model
+            if save_dir is not None:
+                ensure_dir(save_dir)
+                ckpt_path = os.path.join(save_dir, "ckpt.pt")
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "config": asdict(cfg),
+                        "model_name": name,
+                        "eval_idx": int(eval_idx),
+                    },
+                    ckpt_path,
+                )
+                best_ckpt_path = ckpt_path
+         
 
     metrics = {"val_rmse_all": last_rmse_all, "val_rmse_focus": best_focus_rmse}
-    return best_focus_rmse, metrics, model
+    return best_focus_rmse, metrics, model, best_ckpt_path
 
 # -----------------------------
 # Main
@@ -330,22 +348,30 @@ def main():
             mark_dim=4,
         )
         enc_in = ds.enc_in
-        c_out = ds.enc_in                     # 다채널 출력로 변경 (중요)
+        c_out = ds.enc_in                     
         eval_idx = ds.target_idx if (args.auto_eval_idx or args.eval_channel_idx is None) else args.eval_channel_idx
         eval_idx = max(0, min(eval_idx, c_out - 1))  # 안전 보정
 
         n = len(ds)
-        if n >= 2:
-            # random_split 합계 오류 방지: n_train ∈ [1, n-1]
-            n_train = max(1, min(n - 1, int(round(n * 0.8))))
-            n_val = n - n_train
-            train_ds, val_ds = torch.utils.data.random_split(
-                ds, [n_train, n_val], generator=torch.Generator().manual_seed(42)
-            )
+        g = torch.Generator().manual_seed(42)  
+
+        if MAX_LENGTH is not None and n > MAX_LENGTH:
+            idx = torch.randperm(n, generator=g)[:MAX_LENGTH]
+            dataset = torch.utils.data.Subset(ds, idx.tolist())
         else:
-            # 샘플이 1개뿐이라 split 불가 → 동일 ds로 train/val
-            train_ds = ds
-            val_ds = ds
+            dataset = ds
+
+        m = len(dataset)
+        if m >= 2:
+            # n_train ∈ [1, m-1] 
+            n_train = max(1, min(m - 1, int(round(m * 0.8))))
+            n_val = m - n_train
+            train_ds, val_ds = torch.utils.data.random_split(dataset, [n_train, n_val], generator=g)
+        else:
+            # 샘플이 1개뿐이면 동일 데이터셋 사용
+            train_ds = dataset
+            val_ds = dataset
+            
 
         drop_last_train = (len(train_ds) > args.batch_size)
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, drop_last=drop_last_train)
@@ -373,6 +399,7 @@ def main():
     # 후보 학습 & 선택 + 베스트 모델 보관
     candidates = [m.strip() for m in args.models.split(",") if m.strip()]
     results: Dict[str, Dict[str, Any]] = {}
+    ckpt_paths: Dict[str, Optional[str]] = {}
     best_name, best_metric = None, float("inf")
     best_model_obj = None
 
@@ -383,6 +410,7 @@ def main():
                 train_loader=train_loader, val_loader=val_loader,
                 device=device, epochs=args.epochs,
                 eval_idx=eval_idx,
+                save_dir=os.path.join("outputs", name),
             )
             results[name] = metrics
             if focus_rmse < best_metric:
@@ -391,6 +419,7 @@ def main():
                 best_model_obj = model_obj
         except Exception as e:
             results[name] = {"error": str(e)}
+            ckpt_paths[name] = None
             print(f"[WARN] {name} failed: {e}")
 
     # 예측 생성
@@ -430,7 +459,12 @@ def main():
         # mock 모드: zeros
         prediction = [0.0 for _ in range(args.pred_len)]
 
+
+    if best_name is None:
+        best_name = "Autoformer"
+        
     best_all = results.get(best_name, {}).get("val_rmse_all") if best_name in results else None
+    best_weight_path = ckpt_paths.get(best_name) if best_name is not None else ckpt_paths.get("Autoformer")
 
     summary = {
         "mode": "csv" if csv_mode else "mock",
@@ -449,6 +483,7 @@ def main():
         "prediction": prediction,             # MOTOR_CURRENT 채널만 반환
         "target_col_name": args.target_col_name,
         "feature_start_col": args.feature_start_col,
+        "best_weight_path": best_weight_path,
     }
     ensure_dir("outputs")
     with open(os.path.join("outputs", "summary.json"), "w") as f:
