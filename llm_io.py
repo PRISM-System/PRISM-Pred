@@ -84,10 +84,82 @@ class LLMBridge:
         if not spec.get("taskId"):
             spec["taskId"] = "task_" + datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         return spec
+    
 
-    # -------------------------------
-    #  (7) 한국어 전항목 내러티브 (LLM + 폴백)
-    # -------------------------------
+    def _narrate_en(self, payload: Dict[str, Any]) -> str:
+        """
+        Convert JSON payload into a natural English narrative.
+        Example style:
+        "This is the answer for the request ... We selected model ... The predictions are ..."
+        """
+        try:
+            system_msg = (
+            "You are a careful writer. Produce a natural English explanation using ONLY values present "
+            "in the JSON provided by the user. "
+            "NEVER reveal chain-of-thought, internal reasoning, analysis notes, or any <think> tags. "
+            "Output ONLY the final narrative text (no headers, no bullets, no tags, no code blocks). "
+            "If a field is missing in the JSON, write 'not specified' rather than guessing. "
+            "When describing predictions, list ALL values exactly as provided; "
+            "Keep it concise and fluent."
+            )
+
+            user_msg = (
+            "Rewrite this JSON result into a single, smooth paragraph with complete sentences. "
+            "Do not invent information. Use only what is present in the JSON. "
+            "If a field is missing, say 'not specified'.\n\n"
+            f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+        )
+
+            data = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ],
+                "temperature": 0.0,
+                "max_tokens": 1200,
+            }
+            resp = self._chat(data)
+            return resp["choices"][0]["message"]["content"].strip()
+        except Exception:
+            return self._fallback_en(payload)
+        
+
+    def _fallback_en(self, payload: Dict[str, Any]) -> str:
+        """
+        Deterministic fallback: generate a plain narrative without LLM.
+        """
+        try:
+            d = payload.get("data", {})
+            taskId = d.get("taskId", "N/A")
+            timeRange = d.get("timeRange", "N/A")
+            sensor = d.get("sensor_name", "N/A")
+            target = d.get("target_col", d.get("target_cols", "N/A"))
+            model = d.get("modelSelected", "Unknown")
+            preds = d.get("prediction", [])
+            pred_len = len(preds) if isinstance(preds, list) else "N/A"
+
+            # prediction preview
+            if isinstance(preds, list) and len(preds) > 10:
+                pred_text = f"first values {preds[:3]} ... last values {preds[-3:]} (total {len(preds)})"
+            else:
+                pred_text = str(preds)
+
+            risk = d.get("risk", {})
+            risk_level = risk.get("riskLevel", "unknown")
+
+            return (
+                f"This is the answer for request {taskId}. "
+                f"The request covered {timeRange} on sensor {sensor}, targeting column {target}. "
+                f"We selected model {model}, which produced {pred_len} predictions: {pred_text}. "
+                f"The risk level was assessed as {risk_level}. "
+                f"Based on the data, the current state is considered {risk_level}, "
+                f"and no immediate action is required unless stated otherwise."
+            )
+        except Exception as e:
+            return f"Could not generate narrative fallback: {e}"
+
+    # 아래는 한국어 설명에 대한 함수들 (TBU)
     def _narrate(self, payload: Dict[str, Any]) -> str:
         """
         입력 JSON(payload)의 모든 필드를 '누락 없이' 한국어로 풀어쓴 설명문을 생성.
@@ -148,16 +220,15 @@ class LLMBridge:
                     {"role": "user", "content": user_msg}
                 ],
                 "temperature": 0.0,
-                "max_tokens": 1200
+                "max_tokens": 1200,
+                
             }
             resp = self._chat(data)
             return resp["choices"][0]["message"]["content"].strip()
         except Exception:
             return self._fallback_ko(payload)
 
-    # -------------------------------
-    #  결정적 폴백 (LLM 없이 전항목 나열)
-    # -------------------------------
+    # deterministic fallback formatter
     def _fallback_ko(self, payload: Dict[str, Any]) -> str:
         lines: List[str] = []
         lines.append("PRISM 예측 결과 상세 보고 (폴백 모드)")
