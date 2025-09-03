@@ -1,0 +1,106 @@
+<!-- templates/ui.html -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{{ app_title }}</title>
+  <link rel="stylesheet" href="/static/ui.css">
+  <!-- CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <header class="sticky top-0 z-10 backdrop-blur bg-white/70 border-b">
+    <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="h-8 w-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">P</div>
+        <h1 class="text-xl font-semibold">{{ app_title }}</h1>
+      </div>
+      <div class="text-sm text-slate-500 hidden md:block">
+        Query Processing → <span class="font-medium">run-direct</span> → <span class="font-medium">narrate</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-6 space-y-6">
+    <ol class="grid sm:grid-cols-3 gap-3">
+      <!-- Step 1 -->
+      <li class="card flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="step">1</span>
+            <h2 class="font-semibold">Query-Processing</h2>
+          </div>
+          <span id="badgeStep1" class="badge badge-soft">Idle</span>
+        </div>
+        <textarea id="nl" class="w-full border rounded-lg p-3 text-sm" rows="3"
+          placeholder="예: CMP 센서의 MOTOR_CURRENT를 2025-08-20 09:00:00~09:10:00 예측해줘">CMP 센서의 MOTOR_CURRENT를 2025-08-20 09:00:00~09:10:00 예측해줘</textarea>
+        <div class="flex items-center gap-2">
+          <button id="btnNL" class="btn btn-primary">Parse</button>
+          <span id="s1" class="text-sm text-slate-500"></span>
+        </div>
+        <div class="relative">
+          <button class="copy-btn" data-target="nlout">Copy</button>
+          <pre id="nlout" class="pane"></pre>
+        </div>
+      </li>
+
+      <!-- Step 2 -->
+      <li class="card flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="step">2</span>
+            <h2 class="font-semibold">Run</h2>
+          </div>
+          <span id="badgeStep2" class="badge badge-soft">Idle</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnRun" class="btn btn-success">Run</button>
+          <span id="s2" class="text-sm text-slate-500"></span>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div class="p-3 bg-slate-50 border rounded-lg text-sm">
+            <div>Model: <span id="modelName" class="font-medium">-</span></div>
+            <div>Pred len: <span id="predLen" class="font-medium">-</span></div>
+            <div>Risk: <span id="riskBadge" class="badge badge-soft">N/A</span></div>
+          </div>
+          <div class="p-3 bg-slate-50 border rounded-lg">
+            <canvas id="predChart" height="120"></canvas>
+          </div>
+        </div>
+        <div class="relative">
+          <button class="copy-btn" data-target="runout">Copy</button>
+          <pre id="runout" class="pane"></pre>
+        </div>
+      </li>
+
+      <!-- Step 3 -->
+      <li class="card flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="step">3</span>
+            <h2 class="font-semibold">Narrate</h2>
+          </div>
+          <span id="badgeStep3" class="badge badge-soft">Idle</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnNarr" class="btn btn-dark">Generate Description</button>
+          <span id="s3" class="text-sm text-slate-500"></span>
+        </div>
+        <div class="relative">
+          <button class="copy-btn" data-target="narout">Copy</button>
+          <pre id="narout" class="pane lg-pane"></pre>
+        </div>
+      </li>
+    </ol>
+
+    <div class="text-xs text-slate-500">
+      <kbd class="kbd">Shift</kbd> + <kbd class="kbd">Enter</kbd> 줄바꿈, <span class="kbd">Copy</span>로 결과 복사.
+    </div>
+  </main>
+
+  <script>window.API_BASE = "{{ api_base }}";</script>
+  <script src="/static/ui.js"></script>
+</body>
+</html>
