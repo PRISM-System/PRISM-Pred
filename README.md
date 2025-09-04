@@ -77,12 +77,12 @@ curl -s -X POST "http:///api/v1/prediction/run-direct" -H "Content-Type: applica
 
 #### 참고
 
-- 기본 CSV 매핑은 `prism_prediction/Industrial_DB_sample` 하위 파일을 사용합니다.
+- 현재 DB는 `./prism_prediction/Industrial_DB_sample/dataset_v2`의 하위 파일인 CMP/CVD/ETCH/ION/PHOTO 공정의 데이터를 사용합니다.
 - 서버 로그는 uvicorn을 실행한 터미널에서 확인할 수 있습니다.
 
 ---
 
-## 4. 샘플 응답 (실제 출력)
+## 4. 응답 예시 (실제 출력)
 
 아래는 예측 API 호출 시의 예시 응답입니다.  
 모델/버전/데이터에 따라 수치는 달라질 수 있습니다.
