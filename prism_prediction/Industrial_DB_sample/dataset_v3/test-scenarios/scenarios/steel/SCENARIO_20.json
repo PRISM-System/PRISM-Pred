@@ -1,0 +1,1246 @@
+{
+  "scenario_id": "SCENARIO_20",
+  "metadata": {
+    "title": "철강 통합 생산라인 환경안전 규제 준수 검증",
+    "industry": "steel",
+    "process": "full_production",
+    "workflow_type": "full_compliance",
+    "workflow_level": 4,
+    "description": "철강 통합 생산라인에서 온도 상승 추세 및 배출 수준 증가를 조기 탐지하고, 안전·환경 위반을 예측하며, 공정 파라미터를 최적 제어한 뒤, 관련 환경안전 규제 준수 여부를 검증하는 시나리오",
+    "complexity": "very_high",
+    "data_source": "test_data/steel/steel_production_004.csv",
+    "total_data_points": 5000
+  },
+  "query": {
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:53:20Z"
+    },
+    "production_lines": [
+      "PROD_L1",
+      "PROD_L2"
+    ],
+    "target_temperature": 1650.0,
+    "max_emission_level": 120.0,
+    "user_question": "2025년 5월 1일 통합 생산라인에서 온도가 상승하고 배출 수준이 증가하는 추세입니다. 현재 상태를 분석하고, 향후 안전·환경 위반을 예측한 뒤, 최적 제어 파라미터를 제시하고, 관련 규제 준수 여부를 검증해 주세요."
+  },
+  "timeseries_data": {
+    "format": "csv",
+    "columns": [
+      "TIMESTAMP",
+      "PRODUCTION_LINE",
+      "TEMPERATURE",
+      "PRESSURE",
+      "OXYGEN_FLOW",
+      "SLAG_COMPOSITION",
+      "THICKNESS",
+      "PRODUCTION_RATE",
+      "QUALITY_INDEX",
+      "EMISSION_LEVEL",
+      "ENERGY_CONSUMPTION",
+      "COMPLIANCE_STATUS"
+    ],
+    "sample_interval_seconds": 10,
+    "total_duration_hours": 13.9,
+    "safety_parameters": {
+      "TEMPERATURE": {
+        "unit": "°C",
+        "target": 1650.0,
+        "max_safe": 1655.0,
+        "current_range": [
+          1645.8,
+          1654.28
+        ]
+      },
+      "EMISSION_LEVEL": {
+        "unit": "mg/Nm³",
+        "regulatory_limit": 120.0,
+        "current_range": [
+          80.34,
+          148.29
+        ]
+      },
+      "ENERGY_CONSUMPTION": {
+        "unit": "kWh/ton",
+        "target": 500.0,
+        "max_acceptable": 550.0,
+        "current_range": [
+          451.88,
+          548.13
+        ]
+      },
+      "COMPLIANCE_STATUS": {
+        "unit": "binary",
+        "compliant": 1,
+        "non_compliant": 0
+      }
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "2025년 5월 1일 통합 생산라인에서 온도가 상승하고 배출 수준이 증가하는 추세입니다. 현재 상태를 분석하고, 향후 안전·환경 위반을 예측한 뒤, 최적 제어 파라미터를 제시하고, 관련 규제 준수 여부를 검증해 주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T13:53:20Z"
+        },
+        "metadata": {
+          "industry": "steel",
+          "process": "full_production"
+        }
+      },
+      "response": {
+        "workflow_plan": {
+          "workflow_type": "full_compliance",
+          "steps": [
+            "monitoring",
+            "predictive",
+            "autocontrol",
+            "compliance_check"
+          ],
+          "estimated_time": "25초"
+        },
+        "workflow_id": "wf_steel_production_20250501_001"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "step": "monitoring",
+        "parameters": {
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T13:53:20Z"
+          },
+          "sensors": [
+            "TEMPERATURE",
+            "PRESSURE",
+            "OXYGEN_FLOW",
+            "SLAG_COMPOSITION",
+            "THICKNESS",
+            "PRODUCTION_RATE",
+            "QUALITY_INDEX",
+            "EMISSION_LEVEL",
+            "ENERGY_CONSUMPTION",
+            "COMPLIANCE_STATUS"
+          ],
+          "production_lines": [
+            "PROD_L1",
+            "PROD_L2"
+          ]
+        }
+      },
+      "response": {
+        "status": "success",
+        "detection_summary": {
+          "anomaly_detected": true,
+          "anomaly_type": "temperature_rise_and_emission_increase",
+          "severity": "critical",
+          "affected_lines": [
+            "PROD_L1",
+            "PROD_L2"
+          ],
+          "total_anomaly_points": 2154,
+          "anomaly_rate": "43.1%"
+        },
+        "analysis_result": {
+          "temperature_analysis": {
+            "mean": 1650.08,
+            "std_dev": 1.68,
+            "trend": "increasing",
+            "slope": "+0.082°C/hour",
+            "max_observed": 1654.28,
+            "max_safe_limit": 1655.0,
+            "approaching_limit": true,
+            "estimated_time_to_limit": "약 6시간"
+          },
+          "emission_analysis": {
+            "mean": 116.24,
+            "std_dev": 20.15,
+            "regulatory_limit": 120.0,
+            "exceedance_rate": "38.2%",
+            "exceedance_points": 1910,
+            "max_observed": 148.29,
+            "trend": "increasing",
+            "slope": "+1.24 mg/Nm³/hour"
+          },
+          "energy_consumption_analysis": {
+            "mean": 502.38,
+            "std_dev": 31.45,
+            "target": 500.0,
+            "max_acceptable": 550.0,
+            "over_target_rate": "52.1%",
+            "inefficiency_level": "moderate"
+          },
+          "compliance_status_analysis": {
+            "compliant_rate": "56.8%",
+            "non_compliant_rate": "43.2%",
+            "non_compliant_points": 2160,
+            "primary_violation": "emission_exceedance"
+          },
+          "quality_impact": {
+            "quality_index_mean": 93.2,
+            "quality_index_std": 3.1,
+            "below_95_rate": "62.3%",
+            "correlation_with_temperature": 0.42,
+            "correlation_with_emission": -0.58
+          }
+        },
+        "root_cause_analysis": {
+          "primary_causes": [
+            {
+              "cause": "excessive_oxygen_flow",
+              "description": "과도한 산소 유량 (평균 500.2 Nm³/h)으로 인한 연소 온도 상승 및 NOx 배출 증가",
+              "contribution": "50%"
+            },
+            {
+              "cause": "high_temperature_operation",
+              "description": "목표 온도 초과 운전 (평균 1650.08°C)으로 인한 에너지 손실 및 배출 증가",
+              "contribution": "30%"
+            },
+            {
+              "cause": "inefficient_combustion",
+              "description": "불완전 연소로 인한 먼지 및 CO 배출 증가",
+              "contribution": "20%"
+            }
+          ],
+          "secondary_factors": [
+            "slag_composition_variability",
+            "production_rate_fluctuation"
+          ]
+        },
+        "safety_environmental_risks": {
+          "immediate_risks": [
+            {
+              "risk": "emission_regulatory_violation",
+              "severity": "high",
+              "probability": "현재 진행 중 (38.2%)",
+              "potential_penalty": "최대 5억원"
+            },
+            {
+              "risk": "temperature_safety_limit_approach",
+              "severity": "critical",
+              "probability": "약 6시간 내 도달",
+              "potential_impact": "생산 중단, 설비 손상"
+            },
+            {
+              "risk": "energy_inefficiency",
+              "severity": "moderate",
+              "probability": "52.1%",
+              "potential_loss": "일일 약 3천만원"
+            }
+          ]
+        },
+        "recommended_actions": [
+          "산소 유량 감축 필요",
+          "온도 제어 강화 필요",
+          "배출 저감 조치 필요",
+          "예측 모델을 통한 향후 위반 예측 권장",
+          "자동 제어를 통한 파라미터 최적화 권장",
+          "규제 준수 검증 필수"
+        ]
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "predictions": [
+            {
+              "time_point": "6시간 후",
+              "temperature": {
+                "predicted_value": 1650.57,
+                "confidence_interval": [
+                  1649.82,
+                  1651.32
+                ],
+                "safety_limit": 1655.0,
+                "margin": 4.43,
+                "status": "safe"
+              },
+              "emission_level": {
+                "predicted_value": 123.68,
+                "confidence_interval": [
+                  119.45,
+                  127.91
+                ],
+                "regulatory_limit": 120.0,
+                "exceedance_probability": 0.68,
+                "status": "violation_likely"
+              },
+              "energy_consumption": {
+                "predicted_value": 509.42,
+                "confidence_interval": [
+                  502.18,
+                  516.66
+                ],
+                "target": 500.0,
+                "inefficiency_rate": 0.019
+              },
+              "compliance_probability": 0.42
+            },
+            {
+              "time_point": "12시간 후",
+              "temperature": {
+                "predicted_value": 1651.06,
+                "confidence_interval": [
+                  1650.12,
+                  1652.0
+                ],
+                "safety_limit": 1655.0,
+                "margin": 3.94,
+                "status": "caution"
+              },
+              "emission_level": {
+                "predicted_value": 131.12,
+                "confidence_interval": [
+                  126.23,
+                  136.01
+                ],
+                "regulatory_limit": 120.0,
+                "exceedance_probability": 0.89,
+                "status": "violation_certain"
+              },
+              "energy_consumption": {
+                "predicted_value": 516.46,
+                "confidence_interval": [
+                  508.92,
+                  524.0
+                ],
+                "target": 500.0,
+                "inefficiency_rate": 0.033
+              },
+              "compliance_probability": 0.18
+            },
+            {
+              "time_point": "24시간 후",
+              "temperature": {
+                "predicted_value": 1652.04,
+                "confidence_interval": [
+                  1650.88,
+                  1653.2
+                ],
+                "safety_limit": 1655.0,
+                "margin": 2.96,
+                "status": "warning"
+              },
+              "emission_level": {
+                "predicted_value": 146.0,
+                "confidence_interval": [
+                  140.12,
+                  151.88
+                ],
+                "regulatory_limit": 120.0,
+                "exceedance_probability": 0.98,
+                "status": "serious_violation"
+              },
+              "energy_consumption": {
+                "predicted_value": 530.54,
+                "confidence_interval": [
+                  521.76,
+                  539.32
+                ],
+                "target": 500.0,
+                "inefficiency_rate": 0.061
+              },
+              "compliance_probability": 0.05
+            }
+          ],
+          "violation_forecast": {
+            "6h_forecast": {
+              "emission_violation_probability": "68%",
+              "temperature_safety_status": "안전 범위 내",
+              "estimated_penalty_risk": "약 2억원",
+              "production_impact": "경미"
+            },
+            "12h_forecast": {
+              "emission_violation_probability": "89%",
+              "temperature_safety_status": "주의 필요",
+              "estimated_penalty_risk": "약 4억원",
+              "production_impact": "중간"
+            },
+            "24h_forecast": {
+              "emission_violation_probability": "98%",
+              "temperature_safety_status": "경고 수준",
+              "estimated_penalty_risk": "약 5억원",
+              "production_impact": "심각",
+              "forced_shutdown_probability": "0.35"
+            }
+          },
+          "prediction_model": {
+            "model_type": "Multivariate Time Series Transformer",
+            "features": [
+              "temperature_trend",
+              "emission_autocorrelation",
+              "oxygen_flow_lag_features",
+              "energy_consumption_rolling_statistics",
+              "compliance_status_sequence"
+            ],
+            "accuracy_metrics": {
+              "mae_temperature": 0.42,
+              "mae_emission": 3.68,
+              "r2_score": 0.92
+            }
+          },
+          "recommended_control": true
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_production_20250501_001",
+        "message": "Monitoring 완료. Predictive Agent로 전달.",
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration Agent",
+      "to": "Predictive Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "prediction_task": "forecast_safety_environmental_violations",
+        "input_data": {
+          "current_state": {
+            "temperature": 1650.08,
+            "temperature_slope": 0.082,
+            "emission_level": 116.24,
+            "emission_slope": 1.24,
+            "energy_consumption": 502.38,
+            "compliance_rate": 0.568
+          },
+          "forecast_horizon": "24시간"
+        }
+      },
+      "response": {
+        "status": "success",
+        "predictions": [
+          {
+            "time_point": "6시간 후",
+            "temperature": {
+              "predicted_value": 1650.57,
+              "confidence_interval": [
+                1649.82,
+                1651.32
+              ],
+              "safety_limit": 1655.0,
+              "margin": 4.43,
+              "status": "safe"
+            },
+            "emission_level": {
+              "predicted_value": 123.68,
+              "confidence_interval": [
+                119.45,
+                127.91
+              ],
+              "regulatory_limit": 120.0,
+              "exceedance_probability": 0.68,
+              "status": "violation_likely"
+            },
+            "energy_consumption": {
+              "predicted_value": 509.42,
+              "confidence_interval": [
+                502.18,
+                516.66
+              ],
+              "target": 500.0,
+              "inefficiency_rate": 0.019
+            },
+            "compliance_probability": 0.42
+          },
+          {
+            "time_point": "12시간 후",
+            "temperature": {
+              "predicted_value": 1651.06,
+              "confidence_interval": [
+                1650.12,
+                1652.0
+              ],
+              "safety_limit": 1655.0,
+              "margin": 3.94,
+              "status": "caution"
+            },
+            "emission_level": {
+              "predicted_value": 131.12,
+              "confidence_interval": [
+                126.23,
+                136.01
+              ],
+              "regulatory_limit": 120.0,
+              "exceedance_probability": 0.89,
+              "status": "violation_certain"
+            },
+            "energy_consumption": {
+              "predicted_value": 516.46,
+              "confidence_interval": [
+                508.92,
+                524.0
+              ],
+              "target": 500.0,
+              "inefficiency_rate": 0.033
+            },
+            "compliance_probability": 0.18
+          },
+          {
+            "time_point": "24시간 후",
+            "temperature": {
+              "predicted_value": 1652.04,
+              "confidence_interval": [
+                1650.88,
+                1653.2
+              ],
+              "safety_limit": 1655.0,
+              "margin": 2.96,
+              "status": "warning"
+            },
+            "emission_level": {
+              "predicted_value": 146.0,
+              "confidence_interval": [
+                140.12,
+                151.88
+              ],
+              "regulatory_limit": 120.0,
+              "exceedance_probability": 0.98,
+              "status": "serious_violation"
+            },
+            "energy_consumption": {
+              "predicted_value": 530.54,
+              "confidence_interval": [
+                521.76,
+                539.32
+              ],
+              "target": 500.0,
+              "inefficiency_rate": 0.061
+            },
+            "compliance_probability": 0.05
+          }
+        ],
+        "violation_forecast": {
+          "6h_forecast": {
+            "emission_violation_probability": "68%",
+            "temperature_safety_status": "안전 범위 내",
+            "estimated_penalty_risk": "약 2억원",
+            "production_impact": "경미"
+          },
+          "12h_forecast": {
+            "emission_violation_probability": "89%",
+            "temperature_safety_status": "주의 필요",
+            "estimated_penalty_risk": "약 4억원",
+            "production_impact": "중간"
+          },
+          "24h_forecast": {
+            "emission_violation_probability": "98%",
+            "temperature_safety_status": "경고 수준",
+            "estimated_penalty_risk": "약 5억원",
+            "production_impact": "심각",
+            "forced_shutdown_probability": "0.35"
+          }
+        },
+        "prediction_model": {
+          "model_type": "Multivariate Time Series Transformer",
+          "features": [
+            "temperature_trend",
+            "emission_autocorrelation",
+            "oxygen_flow_lag_features",
+            "energy_consumption_rolling_statistics",
+            "compliance_status_sequence"
+          ],
+          "accuracy_metrics": {
+            "mae_temperature": 0.42,
+            "mae_emission": 3.68,
+            "r2_score": 0.92
+          }
+        },
+        "recommended_control": true
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "optimal_parameters": {
+            "TEMPERATURE": {
+              "current": 1650.08,
+              "optimal": 1648.0,
+              "change": -2.08,
+              "unit": "°C",
+              "rationale": "온도를 2.08°C 낮춰 NOx 배출 저감 및 에너지 효율 향상 (온도 1% 감소 → NOx 15% 감소)"
+            },
+            "OXYGEN_FLOW": {
+              "current": 500.2,
+              "optimal": 495.0,
+              "change": -5.2,
+              "unit": "Nm³/h",
+              "rationale": "산소 유량을 1% 감축하여 과잉 산소로 인한 NOx 생성 억제 및 연소 효율 최적화"
+            },
+            "PRODUCTION_RATE": {
+              "current": 200.0,
+              "optimal": 198.5,
+              "change": -1.5,
+              "unit": "tons/h",
+              "rationale": "생산 속도를 0.75% 감속하여 공정 안정화 및 품질 균일성 향상"
+            }
+          },
+          "predicted_improvement": {
+            "emission_reduction": {
+              "current_mean": 116.24,
+              "predicted_mean": 98.5,
+              "improvement": "-15.3%",
+              "regulatory_compliance_rate": {
+                "current": 61.8,
+                "predicted": 94.2,
+                "improvement": "+32.4%p"
+              }
+            },
+            "temperature_stabilization": {
+              "current_mean": 1650.08,
+              "predicted_mean": 1648.0,
+              "improvement": "-0.13%",
+              "safety_margin": {
+                "current": 4.92,
+                "predicted": 7.0,
+                "improvement": "+42.3%"
+              }
+            },
+            "energy_efficiency": {
+              "current_mean": 502.38,
+              "predicted_mean": 487.2,
+              "improvement": "-3.0%",
+              "cost_saving": "일일 약 2,850만원"
+            },
+            "quality_maintenance": {
+              "current_quality_index": 93.2,
+              "predicted_quality_index": 94.8,
+              "improvement": "+1.7%"
+            },
+            "compliance_rate": {
+              "current": 0.568,
+              "predicted": 0.942,
+              "improvement": "+65.8%"
+            }
+          },
+          "implementation_plan": {
+            "step_1": {
+              "action": "OXYGEN_FLOW 감축",
+              "target": "495.0 Nm³/h",
+              "ramp_rate": "1.0 Nm³/h per minute",
+              "duration": "6분"
+            },
+            "step_2": {
+              "action": "TEMPERATURE 하향 조정",
+              "target": "1648.0°C",
+              "ramp_rate": "0.5°C per minute",
+              "duration": "5분"
+            },
+            "step_3": {
+              "action": "PRODUCTION_RATE 미세 조정",
+              "target": "198.5 tons/h",
+              "ramp_rate": "0.3 tons/h per minute",
+              "duration": "5분"
+            },
+            "total_transition_time": "약 8분",
+            "stabilization_time": "약 15분"
+          },
+          "control_algorithm": {
+            "type": "Multi-Objective Optimization with Constraint Handling",
+            "optimization_method": "Non-dominated Sorting Genetic Algorithm II (NSGA-II)",
+            "objective_functions": [
+              "minimize_emission_level",
+              "minimize_energy_consumption",
+              "maximize_quality_index"
+            ],
+            "weights": {
+              "emission_reduction": 0.5,
+              "energy_efficiency": 0.3,
+              "quality_maintenance": 0.2
+            }
+          },
+          "monitoring_requirements": {
+            "metrics_to_monitor": [
+              "EMISSION_LEVEL",
+              "TEMPERATURE",
+              "ENERGY_CONSUMPTION",
+              "QUALITY_INDEX",
+              "COMPLIANCE_STATUS"
+            ],
+            "monitoring_interval": "5초",
+            "alert_threshold": {
+              "emission_level": "> 115 mg/Nm³",
+              "temperature": "> 1653°C",
+              "quality_index": "< 90"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_production_20250501_001",
+        "message": "Prediction 완료. AutoControl Agent로 전달.",
+        "next_step": "control_optimization"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration Agent",
+      "to": "AutoControl Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "control_task": "optimize_safety_environmental_compliance",
+        "optimization_objective": "minimize_emission_and_energy_while_maintaining_quality",
+        "current_parameters": {
+          "TEMPERATURE": 1650.08,
+          "OXYGEN_FLOW": 500.2,
+          "PRODUCTION_RATE": 200.0
+        },
+        "constraints": {
+          "TEMPERATURE_range": [
+            1645,
+            1655
+          ],
+          "OXYGEN_FLOW_range": [
+            490,
+            510
+          ],
+          "PRODUCTION_RATE_range": [
+            195,
+            205
+          ],
+          "QUALITY_INDEX_min": 90,
+          "EMISSION_LEVEL_max": 120.0,
+          "ENERGY_CONSUMPTION_max": 550.0
+        }
+      },
+      "response": {
+        "status": "success",
+        "optimal_parameters": {
+          "TEMPERATURE": {
+            "current": 1650.08,
+            "optimal": 1648.0,
+            "change": -2.08,
+            "unit": "°C",
+            "rationale": "온도를 2.08°C 낮춰 NOx 배출 저감 및 에너지 효율 향상 (온도 1% 감소 → NOx 15% 감소)"
+          },
+          "OXYGEN_FLOW": {
+            "current": 500.2,
+            "optimal": 495.0,
+            "change": -5.2,
+            "unit": "Nm³/h",
+            "rationale": "산소 유량을 1% 감축하여 과잉 산소로 인한 NOx 생성 억제 및 연소 효율 최적화"
+          },
+          "PRODUCTION_RATE": {
+            "current": 200.0,
+            "optimal": 198.5,
+            "change": -1.5,
+            "unit": "tons/h",
+            "rationale": "생산 속도를 0.75% 감속하여 공정 안정화 및 품질 균일성 향상"
+          }
+        },
+        "predicted_improvement": {
+          "emission_reduction": {
+            "current_mean": 116.24,
+            "predicted_mean": 98.5,
+            "improvement": "-15.3%",
+            "regulatory_compliance_rate": {
+              "current": 61.8,
+              "predicted": 94.2,
+              "improvement": "+32.4%p"
+            }
+          },
+          "temperature_stabilization": {
+            "current_mean": 1650.08,
+            "predicted_mean": 1648.0,
+            "improvement": "-0.13%",
+            "safety_margin": {
+              "current": 4.92,
+              "predicted": 7.0,
+              "improvement": "+42.3%"
+            }
+          },
+          "energy_efficiency": {
+            "current_mean": 502.38,
+            "predicted_mean": 487.2,
+            "improvement": "-3.0%",
+            "cost_saving": "일일 약 2,850만원"
+          },
+          "quality_maintenance": {
+            "current_quality_index": 93.2,
+            "predicted_quality_index": 94.8,
+            "improvement": "+1.7%"
+          },
+          "compliance_rate": {
+            "current": 0.568,
+            "predicted": 0.942,
+            "improvement": "+65.8%"
+          }
+        },
+        "implementation_plan": {
+          "step_1": {
+            "action": "OXYGEN_FLOW 감축",
+            "target": "495.0 Nm³/h",
+            "ramp_rate": "1.0 Nm³/h per minute",
+            "duration": "6분"
+          },
+          "step_2": {
+            "action": "TEMPERATURE 하향 조정",
+            "target": "1648.0°C",
+            "ramp_rate": "0.5°C per minute",
+            "duration": "5분"
+          },
+          "step_3": {
+            "action": "PRODUCTION_RATE 미세 조정",
+            "target": "198.5 tons/h",
+            "ramp_rate": "0.3 tons/h per minute",
+            "duration": "5분"
+          },
+          "total_transition_time": "약 8분",
+          "stabilization_time": "약 15분"
+        },
+        "control_algorithm": {
+          "type": "Multi-Objective Optimization with Constraint Handling",
+          "optimization_method": "Non-dominated Sorting Genetic Algorithm II (NSGA-II)",
+          "objective_functions": [
+            "minimize_emission_level",
+            "minimize_energy_consumption",
+            "maximize_quality_index"
+          ],
+          "weights": {
+            "emission_reduction": 0.5,
+            "energy_efficiency": 0.3,
+            "quality_maintenance": 0.2
+          }
+        },
+        "monitoring_requirements": {
+          "metrics_to_monitor": [
+            "EMISSION_LEVEL",
+            "TEMPERATURE",
+            "ENERGY_CONSUMPTION",
+            "QUALITY_INDEX",
+            "COMPLIANCE_STATUS"
+          ],
+          "monitoring_interval": "5초",
+          "alert_threshold": {
+            "emission_level": "> 115 mg/Nm³",
+            "temperature": "> 1653°C",
+            "quality_index": "< 90"
+          }
+        }
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "compliance_summary": {
+            "total_regulations_checked": 6,
+            "compliant_count_before_control": 2,
+            "compliant_count_after_control": 6,
+            "compliance_rate_before": "33.3%",
+            "compliance_rate_after": "100%"
+          },
+          "detailed_compliance_check": [
+            {
+              "regulation_id": "REG_ENV_001",
+              "regulation_name": "대기환경보전법 - 먼지 및 NOx 배출 기준",
+              "regulatory_body": "환경부",
+              "applicable_standard": "NOx 배출 허용 기준: 120 mg/Nm³ 이하 (제철소 배출시설)",
+              "measured_value_before": 116.24,
+              "measured_value_after": 98.5,
+              "limit": 120.0,
+              "unit": "mg/Nm³",
+              "compliance_before": "경계 (평균 준수, 38.2% 초과)",
+              "compliance_after": "준수",
+              "improvement": "+15.3%",
+              "legal_reference": "대기환경보전법 시행규칙 별표 8",
+              "penalty_if_violated": "최대 2억원 + 조업 정지 명령 가능"
+            },
+            {
+              "regulation_id": "REG_ENV_002",
+              "regulation_name": "온실가스 배출권거래제 - 에너지 효율 기준",
+              "regulatory_body": "환경부 / 산업통상자원부",
+              "applicable_standard": "철강 제조 에너지 원단위: 500 kWh/ton 이하 권장",
+              "measured_value_before": 502.38,
+              "measured_value_after": 487.2,
+              "limit": 500.0,
+              "unit": "kWh/ton",
+              "compliance_before": "미준수 (목표 초과 2.38 kWh/ton)",
+              "compliance_after": "준수",
+              "improvement": "-3.0%",
+              "legal_reference": "온실가스 배출권의 할당 및 거래에 관한 법률",
+              "penalty_if_violated": "배출권 추가 구매 필요 (연간 약 10억원)"
+            },
+            {
+              "regulation_id": "REG_SAFE_001",
+              "regulation_name": "산업안전보건법 - 고온 작업장 온도 기준",
+              "regulatory_body": "고용노동부",
+              "applicable_standard": "제철 고온 작업장 안전 온도: 1655°C 이하 (긴급 조치 기준)",
+              "measured_value_before": 1650.08,
+              "measured_value_after": 1648.0,
+              "limit": 1655.0,
+              "unit": "°C",
+              "compliance_before": "준수 (여유 4.92°C)",
+              "compliance_after": "준수 (여유 7.0°C)",
+              "improvement": "+42.3% (안전 여유 증가)",
+              "legal_reference": "산업안전보건기준에 관한 규칙 제567조",
+              "penalty_if_violated": "작업 중지 명령 + 최대 1억원 벌금"
+            },
+            {
+              "regulation_id": "REG_SAFE_002",
+              "regulation_name": "고압가스 안전관리법 - 산소 공급 안전 기준",
+              "regulatory_body": "한국가스안전공사",
+              "applicable_standard": "제철 공정 산소 유량: 490-510 Nm³/h 안전 범위",
+              "measured_value_before": 500.2,
+              "measured_value_after": 495.0,
+              "limit": 510.0,
+              "unit": "Nm³/h",
+              "compliance_before": "준수",
+              "compliance_after": "준수 (최적화)",
+              "improvement": "안전 범위 중심 근접",
+              "legal_reference": "고압가스 안전관리법 제20조",
+              "penalty_if_violated": "시설 개선 명령 + 최대 5천만원 과태료"
+            },
+            {
+              "regulation_id": "REG_QUAL_001",
+              "regulation_name": "KS D 3698 - 철강 제품 품질 기준",
+              "regulatory_body": "국가기술표준원",
+              "applicable_standard": "품질 지수: 90 이상 (1등급 제품)",
+              "measured_value_before": 93.2,
+              "measured_value_after": 94.8,
+              "limit": 90.0,
+              "unit": "quality index",
+              "compliance_before": "준수 (1등급)",
+              "compliance_after": "준수 (1등급 우수)",
+              "improvement": "+1.7%",
+              "legal_reference": "KS D 3698:2021 철강 열연 강판 품질 기준",
+              "penalty_if_violated": "제품 등급 하락 → 판매가 10% 감소"
+            },
+            {
+              "regulation_id": "REG_ENV_003",
+              "regulation_name": "통합환경관리법 - 최적가용기법(BAT) 기준 준수",
+              "regulatory_body": "환경부",
+              "applicable_standard": "철강 제조 BAT: 에너지 효율 95% 이상, 배출 밀도 최소화",
+              "measured_value_before": "에너지 효율 94.2%, 배출 밀도 높음",
+              "measured_value_after": "에너지 효율 96.8%, 배출 밀도 최적화",
+              "compliance_before": "미준수",
+              "compliance_after": "준수",
+              "improvement": "+2.8%p (효율), -15.3% (배출)",
+              "legal_reference": "통합환경관리법 시행령 별표 4",
+              "penalty_if_violated": "개선 명령 + 최대 3억원 과징금"
+            }
+          ],
+          "regulatory_risk_assessment": {
+            "before_control": {
+              "high_risk_regulations": [
+                "REG_ENV_001",
+                "REG_ENV_002",
+                "REG_ENV_003"
+              ],
+              "total_potential_penalty": "최대 7억원",
+              "operational_shutdown_risk": "moderate",
+              "reputation_damage_risk": "high"
+            },
+            "after_control": {
+              "high_risk_regulations": [],
+              "total_potential_penalty": "0원",
+              "operational_shutdown_risk": "low",
+              "reputation_damage_risk": "minimal"
+            }
+          },
+          "certification_status": {
+            "iso_14001_environmental": {
+              "status_before": "at_risk",
+              "status_after": "compliant",
+              "renewal_probability": "95%"
+            },
+            "iso_45001_safety": {
+              "status_before": "compliant",
+              "status_after": "compliant",
+              "renewal_probability": "98%"
+            },
+            "iso_50001_energy": {
+              "status_before": "at_risk",
+              "status_after": "compliant",
+              "renewal_probability": "92%"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_production_20250501_001",
+        "message": "AutoControl 완료. ComplianceCheck Agent로 전달.",
+        "next_step": "compliance_verification"
+      }
+    },
+    "step_8_orchestration_to_compliance": {
+      "from": "Orchestration Agent",
+      "to": "ComplianceCheck Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/compliance/check",
+      "request": {
+        "workflow_id": "wf_steel_production_20250501_001",
+        "check_type": "safety_environmental_compliance",
+        "control_applied": true,
+        "predicted_state": {
+          "TEMPERATURE": 1648.0,
+          "EMISSION_LEVEL": 98.5,
+          "ENERGY_CONSUMPTION": 487.2,
+          "QUALITY_INDEX": 94.8
+        }
+      },
+      "response": {
+        "status": "success",
+        "compliance_summary": {
+          "total_regulations_checked": 6,
+          "compliant_count_before_control": 2,
+          "compliant_count_after_control": 6,
+          "compliance_rate_before": "33.3%",
+          "compliance_rate_after": "100%"
+        },
+        "detailed_compliance_check": [
+          {
+            "regulation_id": "REG_ENV_001",
+            "regulation_name": "대기환경보전법 - 먼지 및 NOx 배출 기준",
+            "regulatory_body": "환경부",
+            "applicable_standard": "NOx 배출 허용 기준: 120 mg/Nm³ 이하 (제철소 배출시설)",
+            "measured_value_before": 116.24,
+            "measured_value_after": 98.5,
+            "limit": 120.0,
+            "unit": "mg/Nm³",
+            "compliance_before": "경계 (평균 준수, 38.2% 초과)",
+            "compliance_after": "준수",
+            "improvement": "+15.3%",
+            "legal_reference": "대기환경보전법 시행규칙 별표 8",
+            "penalty_if_violated": "최대 2억원 + 조업 정지 명령 가능"
+          },
+          {
+            "regulation_id": "REG_ENV_002",
+            "regulation_name": "온실가스 배출권거래제 - 에너지 효율 기준",
+            "regulatory_body": "환경부 / 산업통상자원부",
+            "applicable_standard": "철강 제조 에너지 원단위: 500 kWh/ton 이하 권장",
+            "measured_value_before": 502.38,
+            "measured_value_after": 487.2,
+            "limit": 500.0,
+            "unit": "kWh/ton",
+            "compliance_before": "미준수 (목표 초과 2.38 kWh/ton)",
+            "compliance_after": "준수",
+            "improvement": "-3.0%",
+            "legal_reference": "온실가스 배출권의 할당 및 거래에 관한 법률",
+            "penalty_if_violated": "배출권 추가 구매 필요 (연간 약 10억원)"
+          },
+          {
+            "regulation_id": "REG_SAFE_001",
+            "regulation_name": "산업안전보건법 - 고온 작업장 온도 기준",
+            "regulatory_body": "고용노동부",
+            "applicable_standard": "제철 고온 작업장 안전 온도: 1655°C 이하 (긴급 조치 기준)",
+            "measured_value_before": 1650.08,
+            "measured_value_after": 1648.0,
+            "limit": 1655.0,
+            "unit": "°C",
+            "compliance_before": "준수 (여유 4.92°C)",
+            "compliance_after": "준수 (여유 7.0°C)",
+            "improvement": "+42.3% (안전 여유 증가)",
+            "legal_reference": "산업안전보건기준에 관한 규칙 제567조",
+            "penalty_if_violated": "작업 중지 명령 + 최대 1억원 벌금"
+          },
+          {
+            "regulation_id": "REG_SAFE_002",
+            "regulation_name": "고압가스 안전관리법 - 산소 공급 안전 기준",
+            "regulatory_body": "한국가스안전공사",
+            "applicable_standard": "제철 공정 산소 유량: 490-510 Nm³/h 안전 범위",
+            "measured_value_before": 500.2,
+            "measured_value_after": 495.0,
+            "limit": 510.0,
+            "unit": "Nm³/h",
+            "compliance_before": "준수",
+            "compliance_after": "준수 (최적화)",
+            "improvement": "안전 범위 중심 근접",
+            "legal_reference": "고압가스 안전관리법 제20조",
+            "penalty_if_violated": "시설 개선 명령 + 최대 5천만원 과태료"
+          },
+          {
+            "regulation_id": "REG_QUAL_001",
+            "regulation_name": "KS D 3698 - 철강 제품 품질 기준",
+            "regulatory_body": "국가기술표준원",
+            "applicable_standard": "품질 지수: 90 이상 (1등급 제품)",
+            "measured_value_before": 93.2,
+            "measured_value_after": 94.8,
+            "limit": 90.0,
+            "unit": "quality index",
+            "compliance_before": "준수 (1등급)",
+            "compliance_after": "준수 (1등급 우수)",
+            "improvement": "+1.7%",
+            "legal_reference": "KS D 3698:2021 철강 열연 강판 품질 기준",
+            "penalty_if_violated": "제품 등급 하락 → 판매가 10% 감소"
+          },
+          {
+            "regulation_id": "REG_ENV_003",
+            "regulation_name": "통합환경관리법 - 최적가용기법(BAT) 기준 준수",
+            "regulatory_body": "환경부",
+            "applicable_standard": "철강 제조 BAT: 에너지 효율 95% 이상, 배출 밀도 최소화",
+            "measured_value_before": "에너지 효율 94.2%, 배출 밀도 높음",
+            "measured_value_after": "에너지 효율 96.8%, 배출 밀도 최적화",
+            "compliance_before": "미준수",
+            "compliance_after": "준수",
+            "improvement": "+2.8%p (효율), -15.3% (배출)",
+            "legal_reference": "통합환경관리법 시행령 별표 4",
+            "penalty_if_violated": "개선 명령 + 최대 3억원 과징금"
+          }
+        ],
+        "regulatory_risk_assessment": {
+          "before_control": {
+            "high_risk_regulations": [
+              "REG_ENV_001",
+              "REG_ENV_002",
+              "REG_ENV_003"
+            ],
+            "total_potential_penalty": "최대 7억원",
+            "operational_shutdown_risk": "moderate",
+            "reputation_damage_risk": "high"
+          },
+          "after_control": {
+            "high_risk_regulations": [],
+            "total_potential_penalty": "0원",
+            "operational_shutdown_risk": "low",
+            "reputation_damage_risk": "minimal"
+          }
+        },
+        "certification_status": {
+          "iso_14001_environmental": {
+            "status_before": "at_risk",
+            "status_after": "compliant",
+            "renewal_probability": "95%"
+          },
+          "iso_45001_safety": {
+            "status_before": "compliant",
+            "status_after": "compliant",
+            "renewal_probability": "98%"
+          },
+          "iso_50001_energy": {
+            "status_before": "at_risk",
+            "status_after": "compliant",
+            "renewal_probability": "92%"
+          }
+        }
+      }
+    },
+    "step_9_compliance_to_orchestration": {
+      "api_endpoint": "Internal communication",
+      "response": {
+        "status": "success",
+        "message": "ComplianceCheck 에이전트가 규제 준수 검증을 완료했습니다.",
+        "next_step": "결과를 사용자에게 반환"
+      }
+    },
+    "step_10_orchestration_to_user": {
+      "api_endpoint": "Return to user",
+      "response": {
+        "status": "success",
+        "summary": "온도·배출 이상 분석 완료 + 위반 예측 + 최적 제어 제시 + 규제 준수 검증 완료",
+        "workflow_execution_time": "24.6초"
+      }
+    }
+  },
+  "expected_answer": {
+    "response_type": "full_compliance_report",
+    "format": "markdown",
+    "content": "# 철강 통합 생산라인 환경안전 규제 준수 검증 보고서\n\n## 1. 이상 탐지 결과 (Monitoring)\n\n### 1.1 이상 개요\n- **이상 유형**: 온도 상승 및 배출 수준 증가\n- **심각도**: Critical\n- **영향 범위**: PROD_L1, PROD_L2 전체 생산라인\n- **이상 비율**: 43.1% (2,154 / 5,000 포인트)\n\n### 1.2 온도 분석\n- **평균 온도**: 1650.08°C (목표: 1650°C)\n- **표준편차**: 1.68°C\n- **추세**: 증가 (+0.082°C/시간)\n- **최대 관측값**: 1654.28°C\n- **안전 한계**: 1655.0°C\n- **한계 도달 예상**: 약 6시간 후\n- **상태**: 안전 한계 접근 중 (여유 4.92°C)\n\n### 1.3 배출 수준 분석\n- **평균 배출량**: 116.24 mg/Nm³ (규제 한계: 120 mg/Nm³)\n- **표준편차**: 20.15 mg/Nm³\n- **규제 초과율**: 38.2% (1,910 포인트)\n- **최대 관측값**: 148.29 mg/Nm³ (규제 한계 +23.6%)\n- **추세**: 증가 (+1.24 mg/Nm³/시간)\n- **상태**: 높은 빈도의 규제 위반\n\n### 1.4 에너지 소비 분석\n- **평균 에너지 소비**: 502.38 kWh/ton (목표: 500 kWh/ton)\n- **표준편차**: 31.45 kWh/ton\n- **최대 허용**: 550 kWh/ton\n- **목표 초과율**: 52.1%\n- **비효율 수준**: Moderate\n- **일일 손실**: 약 3천만원\n\n### 1.5 규제 준수 현황\n- **준수율**: 56.8%\n- **위반율**: 43.2% (2,160 포인트)\n- **주요 위반 사항**: 배출 기준 초과\n\n### 1.6 품질 영향\n- **평균 품질 지수**: 93.2 (목표: 95 이상)\n- **표준편차**: 3.1\n- **95 미만 비율**: 62.3%\n- **온도와의 상관계수**: +0.42\n- **배출과의 상관계수**: -0.58 (배출 증가 → 품질 저하)\n\n### 1.7 근본 원인 분석\n\n**주요 원인**\n1. **과도한 산소 유량** (기여도 50%)\n   - 평균 500.2 Nm³/h\n   - 연소 온도 상승 및 NOx 배출 증가 초래\n\n2. **고온 운전** (기여도 30%)\n   - 평균 1650.08°C (목표 초과)\n   - 에너지 손실 및 배출 증가\n\n3. **불완전 연소** (기여도 20%)\n   - 먼지 및 CO 배출 증가\n\n**부차적 요인**\n- Slag 조성 변동성\n- 생산 속도 변동\n\n### 1.8 안전·환경 리스크\n\n**즉각적 리스크**\n\n| 리스크 | 심각도 | 발생 확률 | 잠재적 영향 |\n|--------|--------|-----------|-------------|\n| **배출 규제 위반** | High | 38.2% (현재 진행 중) | 최대 5억원 과징금 |\n| **온도 안전 한계 근접** | Critical | 약 6시간 내 도달 | 생산 중단, 설비 손상 |\n| **에너지 비효율** | Moderate | 52.1% | 일일 약 3천만원 손실 |\n\n---\n\n## 2. 안전·환경 위반 예측 결과 (Predictive)\n\n### 2.1 예측 모델 정보\n- **모델 유형**: Multivariate Time Series Transformer\n- **입력 특성**: 온도 추세, 배출 자기상관, 산소유량 시차 특성, 에너지 통계량, 규제준수 시퀀스\n- **정확도**:\n  - MAE (온도): 0.42°C\n  - MAE (배출): 3.68 mg/Nm³\n  - R² Score: 0.92\n\n### 2.2 6시간 후 예측\n\n**온도**\n- 예측값: 1650.57°C (신뢰구간: 1649.82 ~ 1651.32°C)\n- 안전 한계: 1655.0°C\n- 안전 여유: 4.43°C\n- 상태: **안전 범위 내**\n\n**배출 수준**\n- 예측값: 123.68 mg/Nm³ (신뢰구간: 119.45 ~ 127.91)\n- 규제 한계: 120.0 mg/Nm³\n- 초과 확률: **68%**\n- 상태: **위반 가능성 높음**\n\n**에너지 소비**\n- 예측값: 509.42 kWh/ton\n- 목표 대비 비효율: 1.9%\n\n**규제 준수 확률**: 42%  \n**예상 과징금 리스크**: **약 2억원**  \n**생산 영향**: 경미\n\n### 2.3 12시간 후 예측\n\n**온도**\n- 예측값: 1651.06°C (신뢰구간: 1650.12 ~ 1652.00°C)\n- 안전 여유: 3.94°C\n- 상태: **주의 필요**\n\n**배출 수준**\n- 예측값: 131.12 mg/Nm³ (신뢰구간: 126.23 ~ 136.01)\n- 규제 한계 초과: +9.3%\n- 초과 확률: **89%**\n- 상태: **위반 확실**\n\n**에너지 소비**\n- 예측값: 516.46 kWh/ton\n- 목표 대비 비효율: 3.3%\n\n**규제 준수 확률**: 18%  \n**예상 과징금 리스크**: **약 4억원**  \n**생산 영향**: 중간\n\n### 2.4 24시간 후 예측\n\n**온도**\n- 예측값: 1652.04°C (신뢰구간: 1650.88 ~ 1653.20°C)\n- 안전 여유: 2.96°C\n- 상태: **경고 수준**\n\n**배출 수준**\n- 예측값: 146.00 mg/Nm³ (신뢰구간: 140.12 ~ 151.88)\n- 규제 한계 초과: +21.7%\n- 초과 확률: **98%**\n- 상태: **심각한 위반**\n\n**에너지 소비**\n- 예측값: 530.54 kWh/ton\n- 목표 대비 비효율: 6.1%\n\n**규제 준수 확률**: 5%  \n**예상 과징금 리스크**: **약 5억원**  \n**생산 영향**: 심각  \n**강제 조업 중단 확률**: **35%**\n\n---\n\n## 3. 최적 제어 파라미터 (AutoControl)\n\n### 3.1 제어 알고리즘\n- **유형**: Multi-Objective Optimization with Constraint Handling\n- **최적화 방법**: NSGA-II (Non-dominated Sorting Genetic Algorithm II)\n- **목적 함수**: \n  1. 배출 수준 최소화 (가중치 50%)\n  2. 에너지 소비 최소화 (가중치 30%)\n  3. 품질 지수 최대화 (가중치 20%)\n\n### 3.2 최적 파라미터\n\n| 파라미터 | 현재값 | 최적값 | 변경량 | 단위 |\n|---------|--------|--------|--------|------|\n| **온도** | 1650.08 | 1648.0 | -2.08 | °C |\n| **산소 유량** | 500.2 | 495.0 | -5.2 | Nm³/h |\n| **생산 속도** | 200.0 | 198.5 | -1.5 | tons/h |\n\n### 3.3 파라미터 변경 근거\n\n**온도 (-0.13%)**\n- 1650.08 → 1648.0°C\n- 근거: 온도를 2.08°C 낮춰 NOx 배출 저감 및 에너지 효율 향상\n- 과학적 배경: 온도 1% 감소 → NOx 약 15% 감소 (Zeldovich mechanism)\n- 효과: 배출 감소, 에너지 절감, 안전 여유 확대\n\n**산소 유량 (-1.0%)**\n- 500.2 → 495.0 Nm³/h\n- 근거: 산소 유량을 1% 감축하여 과잉 산소로 인한 NOx 생성 억제\n- 과학적 배경: 화학양론비에 근접한 연소 → 최소 배출 달성\n- 효과: NOx 배출 최소화, 연소 효율 최적화\n\n**생산 속도 (-0.75%)**\n- 200.0 → 198.5 tons/h\n- 근거: 생산 속도를 0.75% 감속하여 공정 안정화 및 품질 균일성 향상\n- 효과: 온도/배출 변동성 감소, 품질 지수 향상\n\n### 3.4 예상 개선 효과\n\n**배출 저감**\n- 현재 평균: 116.24 mg/Nm³\n- 예상 평균: 98.5 mg/Nm³\n- **개선율: -15.3%**\n- 규제 준수율:\n  - 현재: 61.8%\n  - 예상: 94.2%\n  - **개선: +32.4%p**\n\n**온도 안정화**\n- 현재 평균: 1650.08°C\n- 예상 평균: 1648.0°C\n- **개선율: -0.13%**\n- 안전 여유:\n  - 현재: 4.92°C\n  - 예상: 7.0°C\n  - **개선: +42.3%**\n\n**에너지 효율**\n- 현재 평균: 502.38 kWh/ton\n- 예상 평균: 487.2 kWh/ton\n- **개선율: -3.0%**\n- **비용 절감: 일일 약 2,850만원**\n\n**품질 개선**\n- 현재 품질 지수: 93.2\n- 예상 품질 지수: 94.8\n- **개선율: +1.7%**\n\n**종합 규제 준수율**\n- 현재: 56.8%\n- 예상: 94.2%\n- **개선: +65.8%**\n\n### 3.5 구현 계획\n\n**Step 1: 산소 유량 감축**\n- 목표: 495.0 Nm³/h\n- 램프 속도: 1.0 Nm³/h/분\n- 소요 시간: 6분\n\n**Step 2: 온도 하향 조정**\n- 목표: 1648.0°C\n- 램프 속도: 0.5°C/분\n- 소요 시간: 5분\n\n**Step 3: 생산 속도 조정**\n- 목표: 198.5 tons/h\n- 램프 속도: 0.3 tons/h/분\n- 소요 시간: 5분\n\n**총 전환 시간**: 약 8분  \n**안정화 시간**: 약 15분\n\n### 3.6 모니터링 요구사항\n\n**모니터링 대상**\n- EMISSION_LEVEL (배출 수준)\n- TEMPERATURE (온도)\n- ENERGY_CONSUMPTION (에너지 소비)\n- QUALITY_INDEX (품질 지수)\n- COMPLIANCE_STATUS (규제 준수 상태)\n\n**모니터링 주기**: 5초\n\n**경보 임계값**\n- 배출 수준: > 115 mg/Nm³\n- 온도: > 1653°C\n- 품질 지수: < 90\n\n---\n\n## 4. 규제 준수 검증 결과 (ComplianceCheck)\n\n### 4.1 준수 검증 개요\n- **검증 대상 규제**: 6개\n- **제어 전 준수**: 2개 (33.3%)\n- **제어 후 준수**: 6개 (100%)\n- **개선율**: +200%\n\n### 4.2 상세 규제 검증\n\n#### 규제 1: 대기환경보전법 - NOx 배출 기준\n\n- **규제 기관**: 환경부\n- **적용 기준**: NOx 배출 허용 기준 120 mg/Nm³ 이하 (제철소 배출시설)\n- **법적 근거**: 대기환경보전법 시행규칙 별표 8\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 측정값 | 116.24 mg/Nm³ | 98.5 mg/Nm³ | -15.3% |\n| 한계값 | 120.0 mg/Nm³ | 120.0 mg/Nm³ | - |\n| 준수 여부 | **경계** (평균 준수, 38.2% 초과) | **준수** | ✓ |\n\n**위반 시 처벌**: 최대 2억원 과징금 + 조업 정지 명령 가능\n\n---\n\n#### 규제 2: 온실가스 배출권거래제 - 에너지 효율\n\n- **규제 기관**: 환경부 / 산업통상자원부\n- **적용 기준**: 철강 제조 에너지 원단위 500 kWh/ton 이하 권장\n- **법적 근거**: 온실가스 배출권의 할당 및 거래에 관한 법률\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 측정값 | 502.38 kWh/ton | 487.2 kWh/ton | -3.0% |\n| 목표값 | 500.0 kWh/ton | 500.0 kWh/ton | - |\n| 준수 여부 | **미준수** (+2.38) | **준수** | ✓ |\n\n**위반 시 처벌**: 배출권 추가 구매 필요 (연간 약 10억원)\n\n---\n\n#### 규제 3: 산업안전보건법 - 고온 작업장 안전\n\n- **규제 기관**: 고용노동부\n- **적용 기준**: 제철 고온 작업장 안전 온도 1655°C 이하 (긴급 조치 기준)\n- **법적 근거**: 산업안전보건기준에 관한 규칙 제567조\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 측정값 | 1650.08°C | 1648.0°C | -0.13% |\n| 한계값 | 1655.0°C | 1655.0°C | - |\n| 안전 여유 | 4.92°C | 7.0°C | +42.3% |\n| 준수 여부 | **준수** | **준수** (여유 증가) | ✓ |\n\n**위반 시 처벌**: 작업 중지 명령 + 최대 1억원 벌금\n\n---\n\n#### 규제 4: 고압가스 안전관리법 - 산소 안전\n\n- **규제 기관**: 한국가스안전공사\n- **적용 기준**: 제철 공정 산소 유량 490-510 Nm³/h 안전 범위\n- **법적 근거**: 고압가스 안전관리법 제20조\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 측정값 | 500.2 Nm³/h | 495.0 Nm³/h | 최적화 |\n| 안전 범위 | 490-510 Nm³/h | 490-510 Nm³/h | - |\n| 준수 여부 | **준수** | **준수** (중심 근접) | ✓ |\n\n**위반 시 처벌**: 시설 개선 명령 + 최대 5천만원 과태료\n\n---\n\n#### 규제 5: KS D 3698 - 철강 제품 품질 기준\n\n- **규제 기관**: 국가기술표준원\n- **적용 기준**: 품질 지수 90 이상 (1등급 제품)\n- **법적 근거**: KS D 3698:2021 철강 열연 강판 품질 기준\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 측정값 | 93.2 | 94.8 | +1.7% |\n| 기준값 | 90.0 | 90.0 | - |\n| 등급 | 1등급 | 1등급 우수 | ✓ |\n| 준수 여부 | **준수** | **준수** (품질 향상) | ✓ |\n\n**위반 시 영향**: 제품 등급 하락 → 판매가 10% 감소\n\n---\n\n#### 규제 6: 통합환경관리법 - BAT 기준\n\n- **규제 기관**: 환경부\n- **적용 기준**: 철강 제조 BAT - 에너지 효율 95% 이상, 배출 밀도 최소화\n- **법적 근거**: 통합환경관리법 시행령 별표 4\n\n| 항목 | 제어 전 | 제어 후 | 개선 |\n|------|---------|---------|------|\n| 에너지 효율 | 94.2% | 96.8% | +2.8%p |\n| 배출 밀도 | 높음 | 최적화 | -15.3% |\n| 준수 여부 | **미준수** | **준수** | ✓ |\n\n**위반 시 처벌**: 개선 명령 + 최대 3억원 과징금\n\n---\n\n### 4.3 규제 리스크 평가\n\n**제어 전 리스크**\n- 고위험 규제: REG_ENV_001, REG_ENV_002, REG_ENV_003 (3개)\n- 총 잠재적 과징금: **최대 7억원**\n- 조업 중단 리스크: Moderate\n- 평판 손상 리스크: High\n\n**제어 후 리스크**\n- 고위험 규제: **없음**\n- 총 잠재적 과징금: **0원**\n- 조업 중단 리스크: Low\n- 평판 손상 리스크: Minimal\n\n### 4.4 인증 상태\n\n**ISO 14001 (환경경영시스템)**\n- 제어 전: At Risk (갱신 불확실)\n- 제어 후: Compliant\n- 갱신 확률: **95%**\n\n**ISO 45001 (안전보건경영시스템)**\n- 제어 전: Compliant\n- 제어 후: Compliant\n- 갱신 확률: **98%**\n\n**ISO 50001 (에너지경영시스템)**\n- 제어 전: At Risk (갱신 불확실)\n- 제어 후: Compliant\n- 갱신 확률: **92%**\n\n---\n\n## 5. 경제적 영향 분석\n\n### 5.1 제어 미적용 시 손실 (24시간 기준)\n\n**규제 위반 과징금**\n- 대기환경보전법: 약 2억원\n- 온실가스 배출권: 약 10억원 (연간 환산)\n- 통합환경관리법: 약 3억원\n- **총 과징금 리스크**: **약 5억원** (직접 손실)\n\n**에너지 비효율 손실**\n- 일일 초과 에너지 비용: 약 3천만원\n- **24시간 손실**: **약 3천만원**\n\n**조업 중단 리스크** (확률 35%)\n- 1일 조업 중단 시 손실: 약 50억원\n- 기대 손실: 50억 × 0.35 = **약 17억 5천만원**\n\n**총 예상 손실 (24시간)**: **약 22억 5천만원**\n\n### 5.2 제어 적용 시 개선\n\n**규제 준수**\n- 과징금 리스크: 0원\n- **절감**: **약 5억원**\n\n**에너지 효율 개선**\n- 일일 에너지 비용 절감: 약 2,850만원\n- **24시간 절감**: **약 2,850만원**\n\n**조업 중단 방지**\n- 조업 중단 확률: 35% → 5%\n- 기대 손실 감소: 약 15억원\n- **순 이익**: **약 15억원**\n\n**총 경제적 이익 (24시간)**: **약 20억 2,850만원**\n\n### 5.3 ROI 분석\n\n- 제어 시스템 운영 비용: 약 1,000만원/일\n- 순 이익: 약 20억 1,850만원/일\n- **ROI**: **약 202배**\n- **회수 기간**: 즉시 (첫날부터 이익 발생)\n\n### 5.4 장기적 경제 효과 (연간)\n\n**직접 효과**\n- 과징금 방지: 약 18억원/년\n- 에너지 비용 절감: 약 104억원/년\n- 조업 안정성 향상: 약 547억원/년\n- **연간 총 이익**: **약 669억원**\n\n**간접 효과**\n- ISO 인증 유지 → 수출 계약 유지 (약 500억원/년)\n- 브랜드 평판 향상 → 프리미엄 가격 책정 가능 (+5%)\n- ESG 평가 개선 → 자금 조달 비용 절감\n\n---\n\n## 6. 권장 조치사항\n\n### 6.1 즉시 조치 (0-1시간)\n\n1. **최적 제어 파라미터 즉시 적용**\n   - 온도: 1648.0°C\n   - 산소 유량: 495.0 Nm³/h\n   - 생산 속도: 198.5 tons/h\n   - 전환 시간: 8분, 안정화: 15분\n\n2. **집중 모니터링 체계 가동**\n   - 5초 간격 실시간 감시\n   - 배출 > 115 mg/Nm³ 즉시 경보\n   - 온도 > 1653°C 즉시 경보\n\n3. **규제 당국 보고 준비**\n   - 배출 초과 사실 자진 신고 검토\n   - 개선 조치 완료 증빙 자료 준비\n\n### 6.2 단기 조치 (1-24시간)\n\n1. **제어 효과 검증**\n   - 2시간 간격 배출 수준 재측정\n   - 4시간 간격 규제 준수율 재계산\n   - 8시간 후 에너지 효율 개선 확인\n\n2. **예측 모델 업데이트**\n   - 제어 후 실측 데이터로 모델 재학습\n   - 예측 정확도 재평가\n\n3. **운전원 교육**\n   - 최적 제어 파라미터 설명\n   - 비상 상황 대응 절차 숙지\n\n### 6.3 중기 조치 (1주일 - 1개월)\n\n1. **자동 제어 시스템 고도화**\n   - NSGA-II 알고리즘 가중치 미세 조정\n   - 다목적 최적화 목표 함수 재평가\n   - 강건성(robustness) 테스트\n\n2. **규제 당국 협의**\n   - 개선 완료 보고서 제출\n   - 자율 개선 노력 인정 요청\n   - 과징금 감면 협상\n\n3. **ISO 인증 사전 준비**\n   - 개선 기록 문서화\n   - 내부 감사 실시\n   - 갱신 심사 준비\n\n### 6.4 장기 조치 (1개월 이상)\n\n1. **공정 혁신**\n   - 저배출 공정 기술 도입 검토\n   - 재생 에너지 활용 확대\n   - 순환 경제 모델 적용\n\n2. **ESG 경영 강화**\n   - 환경 목표 상향 조정\n   - 탄소중립 로드맵 수립\n   - 지속가능성 보고서 발간\n\n3. **디지털 전환**\n   - AI 기반 예측 제어 고도화\n   - 디지털 트윈 구축\n   - 실시간 규제 준수 대시보드 개발\n\n---\n\n## 7. 결론\n\n### 7.1 핵심 발견사항\n\n- **온도 상승 추세 확인**: 평균 1650.08°C, 시간당 +0.082°C 증가, 6시간 내 안전 한계 도달 우려\n- **배출 규제 위반 심각**: 38.2% 빈도로 120 mg/Nm³ 초과, 24시간 내 98% 확률로 심각한 위반 예상\n- **에너지 비효율**: 평균 502.38 kWh/ton으로 목표 초과, 일일 3천만원 손실\n- **규제 준수율 저조**: 56.8% 준수, 43.2% 위반, 최대 7억원 과징금 리스크\n\n### 7.2 최적 제어 효과\n\n**제어 파라미터 적용 시**\n- 온도 2.08°C 감소 → 안전 여유 42.3% 증가\n- 산소 유량 1% 감축 → 배출 15.3% 저감\n- 생산 속도 0.75% 감속 → 품질 1.7% 향상\n\n**종합 개선**\n- 배출 규제 준수율: 61.8% → 94.2% (+32.4%p)\n- 전체 규제 준수율: 33.3% → 100% (+200%)\n- 에너지 효율: 3.0% 개선\n- 과징금 리스크: 7억원 → 0원\n\n### 7.3 경제적 효과\n\n**단기 (24시간)**\n- 제어 미적용 시 손실: 약 22억 5천만원\n- 제어 적용 시 이익: 약 20억 2,850만원\n- ROI: 202배\n\n**장기 (연간)**\n- 연간 총 이익: 약 669억원\n- ISO 인증 유지 → 수출 계약 안정성 확보\n- ESG 평가 개선 → 기업 가치 향상\n\n### 7.4 최종 권고\n\n**즉시 실행 필수**\n1. 최적 제어 파라미터를 8분 내에 적용하여 배출 규제 위반 방지\n2. 실시간 모니터링 체계를 통해 제어 효과 검증\n3. 규제 당국과의 협의를 통해 자율 개선 노력 인정 요청\n\n**지속적 개선 필요**\n1. NSGA-II 기반 자동 제어 시스템의 지속적 최적화\n2. 예측 모델의 정기적 재학습 및 정확도 개선\n3. 장기적 공정 혁신 및 ESG 경영 강화\n\n**기대 성과**\n- 6개 규제 100% 준수 달성\n- 연간 669억원 경제적 이익 창출\n- 안전하고 지속 가능한 철강 생산 체계 구축\n\n**보고서 생성 시각**: 2025-05-01  \n**분석 소요 시간**: 24.6초  \n**담당 에이전트**: PRISM Multi-Agent System (Monitoring + Predictive + AutoControl + ComplianceCheck)"
+  },
+  "test_validation": {
+    "validation_points": [
+      {
+        "point": "Monitoring 에이전트가 온도 상승 및 배출 증가를 정확히 탐지했는가?",
+        "expected": "온도 평균 1650.08°C, 배출 38.2% 초과율, 규제 위반 43.2% 탐지",
+        "validation_method": "agent_workflow.step_2의 detection_summary 및 analysis_result 확인"
+      },
+      {
+        "point": "안전·환경 리스크가 식별되었는가?",
+        "expected": "배출 규제 위반, 온도 한계 근접, 에너지 비효율 3대 리스크 식별",
+        "validation_method": "agent_workflow.step_2의 safety_environmental_risks 확인"
+      },
+      {
+        "point": "Predictive 에이전트가 향후 위반을 예측했는가?",
+        "expected": "6h: 68% 위반 확률, 12h: 89%, 24h: 98% 위반 확률 예측",
+        "validation_method": "agent_workflow.step_3의 predictions 확인"
+      },
+      {
+        "point": "조업 중단 리스크가 예측되었는가?",
+        "expected": "24시간 후 35% 강제 조업 중단 확률",
+        "validation_method": "agent_workflow.step_3의 violation_forecast 확인"
+      },
+      {
+        "point": "AutoControl 에이전트가 최적 파라미터를 계산했는가?",
+        "expected": "온도 -2.08°C, 산소 -5.2 Nm³/h, 생산속도 -1.5 tons/h",
+        "validation_method": "agent_workflow.step_4의 optimal_parameters 확인"
+      },
+      {
+        "point": "다목적 최적화 알고리즘이 사용되었는가?",
+        "expected": "NSGA-II 알고리즘, 3개 목적함수 (배출, 에너지, 품질)",
+        "validation_method": "agent_workflow.step_4의 control_algorithm 확인"
+      },
+      {
+        "point": "ComplianceCheck 에이전트가 6개 규제를 검증했는가?",
+        "expected": "6개 규제 상세 검증 (대기환경보전법, 배출권거래제, 산업안전보건법, 고압가스법, KS 품질기준, 통합환경관리법)",
+        "validation_method": "agent_workflow.step_5의 detailed_compliance_check 확인"
+      },
+      {
+        "point": "제어 전후 규제 준수율이 비교되었는가?",
+        "expected": "제어 전 33.3% → 제어 후 100%",
+        "validation_method": "agent_workflow.step_5의 compliance_summary 확인"
+      },
+      {
+        "point": "과징금 리스크가 정량화되었는가?",
+        "expected": "제어 전 최대 7억원 → 제어 후 0원",
+        "validation_method": "agent_workflow.step_5의 regulatory_risk_assessment 확인"
+      },
+      {
+        "point": "ISO 인증 상태가 평가되었는가?",
+        "expected": "ISO 14001, 45001, 50001 인증 상태 및 갱신 확률 제시",
+        "validation_method": "agent_workflow.step_5의 certification_status 확인"
+      },
+      {
+        "point": "경제적 영향이 분석되었는가?",
+        "expected": "24시간 22.5억원 손실 방지, ROI 202배, 연간 669억원 이익",
+        "validation_method": "expected_answer의 경제적 영향 분석 섹션 확인"
+      },
+      {
+        "point": "응답이 마크다운 형식으로 제공되는가?",
+        "expected": "7개 섹션 구조화된 마크다운 보고서",
+        "validation_method": "expected_answer.content의 마크다운 포맷 확인"
+      },
+      {
+        "point": "workflow_type이 full_compliance인가?",
+        "expected": "full_compliance, level 4",
+        "validation_method": "metadata.workflow_type 확인"
+      }
+    ],
+    "success_criteria": {
+      "anomaly_detection_accuracy": "> 95%",
+      "prediction_r2_score": "> 0.90",
+      "control_improvement_rate": "> 60%",
+      "compliance_rate_after_control": "> 95%",
+      "response_time": "< 30초",
+      "report_completeness": "모든 섹션 포함 + 6개 규제 상세 검증"
+    }
+  }
+}

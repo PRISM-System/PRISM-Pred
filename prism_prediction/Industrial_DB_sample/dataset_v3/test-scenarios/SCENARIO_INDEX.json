@@ -1,0 +1,743 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created_date": "2025-10-14",
+    "description": "PRISM test scenario index - 5 industries, 4 workflow levels, 20 total scenarios",
+    "total_scenarios": 20,
+    "industries": [
+      "semiconductor",
+      "chemical",
+      "automotive",
+      "battery",
+      "steel"
+    ],
+    "workflow_levels": [
+      "monitoring_only",
+      "monitoring_prediction",
+      "monitoring_prediction_control",
+      "full_compliance"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO_01",
+      "title": "Semiconductor CMP Process Anomaly Monitoring",
+      "title_ko": "반도체 CMP 공정 이상 모니터링",
+      "description": "Detect and analyze Slurry flow rate anomalies in CMP (Chemical Mechanical Planarization) process",
+      "workflow_type": "monitoring_only",
+      "workflow_level": 1,
+      "industry": "semiconductor",
+      "process": "CMP",
+      "file_path": "scenarios/semiconductor/SCENARIO_01.json",
+      "dataset_file": "datasets/semiconductor_cmp_001.csv",
+      "query_template": "CMP 공정에서 Slurry 유량이 불안정합니다. 현재 상황을 분석해주세요.",
+      "key_sensors": [
+        "MOTOR_CURRENT",
+        "SLURRY_FLOW_RATE",
+        "HEAD_ROTATION",
+        "PRESSURE",
+        "TEMPERATURE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "complexity": "low"
+    },
+    {
+      "scenario_id": "SCENARIO_02",
+      "title": "Semiconductor Etching Process Predictive Analysis",
+      "title_ko": "반도체 Etching 공정 예측 분석",
+      "description": "Analyze pressure increase trend in plasma etching process and predict critical threshold arrival time",
+      "workflow_type": "monitoring_prediction",
+      "workflow_level": 2,
+      "industry": "semiconductor",
+      "process": "Etching",
+      "file_path": "scenarios/semiconductor/SCENARIO_02.json",
+      "dataset_file": "datasets/semiconductor_etch_002.csv",
+      "query_template": "Etching 공정의 PRESSURE가 계속 상승하고 있습니다. 언제 임계치에 도달할지 예측해주세요.",
+      "key_sensors": [
+        "PRESSURE",
+        "VACUUM_PUMP",
+        "GAS_FLOW_RATE",
+        "RF_POWER",
+        "TEMPERATURE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "scenario_id": "SCENARIO_03",
+      "title": "Semiconductor Deposition Process Auto Control",
+      "title_ko": "반도체 Deposition 공정 자동 제어",
+      "description": "Detect temperature instability in thin film deposition, predict, and perform auto control for stabilization",
+      "workflow_type": "monitoring_prediction_control",
+      "workflow_level": 3,
+      "industry": "semiconductor",
+      "process": "Deposition",
+      "file_path": "scenarios/semiconductor/SCENARIO_03.json",
+      "dataset_file": "datasets/semiconductor_deposition_003.csv",
+      "query_template": "Deposition 공정의 TEMPERATURE가 불안정합니다. 자동으로 안정화시켜주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "PRESSURE",
+        "GAS_FLOW_RATE",
+        "RF_POWER",
+        "DEPOSITION_RATE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "complexity": "high"
+    },
+    {
+      "scenario_id": "SCENARIO_04",
+      "title": "Semiconductor Full Process Compliance Verification",
+      "title_ko": "반도체 전체 공정 규제 준수 검증",
+      "description": "Full semiconductor manufacturing process with anomaly detection, prediction, control, and regulatory compliance verification",
+      "workflow_type": "full_compliance",
+      "workflow_level": 4,
+      "industry": "semiconductor",
+      "process": "Full Process",
+      "file_path": "scenarios/semiconductor/SCENARIO_04.json",
+      "dataset_file": "datasets/semiconductor_full_004.csv",
+      "query_template": "반도체 공정에서 RF_POWER가 증가 추세입니다. 예측 및 제어를 수행하고 규제 준수 여부를 확인해주세요.",
+      "key_sensors": [
+        "RF_POWER",
+        "PRESSURE",
+        "TEMPERATURE",
+        "GAS_FLOW_RATE",
+        "VACUUM_PUMP"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "complexity": "very_high"
+    },
+    {
+      "scenario_id": "SCENARIO_05",
+      "title": "Chemical Reactor Temperature Anomaly Monitoring",
+      "title_ko": "화학 반응기 온도 이상 모니터링",
+      "description": "Detect and analyze rapid temperature increase in chemical reactor",
+      "workflow_type": "monitoring_only",
+      "workflow_level": 1,
+      "industry": "chemical",
+      "process": "Reactor",
+      "file_path": "scenarios/chemical/SCENARIO_05.json",
+      "dataset_file": "datasets/chemical_reactor_001.csv",
+      "query_template": "반응기 REACT_A3의 TEMPERATURE가 급격히 상승하고 있습니다. 현재 상황을 분석해주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "PRESSURE",
+        "pH",
+        "CONCENTRATION",
+        "FEED_RATE",
+        "CATALYST_RATIO"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "complexity": "low"
+    },
+    {
+      "scenario_id": "SCENARIO_06",
+      "title": "Chemical Distillation Pressure Predictive Analysis",
+      "title_ko": "화학 증류탑 압력 예측 분석",
+      "description": "Analyze pressure change trend in distillation tower and predict overpressure arrival time",
+      "workflow_type": "monitoring_prediction",
+      "workflow_level": 2,
+      "industry": "chemical",
+      "process": "Distillation",
+      "file_path": "scenarios/chemical/SCENARIO_06.json",
+      "dataset_file": "datasets/chemical_distillation_002.csv",
+      "query_template": "증류탑 TOWER_01의 PRESSURE가 계속 증가하고 있습니다. 안전 압력 한계에 도달할 시점을 예측해주세요.",
+      "key_sensors": [
+        "PRESSURE",
+        "TEMPERATURE",
+        "REFLUX_RATIO",
+        "REBOILER_HEAT",
+        "FEED_FLOW_RATE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "scenario_id": "SCENARIO_07",
+      "title": "Chemical Refining Process Auto Control",
+      "title_ko": "화학 정제 공정 자동 제어",
+      "description": "Detect purity degradation in chemical refining, predict, and auto control for quality improvement",
+      "workflow_type": "monitoring_prediction_control",
+      "workflow_level": 3,
+      "industry": "chemical",
+      "process": "Refining",
+      "file_path": "scenarios/chemical/SCENARIO_07.json",
+      "dataset_file": "datasets/chemical_refining_003.csv",
+      "query_template": "정제 공정의 PURITY가 목표치 이하로 떨어지고 있습니다. 자동으로 품질을 개선해주세요.",
+      "key_sensors": [
+        "PURITY",
+        "TEMPERATURE",
+        "FILTER_PRESSURE",
+        "FLOW_RATE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "complexity": "high"
+    },
+    {
+      "scenario_id": "SCENARIO_08",
+      "title": "Chemical Full Process Compliance Verification",
+      "title_ko": "화학 전체 공정 규제 준수 검증",
+      "description": "Chemical manufacturing with catalyst ratio adjustment and environmental compliance verification",
+      "workflow_type": "full_compliance",
+      "workflow_level": 4,
+      "industry": "chemical",
+      "process": "Full Process",
+      "file_path": "scenarios/chemical/SCENARIO_08.json",
+      "dataset_file": "datasets/chemical_full_004.csv",
+      "query_template": "반응기의 CATALYST_RATIO가 증가 추세입니다. 예측 및 제어를 수행하고 환경 규제 준수 여부를 확인해주세요.",
+      "key_sensors": [
+        "CATALYST_RATIO",
+        "TEMPERATURE",
+        "PRESSURE",
+        "pH",
+        "CONCENTRATION"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "complexity": "very_high"
+    },
+    {
+      "scenario_id": "SCENARIO_09",
+      "title": "Automotive Welding Current Anomaly Monitoring",
+      "title_ko": "자동차 용접 전류 이상 모니터링",
+      "description": "Detect and analyze welding current fluctuation in automotive body welding process",
+      "workflow_type": "monitoring_only",
+      "workflow_level": 1,
+      "industry": "automotive",
+      "process": "Welding",
+      "file_path": "scenarios/automotive/SCENARIO_09.json",
+      "dataset_file": "datasets/automotive_welding_001.csv",
+      "query_template": "용접 라인의 WELD_CURRENT가 불안정합니다. 현재 용접 품질 상태를 분석해주세요.",
+      "key_sensors": [
+        "WELD_CURRENT",
+        "WELD_VOLTAGE",
+        "WIRE_SPEED",
+        "TRAVEL_SPEED",
+        "SHIELDING_GAS"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "complexity": "low"
+    },
+    {
+      "scenario_id": "SCENARIO_10",
+      "title": "Automotive Painting Process Predictive Analysis",
+      "title_ko": "자동차 도장 공정 예측 분석",
+      "description": "Analyze temperature and humidity changes in painting process and predict coating quality",
+      "workflow_type": "monitoring_prediction",
+      "workflow_level": 2,
+      "industry": "automotive",
+      "process": "Painting",
+      "file_path": "scenarios/automotive/SCENARIO_10.json",
+      "dataset_file": "datasets/automotive_painting_002.csv",
+      "query_template": "도장 부스의 HUMIDITY가 계속 상승하고 있습니다. 도막 품질에 미칠 영향을 예측해주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "HUMIDITY",
+        "SPRAY_PRESSURE",
+        "PAINT_FLOW_RATE",
+        "BOOTH_AIRFLOW"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "scenario_id": "SCENARIO_11",
+      "title": "Automotive Press Process Auto Control",
+      "title_ko": "자동차 프레스 공정 자동 제어",
+      "description": "Detect pressure imbalance in press forming, predict, and auto adjust to reduce defect rate",
+      "workflow_type": "monitoring_prediction_control",
+      "workflow_level": 3,
+      "industry": "automotive",
+      "process": "Press",
+      "file_path": "scenarios/automotive/SCENARIO_11.json",
+      "dataset_file": "datasets/automotive_press_003.csv",
+      "query_template": "프레스 라인의 PRESS_FORCE가 불균형합니다. 자동으로 조정하여 불량률을 줄여주세요.",
+      "key_sensors": [
+        "PRESS_FORCE",
+        "DIE_TEMPERATURE",
+        "STROKE_SPEED",
+        "BLANK_THICKNESS",
+        "LUBRICATION"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "complexity": "high"
+    },
+    {
+      "scenario_id": "SCENARIO_12",
+      "title": "Automotive Full Assembly Line Compliance Verification",
+      "title_ko": "자동차 전체 조립 라인 규제 준수 검증",
+      "description": "Full automotive assembly line with anomaly detection, prediction, control, and safety compliance verification",
+      "workflow_type": "full_compliance",
+      "workflow_level": 4,
+      "industry": "automotive",
+      "process": "Full Assembly",
+      "file_path": "scenarios/automotive/SCENARIO_12.json",
+      "dataset_file": "datasets/automotive_assembly_004.csv",
+      "query_template": "조립 라인의 TORQUE가 증가 추세입니다. 예측 및 제어를 수행하고 안전 규제 준수 여부를 확인해주세요.",
+      "key_sensors": [
+        "TORQUE",
+        "PRESSURE",
+        "TEMPERATURE",
+        "CYCLE_TIME",
+        "DEFECT_RATE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "complexity": "very_high"
+    },
+    {
+      "scenario_id": "SCENARIO_13",
+      "title": "Battery Formation Voltage Anomaly Monitoring",
+      "title_ko": "배터리 화성 공정 전압 이상 모니터링",
+      "description": "Detect and analyze cell voltage anomaly in battery formation process",
+      "workflow_type": "monitoring_only",
+      "workflow_level": 1,
+      "industry": "battery",
+      "process": "Formation",
+      "file_path": "scenarios/battery/SCENARIO_13.json",
+      "dataset_file": "datasets/battery_formation_001.csv",
+      "query_template": "배터리 셀 CELL_F001의 VOLTAGE가 비정상적으로 변동하고 있습니다. 현재 상태를 분석해주세요.",
+      "key_sensors": [
+        "VOLTAGE",
+        "CURRENT",
+        "CAPACITY",
+        "TEMPERATURE",
+        "SOC",
+        "CYCLE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "complexity": "low"
+    },
+    {
+      "scenario_id": "SCENARIO_14",
+      "title": "Battery Coating Process Predictive Analysis",
+      "title_ko": "배터리 코팅 공정 예측 분석",
+      "description": "Analyze thickness change trend in electrode coating and predict quality defects",
+      "workflow_type": "monitoring_prediction",
+      "workflow_level": 2,
+      "industry": "battery",
+      "process": "Coating",
+      "file_path": "scenarios/battery/SCENARIO_14.json",
+      "dataset_file": "datasets/battery_coating_002.csv",
+      "query_template": "코팅 라인의 COATING_THICKNESS가 목표치를 벗어나고 있습니다. 품질 불량 발생 시점을 예측해주세요.",
+      "key_sensors": [
+        "COATING_THICKNESS",
+        "COATING_SPEED",
+        "SLURRY_VISCOSITY",
+        "TEMPERATURE",
+        "HUMIDITY"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "scenario_id": "SCENARIO_15",
+      "title": "Battery Aging Process Auto Control",
+      "title_ko": "배터리 에이징 공정 자동 제어",
+      "description": "Detect SOH degradation in battery aging, predict, and auto optimize conditions",
+      "workflow_type": "monitoring_prediction_control",
+      "workflow_level": 3,
+      "industry": "battery",
+      "process": "Aging",
+      "file_path": "scenarios/battery/SCENARIO_15.json",
+      "dataset_file": "datasets/battery_aging_003.csv",
+      "query_template": "에이징 챔버의 배터리 SOH가 예상보다 빠르게 저하되고 있습니다. 자동으로 조건을 최적화해주세요.",
+      "key_sensors": [
+        "SOH",
+        "SOC",
+        "CAPACITY",
+        "TEMPERATURE",
+        "HUMIDITY",
+        "AGING_DAYS"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "complexity": "high"
+    },
+    {
+      "scenario_id": "SCENARIO_16",
+      "title": "Battery Full Production Line Compliance Verification",
+      "title_ko": "배터리 전체 생산 라인 규제 준수 검증",
+      "description": "Full battery production with anomaly detection, prediction, control, and safety/environmental compliance verification",
+      "workflow_type": "full_compliance",
+      "workflow_level": 4,
+      "industry": "battery",
+      "process": "Full Production",
+      "file_path": "scenarios/battery/SCENARIO_16.json",
+      "dataset_file": "datasets/battery_production_004.csv",
+      "query_template": "배터리 생산 라인의 TEMPERATURE가 증가 추세입니다. 예측 및 제어를 수행하고 안전 규제 준수 여부를 확인해주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "VOLTAGE",
+        "CURRENT",
+        "CAPACITY",
+        "SOC"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "complexity": "very_high"
+    },
+    {
+      "scenario_id": "SCENARIO_17",
+      "title": "Steel Rolling Process Thickness Anomaly Monitoring",
+      "title_ko": "철강 압연 공정 두께 이상 모니터링",
+      "description": "Detect and analyze steel plate thickness deviation in hot rolling process",
+      "workflow_type": "monitoring_only",
+      "workflow_level": 1,
+      "industry": "steel",
+      "process": "Rolling",
+      "file_path": "scenarios/steel/SCENARIO_17.json",
+      "dataset_file": "datasets/steel_rolling_001.csv",
+      "query_template": "압연 라인 ROLL_004의 THICKNESS가 목표 편차를 초과하고 있습니다. 현재 상황을 분석해주세요.",
+      "key_sensors": [
+        "THICKNESS",
+        "ROLL_GAP",
+        "ROLLING_SPEED",
+        "TENSION",
+        "TEMPERATURE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "complexity": "low"
+    },
+    {
+      "scenario_id": "SCENARIO_18",
+      "title": "Steel Converter Process Predictive Analysis",
+      "title_ko": "철강 전로 공정 예측 분석",
+      "description": "Analyze temperature and oxygen flow changes in converter and predict slag status",
+      "workflow_type": "monitoring_prediction",
+      "workflow_level": 2,
+      "industry": "steel",
+      "process": "Converter",
+      "file_path": "scenarios/steel/SCENARIO_18.json",
+      "dataset_file": "datasets/steel_converter_002.csv",
+      "query_template": "전로의 TEMPERATURE와 OXYGEN_FLOW가 변동하고 있습니다. SLAG_COMPOSITION 상태를 예측해주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "OXYGEN_FLOW",
+        "LANCE_POSITION",
+        "PRESSURE",
+        "SLAG_COMPOSITION"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "scenario_id": "SCENARIO_19",
+      "title": "Steel Casting Process Auto Control",
+      "title_ko": "철강 연주 공정 자동 제어",
+      "description": "Detect slab thickness imbalance in continuous casting, predict, and auto adjust",
+      "workflow_type": "monitoring_prediction_control",
+      "workflow_level": 3,
+      "industry": "steel",
+      "process": "Casting",
+      "file_path": "scenarios/steel/SCENARIO_19.json",
+      "dataset_file": "datasets/steel_casting_003.csv",
+      "query_template": "연주 라인의 SLAB_THICKNESS가 불균일합니다. 자동으로 CASTING_SPEED를 조정해주세요.",
+      "key_sensors": [
+        "SLAB_THICKNESS",
+        "CASTING_SPEED",
+        "MOLD_WIDTH",
+        "TEMPERATURE"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "complexity": "high"
+    },
+    {
+      "scenario_id": "SCENARIO_20",
+      "title": "Steel Full Production Line Compliance Verification",
+      "title_ko": "철강 전체 제조 라인 규제 준수 검증",
+      "description": "Full steel manufacturing with anomaly detection, prediction, control, and environmental/safety compliance verification",
+      "workflow_type": "full_compliance",
+      "workflow_level": 4,
+      "industry": "steel",
+      "process": "Full Production",
+      "file_path": "scenarios/steel/SCENARIO_20.json",
+      "dataset_file": "datasets/steel_production_004.csv",
+      "query_template": "철강 생산 라인의 TEMPERATURE가 증가 추세입니다. 예측 및 제어를 수행하고 환경 규제 준수 여부를 확인해주세요.",
+      "key_sensors": [
+        "TEMPERATURE",
+        "PRESSURE",
+        "OXYGEN_FLOW",
+        "SLAG_COMPOSITION",
+        "THICKNESS"
+      ],
+      "expected_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "complexity": "very_high"
+    }
+  ],
+  "workflow_types": {
+    "monitoring_only": {
+      "level": 1,
+      "description": "Use monitoring agent only for anomaly detection and analysis",
+      "description_ko": "모니터링 에이전트만 사용하여 이상 감지 및 분석",
+      "agents": [
+        "Orchestration",
+        "Monitoring"
+      ],
+      "use_cases": [
+        "Real-time anomaly detection",
+        "Status analysis",
+        "Alarm generation"
+      ]
+    },
+    "monitoring_prediction": {
+      "level": 2,
+      "description": "Combine monitoring and prediction agents for anomaly detection and future state prediction",
+      "description_ko": "모니터링과 예측 에이전트를 결합하여 이상 감지 및 미래 상태 예측",
+      "agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "use_cases": [
+        "Anomaly trend analysis",
+        "Critical threshold arrival prediction",
+        "Early warning"
+      ]
+    },
+    "monitoring_prediction_control": {
+      "level": 3,
+      "description": "Combine monitoring, prediction, and auto control agents for proactive action",
+      "description_ko": "모니터링, 예측, 자동제어 에이전트를 결합하여 능동적 조치 수행",
+      "agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "use_cases": [
+        "Auto parameter adjustment",
+        "Process optimization",
+        "Defect rate reduction"
+      ]
+    },
+    "full_compliance": {
+      "level": 4,
+      "description": "Full agent utilization for monitoring, prediction, control, and compliance verification",
+      "description_ko": "전체 에이전트를 활용하여 모니터링, 예측, 제어, 규제 준수 검증까지 수행",
+      "agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl",
+        "Compliance"
+      ],
+      "use_cases": [
+        "Full autonomous manufacturing",
+        "Compliance verification",
+        "Safety standard confirmation"
+      ]
+    }
+  },
+  "industries": {
+    "semiconductor": {
+      "name": "Semiconductor Manufacturing",
+      "name_ko": "반도체 제조",
+      "processes": [
+        "CMP",
+        "Etching",
+        "Deposition",
+        "Full Process"
+      ],
+      "scenario_ids": [
+        "SCENARIO_01",
+        "SCENARIO_02",
+        "SCENARIO_03",
+        "SCENARIO_04"
+      ],
+      "key_challenges": [
+        "Nanoscale precision",
+        "Cleanroom environment",
+        "Complex multi-stage process"
+      ]
+    },
+    "chemical": {
+      "name": "Chemical Manufacturing",
+      "name_ko": "화학 제조",
+      "processes": [
+        "Reactor",
+        "Distillation",
+        "Refining",
+        "Full Process"
+      ],
+      "scenario_ids": [
+        "SCENARIO_05",
+        "SCENARIO_06",
+        "SCENARIO_07",
+        "SCENARIO_08"
+      ],
+      "key_challenges": [
+        "Hazardous material handling",
+        "Environmental regulations",
+        "Quality stability"
+      ]
+    },
+    "automotive": {
+      "name": "Automotive Manufacturing",
+      "name_ko": "자동차 제조",
+      "processes": [
+        "Welding",
+        "Painting",
+        "Press",
+        "Full Assembly"
+      ],
+      "scenario_ids": [
+        "SCENARIO_09",
+        "SCENARIO_10",
+        "SCENARIO_11",
+        "SCENARIO_12"
+      ],
+      "key_challenges": [
+        "Mass production",
+        "Quality consistency",
+        "Multi-variant handling"
+      ]
+    },
+    "battery": {
+      "name": "Battery Manufacturing",
+      "name_ko": "배터리 제조",
+      "processes": [
+        "Formation",
+        "Coating",
+        "Aging",
+        "Full Production"
+      ],
+      "scenario_ids": [
+        "SCENARIO_13",
+        "SCENARIO_14",
+        "SCENARIO_15",
+        "SCENARIO_16"
+      ],
+      "key_challenges": [
+        "Safety assurance",
+        "Energy density",
+        "Lifecycle management"
+      ]
+    },
+    "steel": {
+      "name": "Steel Manufacturing",
+      "name_ko": "철강 제조",
+      "processes": [
+        "Rolling",
+        "Converter",
+        "Casting",
+        "Full Production"
+      ],
+      "scenario_ids": [
+        "SCENARIO_17",
+        "SCENARIO_18",
+        "SCENARIO_19",
+        "SCENARIO_20"
+      ],
+      "key_challenges": [
+        "High temperature environment",
+        "Large-scale equipment",
+        "Quality uniformity"
+      ]
+    }
+  },
+  "testing_guidelines": {
+    "scenario_selection": "Select scenarios balanced by industry and workflow level",
+    "data_validation": "Verify sensor data file exists and format is correct for each scenario",
+    "api_testing": "Pass natural language query and timeseries data to PRISM API endpoints",
+    "result_verification": "Compare expected_answer with actual response, measure accuracy",
+    "performance_metrics": [
+      "Response time",
+      "Accuracy",
+      "Compliance verification",
+      "Auto control effectiveness"
+    ]
+  },
+  "notes": {
+    "dataset_generation": "Generate CSV datasets corresponding to each scenario based on test_data/sample_data_templates.json",
+    "api_endpoints": "Refer to api_endpoint.xlsx file to check API call structure for each agent",
+    "realistic_scenarios": "All scenarios are based on situations that can occur in actual manufacturing sites",
+    "korean_queries": "Natural language queries are written in Korean, with technical terms (process names, equipment names) in English"
+  }
+}

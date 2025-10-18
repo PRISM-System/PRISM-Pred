@@ -1,0 +1,50 @@
+{
+  "taskId": "2025",
+  "best_model": "TimesNet",
+  "feature_names": [
+    "HEAD_PRESSURE",
+    "RETAINER_PRESSURE",
+    "PLATEN_ROTATION",
+    "HEAD_ROTATION",
+    "SLURRY_FLOW_RATE",
+    "SLURRY_TEMP",
+    "PAD_TEMP",
+    "REMOVAL_RATE",
+    "MOTOR_CURRENT",
+    "CONDITIONER_PRESSURE",
+    "ENDPOINT_SIGNAL"
+  ],
+  "input_time_range": "2025-08-20 09:00:00~09:10:00",
+  "output_offsets": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "pred_len": 11,
+  "target_col": "MOTOR_CURRENT",
+  "prediction": [
+    15.833433,
+    15.90554,
+    14.821797,
+    15.100117,
+    15.736328,
+    15.582558,
+    14.177143,
+    16.229126,
+    15.714023,
+    15.244843,
+    15.905807
+  ],
+  "prediction_text": "15.833433, 15.905540, 14.821797, 15.100117, 15.736328, 15.582558, 14.177143, 16.229126, 15.714023, 15.244843, 15.905807",
+  "prediction_count": 11,
+  "weight_path": "/home/dm3/Jinju/AGI/outputs/TimesNet/ckpt.pt",
+  "saved_at": "2025-09-03T20:23:47Z"
+}

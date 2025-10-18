@@ -1,0 +1,419 @@
+{
+  "scenario_id": "SCENARIO_11",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "자동차 프레스 압력 최적 제어",
+    "title_en": "Automotive Press Force Optimal Control",
+    "industry": "automotive",
+    "process": "Press",
+    "workflow_type": "monitoring_prediction_control",
+    "workflow_level": 3,
+    "complexity": "high",
+    "description": "프레스 공정의 압력 이상을 감지하고 예측하여 최적 제어 방안을 자동으로 수행하는 시나리오"
+  },
+  "query": {
+    "text": "Press 공정의 PRESS_FORCE가 계속 증가하고 있어 금형 손상이 우려됩니다. 최적 제어 방안을 제시해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:10:00Z"
+    },
+    "user_id": "press_operator_03",
+    "priority": "critical"
+  },
+  "timeseries_data": {
+    "file": "automotive_press_003.csv",
+    "file_path": "test_data/automotive/automotive_press_003.csv",
+    "columns": [
+      "TIMESTAMP",
+      "PRESS_ID",
+      "PRESS_FORCE",
+      "DIE_TEMPERATURE",
+      "LUBRICATION_FLOW",
+      "BLANK_THICKNESS",
+      "RAM_SPEED",
+      "HOLDING_TIME",
+      "SPRINGBACK",
+      "PART_THICKNESS",
+      "QUALITY_SCORE"
+    ],
+    "key_variables": [
+      "PRESS_FORCE",
+      "DIE_TEMPERATURE",
+      "QUALITY_SCORE"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:10:00Z",
+      "total_points": 5100,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:10:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "Press 공정의 PRESS_FORCE가 계속 증가하고 있어 금형 손상이 우려됩니다. 최적 제어 방안을 제시해주세요.",
+        "session_id": "press_session_20250501_003",
+        "user_id": "press_operator_03",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "anomaly_detection_prediction_and_control",
+          "target_process": "press_stamping",
+          "target_variable": "PRESS_FORCE",
+          "action_required": "optimal_control_execution",
+          "urgency": "critical"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_prediction_control",
+          "reason": "User requests optimal control solution requiring monitoring, prediction, and automated control",
+          "required_agents": [
+            "Monitoring",
+            "Predictive",
+            "AutoControl"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "PRESS_TASK_20250501_003",
+          "subtasks": [
+            {
+              "subtask_id": "PRESS_TASK_20250501_003_1",
+              "name": "프레스 압력 이상 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "critical"
+            },
+            {
+              "subtask_id": "PRESS_TASK_20250501_003_2",
+              "name": "금형 손상 위험 예측",
+              "assigned_agent": "Predictive",
+              "priority": "critical",
+              "depends_on": "PRESS_TASK_20250501_003_1"
+            },
+            {
+              "subtask_id": "PRESS_TASK_20250501_003_3",
+              "name": "최적 제어 실행",
+              "assigned_agent": "AutoControl",
+              "priority": "critical",
+              "depends_on": "PRESS_TASK_20250501_003_2"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T14:10:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "PRESS_TASK_20250501_003_1",
+        "query": "프레스 PRESS_01~PRESS_04의 PRESS_FORCE 이상 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T14:10:00Z. 주요 변수: PRESS_FORCE, DIE_TEMPERATURE, QUALITY_SCORE"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:10:06Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### 프레스 압력 이상 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: 프레스 PRESS_01~PRESS_04\n- **분석 시간**: 2025-05-01 00:00:00 ~ 14:10:00 (14시간 10분)\n- **총 데이터 포인트**: 5,100건\n- **압력 상승 감지 시작**: 2025-05-01T13:00:00Z\n- **상승 지속 시간**: 1시간 10분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 PRESS_FORCE 지속 상승\n- **현상**: 지수 함수형 상승(exponential increase) 패턴\n- **현재값**: 2,850 kN (목표: 2,200-2,500 kN)\n- **초기값 (13:00)**: 2,380 kN\n- **상승량**: +470 kN (+19.7%)\n- **평균 변화율**: +6.71 kN/분\n- **최근 10분 변화율**: +12.3 kN/분 (가속 증가)\n- **추세**: 급격한 상승(accelerating)\n- **위험 수준**: 🔴 **매우 높음**\n\n##### 2.2 DIE_TEMPERATURE 급등\n- **현재값**: 178.3°C (목표: 140-160°C)\n- **초기값 (13:00)**: 152.1°C\n- **상승량**: +26.2°C\n- **PRESS_FORCE와 상관계수**: 0.91 (매우 강한 양의 상관관계)\n- **해석**: 압력 증가로 인한 마찰열 발생 증가\n\n##### 2.3 품질 점수 급락\n- **QUALITY_SCORE 현재 평균**: 78.2 (목표치: 85 이상)\n- **13:00 이전 평균**: 88.7\n- **저하율**: -11.8%\n- **추세**: 급락(plummeting)\n- **불량 건수**: 67건 (압력 상승 이후)\n\n##### 2.4 LUBRICATION_FLOW 감소\n- **현재값**: 2.1 L/min (목표: 3.0-3.5 L/min)\n- **초기값**: 3.2 L/min\n- **감소율**: -34.4%\n- **해석**: 윤활 부족이 압력 증가의 주요 원인 가능\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **윤활유 공급 시스템 고장** (가능성: 매우 높음)\n   - LUBRICATION_FLOW 34% 감소\n   - 압력과 온도의 동시 급증\n   - 윤활 펌프 또는 필터 막힘 의심\n   \n**부차적 원인**:\n2. **금형 표면 마모** (가능성: 높음)\n   - 윤활 부족으로 인한 2차 손상\n   - DIE_TEMPERATURE 18°C 초과\n   \n3. **소재 두께 편차** (가능성: 낮음)\n   - BLANK_THICKNESS는 정상 범위 (0.8±0.02 mm)\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 13:00 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| PRESS_FORCE | 2,380 kN | 2,850 kN | +470 kN | 2,200-2,500 kN | 🔴 심각 초과 |\n| DIE_TEMPERATURE | 152.1°C | 178.3°C | +26.2°C | 140-160°C | 🔴 심각 초과 |\n| LUBRICATION_FLOW | 3.2 L/min | 2.1 L/min | -1.1 L/min | 3.0-3.5 L/min | 🔴 심각 미달 |\n| QUALITY_SCORE | 88.7 | 78.2 | -10.5 | ≥85 | 🔴 심각 미달 |\n| RAM_SPEED | 25.2 mm/s | 25.1 mm/s | -0.1 | 24-26 mm/s | ✅ 정상 |\n| SPRINGBACK | 2.3 mm | 3.8 mm | +1.5 mm | 2.0-2.5 mm | ⚠️ 초과 |\n\n#### 💥 5. 임계 위험 분석\n\n**금형 손상 임계치**: 3,000 kN\n- **현재값**: 2,850 kN (95% 도달)\n- **임계치까지 여유**: 150 kN (5.3%)\n- **현재 상승률**: +12.3 kN/분\n- **⏰ 예상 도달 시간**: **약 12분 후** (2025-05-01T14:22:00Z)\n\n**즉각 조치 미실행 시 리스크**:\n- 금형 균열 또는 파손 가능성: **85%**\n- 금형 교체 비용: 약 **48,000,000원**\n- 생산 중단 시간: 최소 **72시간**\n- 예상 손실: 약 **120,000,000원**\n\n#### 💡 6. 긴급 권장 조치\n\n**즉시 조치 (우선순위: 최고 긴급)**\n1. 윤활유 공급 시스템 긴급 점검\n   - 윤활 펌프 동작 상태 확인\n   - 필터 막힘 여부 점검\n   - 윤활유 레벨 확인\n   \n2. **자동 제어 필요**: PRESS_FORCE 감소를 위한 공정 파라미터 조정\n   - RAM_SPEED 감속\n   - HOLDING_TIME 단축\n   - BLANK_THICKNESS 보정\n   \n⚠️ **Predictive Agent를 통한 금형 손상 위험 예측 및 AutoControl Agent를 통한 긴급 제어 실행 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T14:10:06Z  \n**분석 소요 시간**: 5.3초  \n**신뢰도**: 94%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T14:10:07Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "PRESS_TASK_20250501_003_2",
+        "timeRange": {
+          "start": "2025-05-01T13:00:00Z",
+          "end": "2025-05-01T14:10:00Z"
+        },
+        "sensor_name": "PRESS_01,PRESS_02,PRESS_03,PRESS_04",
+        "target_cols": [
+          "PRESS_FORCE",
+          "DIE_TEMPERATURE",
+          "QUALITY_SCORE"
+        ],
+        "feature_cols": [
+          "PRESS_FORCE",
+          "DIE_TEMPERATURE",
+          "LUBRICATION_FLOW",
+          "RAM_SPEED",
+          "HOLDING_TIME",
+          "SPRINGBACK"
+        ],
+        "prediction_horizon_minutes": 30,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:10:13Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 금형 손상 위험 예측 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T14:10:00Z\n- **예측 종료 시각**: 2025-05-01T14:40:00Z\n- **예측 기간**: 30분\n- **예측 간격**: 5분\n- **사용 모델**: LSTM (Long Short-Term Memory)\n- **신뢰 구간**: 95%\n\n#### 📈 2. PRESS_FORCE 예측 결과\n\n| 시각 | 예측값 (kN) | 95% 신뢰구간 | 임계치 대비 | 위험도 |\n|------|------------|-------------|------------|--------|\n| 14:10 (현재) | 2,850 | - | 95.0% | 🔴 위험 |\n| 14:15 | 2,911 | [2,887, 2,935] | 97.0% | 🔴 매우 위험 |\n| 14:20 | 2,976 | [2,945, 3,007] | 99.2% | 🔴 임계 |\n| 14:25 | 3,045 | [3,006, 3,084] | 101.5% | 💥 **초과** |\n| 14:30 | 3,118 | [3,071, 3,165] | 103.9% | 💥 **초과** |\n| 14:35 | 3,196 | [3,141, 3,251] | 106.5% | 💥 **초과** |\n| 14:40 | 3,279 | [3,216, 3,342] | 109.3% | 💥 **초과** |\n\n**💥 임계치(3,000 kN) 도달 예상 시각**: **2025-05-01T14:23:00Z** (약 13분 후)\n\n#### 🌡️ 3. DIE_TEMPERATURE 예측 결과\n\n| 시각 | 예측값 (°C) | 95% 신뢰구간 | 목표 범위 대비 | 금형 손상 위험 |\n|------|------------|-------------|---------------|---------------|\n| 14:10 (현재) | 178.3 | - | +18.3°C | 중간 |\n| 14:15 | 182.7 | [180.2, 185.2] | +22.7°C | 높음 |\n| 14:20 | 187.4 | [184.3, 190.5] | +27.4°C | 매우 높음 |\n| 14:25 | 192.5 | [188.7, 196.3] | +32.5°C | 심각 |\n| 14:30 | 198.1 | [193.5, 202.7] | +38.1°C | 심각 |\n| 14:35 | 204.2 | [198.6, 209.8] | +44.2°C | 치명적 |\n| 14:40 | 210.8 | [204.1, 217.5] | +50.8°C | 치명적 |\n\n**⚠️ 금형 열화 임계온도(200°C)**: **2025-05-01T14:31:00Z** (약 21분 후)\n\n#### 📉 4. QUALITY_SCORE 예측 결과\n\n| 시각 | 예측값 | 불량률 (%) | 예상 손실 (천원/시간) |\n|------|--------|-----------|---------------------|\n| 14:10 (현재) | 78.2 | 15.3% | 8,200 |\n| 14:15 | 75.8 | 18.7% | 10,500 |\n| 14:20 | 73.1 | 22.5% | 13,100 |\n| 14:25 | 70.2 | 26.8% | 16,200 |\n| 14:30 | 67.0 | 31.5% | 19,800 |\n| 14:35 | 63.5 | 36.8% | 24,100 |\n| 14:40 | 59.7 | 42.7% | 29,200 |\n\n#### 🎯 5. 금형 손상 확률 예측\n\n**시간대별 금형 손상 확률**:\n- **14:10-14:20**: 12.3% (현재-10분 후)\n- **14:20-14:30**: 47.8% (10-20분 후)\n- **14:30-14:40**: 82.5% (20-30분 후)\n\n**누적 금형 손상 확률**:\n- **30분 내**: **91.2%**\n\n#### 💡 6. 제어 필요성 분석\n\n**조치 시나리오별 효과 예측**:\n\n**시나리오 A: 즉시 제어 실행 (AutoControl Agent)**\n- **조치 시각**: 지금 즉시 (14:10)\n- **목표**: PRESS_FORCE를 2,400 kN으로 감소\n- **제어 변수**: RAM_SPEED -15%, HOLDING_TIME -20%\n- **예상 효과**:\n  - 15분 내 PRESS_FORCE 2,400 kN 달성\n  - DIE_TEMPERATURE 165°C까지 하강\n  - 금형 손상 확률 < 5%\n  - 품질 점수 82점 회복\n- **예상 손실**: 약 1,200,000원 (불량품)\n- **금형 손상 방지**: 약 **120,000,000원 절감**\n\n**시나리오 B: 10분 후 조치 (비권장)**\n- **조치 시각**: 14:20\n- **시점**: 임계치 99.2% 도달 상태\n- **예상 효과**: 제어 지연으로 금형 손상 확률 35%\n- **예상 손실**: 약 42,000,000원 (금형 수리 필요 가능성)\n\n**시나리오 C: 조치 없음 (매우 위험)**\n- **30분 후 상황**: PRESS_FORCE 3,279 kN (109% 초과)\n- **금형 손상 확률**: 91.2%\n- **예상 손실**: 약 **120,000,000원** (금형 교체 + 생산 중단)\n- **생산 중단**: 최소 72시간\n\n#### 📊 7. 제어 목표 설정\n\n**AutoControl Agent 권장 설정**:\n- **제어 목표**: PRESS_FORCE = 2,400 kN\n- **제어 제약조건**:\n  - RAM_SPEED: 21.0-25.0 mm/s (현재 25.1 mm/s)\n  - HOLDING_TIME: 1.8-2.5 s (현재 3.0 s)\n  - LUBRICATION_FLOW: 3.0 L/min 이상 (현재 2.1 L/min)\n- **제어 우선순위**: 1) 윤활 회복, 2) 속도 감속, 3) 대기 시간 단축\n\n⚡ **긴급 AutoControl 실행 권장**\n\n---\n**예측 완료 시각**: 2025-05-01T14:10:13Z  \n**예측 소요 시간**: 6.2초  \n**모델 신뢰도**: 93%"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration",
+      "to": "AutoControl",
+      "timestamp": "2025-05-01T14:10:14Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "taskId": "PRESS_TASK_20250501_003_3",
+        "feature_names": [
+          "RAM_SPEED",
+          "HOLDING_TIME",
+          "LUBRICATION_FLOW"
+        ],
+        "target_col": "PRESS_FORCE",
+        "control_setpoint": 2400,
+        "control_horizon_minutes": 15,
+        "constraints": {
+          "RAM_SPEED": {
+            "min": 21.0,
+            "max": 25.0,
+            "unit": "mm/s"
+          },
+          "HOLDING_TIME": {
+            "min": 1.8,
+            "max": 2.5,
+            "unit": "s"
+          },
+          "LUBRICATION_FLOW": {
+            "min": 3.0,
+            "max": 3.5,
+            "unit": "L/min"
+          }
+        },
+        "optimization_objective": "minimize_deviation_and_risk",
+        "safety_mode": true,
+        "simulation_before_apply": true
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:10:19Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct (response)",
+      "response": {
+        "result": "### 최적 제어 실행 결과\n\n---\n\n#### ⚙️ 1. 제어 실행 개요\n- **제어 시작 시각**: 2025-05-01T14:10:14Z\n- **제어 목표**: PRESS_FORCE를 2,400 kN으로 감소\n- **제어 방식**: Model Predictive Control (MPC)\n- **안전 모드**: 활성화 (시뮬레이션 검증 완료)\n- **제어 적용 상태**: ✅ **실행 완료**\n\n#### 🎯 2. 계산된 최적 제어값\n\n| 제어 변수 | 현재값 | 목표값 | 변화량 | 조정률 |\n|----------|--------|--------|--------|--------|\n| **RAM_SPEED** | 25.1 mm/s | 21.3 mm/s | -3.8 mm/s | -15.1% |\n| **HOLDING_TIME** | 3.0 s | 2.4 s | -0.6 s | -20.0% |\n| **LUBRICATION_FLOW** | 2.1 L/min | 3.2 L/min | +1.1 L/min | +52.4% |\n\n#### 📊 3. 시뮬레이션 예측 결과 (제어 적용 시)\n\n**PRESS_FORCE 변화 예측**:\n| 시각 | 예측값 (kN) | 목표 대비 | 상태 |\n|------|------------|----------|------|\n| 14:10 (현재) | 2,850 | +450 kN | 🔴 초과 |\n| 14:15 (제어 5분) | 2,682 | +282 kN | ⚠️ 감소 중 |\n| 14:20 (제어 10분) | 2,521 | +121 kN | ⚠️ 감소 중 |\n| 14:25 (제어 15분) | 2,405 | +5 kN | ✅ 목표 달성 |\n| 14:30 (제어 20분) | 2,398 | -2 kN | ✅ 안정 |\n\n**DIE_TEMPERATURE 변화 예측**:\n| 시각 | 예측값 (°C) | 목표 범위 대비 | 상태 |\n|------|------------|---------------|------|\n| 14:10 (현재) | 178.3 | +18.3°C | 🔴 초과 |\n| 14:15 | 173.2 | +13.2°C | ⚠️ 하강 중 |\n| 14:20 | 167.5 | +7.5°C | ⚠️ 하강 중 |\n| 14:25 | 161.8 | +1.8°C | ✅ 거의 정상 |\n| 14:30 | 156.4 | -3.6°C | ✅ 정상 범위 |\n\n**QUALITY_SCORE 회복 예측**:\n| 시각 | 예측값 | 불량률 (%) | 상태 |\n|------|--------|-----------|------|\n| 14:10 (현재) | 78.2 | 15.3% | 🔴 미달 |\n| 14:15 | 80.1 | 12.8% | ⚠️ 회복 중 |\n| 14:20 | 81.8 | 10.5% | ⚠️ 회복 중 |\n| 14:25 | 83.5 | 8.1% | ⚠️ 회복 중 |\n| 14:30 | 85.2 | 5.7% | ✅ 목표 달성 |\n\n#### 💰 4. 경제적 효과 분석\n\n**제어 실행 효과**:\n- **금형 손상 방지**: 약 **120,000,000원** 절감\n- **품질 불량 감소**: 약 **18,500,000원** 절감 (30분간 불량률 감소)\n- **생산 중단 방지**: 72시간 생산 유지 (기회비용 약 **85,000,000원**)\n- **총 예상 효과**: 약 **223,500,000원**\n\n**제어 실행 비용**:\n- **불량품 손실** (제어 안정화 기간): 약 1,200,000원\n- **제어 시스템 운영비**: 약 50,000원\n- **총 비용**: 약 1,250,000원\n\n**순 효과**: 약 **222,250,000원** 절감\n\n#### 🛡️ 5. 안전성 검증\n\n**제어 안전성 체크리스트**:\n- ✅ 모든 제어값이 안전 제약조건 내\n- ✅ 급격한 파라미터 변화 없음 (변화율 < 20%/분)\n- ✅ 시뮬레이션 검증 완료 (100회 Monte Carlo)\n- ✅ 금형 손상 확률 < 5%\n- ✅ 생산 연속성 유지 가능\n\n**위험 완화 조치**:\n- RAM_SPEED 점진적 감속 (급정지 방지)\n- LUBRICATION_FLOW 우선 회복 (즉시 윤활 개선)\n- HOLDING_TIME 단계적 단축 (품질 안정성 확보)\n\n#### 📌 6. 모니터링 및 후속 조치\n\n**실시간 모니터링 항목**:\n1. PRESS_FORCE 추이 (5분 간격)\n2. DIE_TEMPERATURE 변화\n3. QUALITY_SCORE 회복 상태\n4. LUBRICATION_FLOW 안정성\n\n**후속 조치 권장사항**:\n1. **즉시 (14:10)**\n   - 윤활 펌프 정밀 점검\n   - 윤활유 필터 교체\n   - 윤활유 레벨 보충\n\n2. **1시간 이내 (15:00)**\n   - 금형 표면 상태 육안 검사\n   - 압력 센서 교정 확인\n   - 제어 효과 검증\n\n3. **24시간 이내**\n   - 금형 정밀 측정 (마모, 균열 여부)\n   - 윤활 시스템 전체 점검\n   - 예방 정비 스케줄 수립\n\n#### ✅ 7. 제어 실행 결과 요약\n\n- **제어 상태**: ✅ **성공적으로 실행됨**\n- **목표 달성 예상 시간**: 15분 (2025-05-01T14:25:00Z)\n- **금형 손상 방지**: ✅ **확인됨** (손상 확률 < 5%)\n- **생산 연속성**: ✅ **유지됨**\n- **품질 회복**: ✅ **예상됨** (20분 내 목표치 달성)\n\n---\n**제어 완료 시각**: 2025-05-01T14:10:19Z  \n**제어 소요 시간**: 5.1초  \n**제어 신뢰도**: 95%"
+      }
+    },
+    "step_8_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T14:10:20Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "press_session_20250501_003",
+        "final_answer": "프레스 압력이 2,850 kN으로 임계치(3,000 kN)의 95%에 도달하여 금형 손상 위험이 매우 높은 상태입니다. 윤활유 공급 시스템 고장이 주요 원인으로 확인되었으며, 조치 없이 13분 후 금형 손상 확률이 91.2%에 이릅니다. 최적 제어를 즉시 실행하여 RAM_SPEED를 15% 감속하고 LUBRICATION_FLOW를 52% 증가시킨 결과, 15분 내 목표 압력(2,400 kN) 달성이 예상되며 약 2억 2천만원의 손실을 방지할 수 있습니다. 제어가 성공적으로 적용되었으며, 즉시 윤활 펌프 및 필터를 점검하시기 바랍니다.",
+        "final_markdown": "### 프레스 압력 최적 제어 실행 결과\n\n(상세 내용은 monitoring, prediction, autocontrol response 참조)",
+        "task_history": [
+          {
+            "id": "PRESS_TASK_20250501_003_1",
+            "name": "프레스 압력 이상 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:10:06Z"
+          },
+          {
+            "id": "PRESS_TASK_20250501_003_2",
+            "name": "금형 손상 위험 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:10:13Z"
+          },
+          {
+            "id": "PRESS_TASK_20250501_003_3",
+            "name": "최적 제어 실행",
+            "assigned_agent_id": "AutoControl",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:10:19Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive",
+          "AutoControl"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "current_press_force": 2850,
+            "critical_threshold": 3000,
+            "utilization_percent": 95.0,
+            "root_cause": "lubrication_system_failure"
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 30,
+            "critical_threshold_time": "2025-05-01T14:23:00Z",
+            "die_damage_probability": 91.2,
+            "confidence": 0.93
+          },
+          {
+            "tool": "AutoControl",
+            "status": "success",
+            "control_applied": true,
+            "target_achievement_time_minutes": 15,
+            "expected_loss_prevention_krw": 222250000,
+            "safety_verified": true,
+            "confidence": 0.95
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "프레스 압력이 현재 2,850 kN으로 임계치의 95%에 도달하여 13분 후 금형 손상 확률이 91.2%에 이릅니다. 윤활유 공급 시스템 고장이 주요 원인이며, 최적 제어를 통해 RAM_SPEED 15% 감속, HOLDING_TIME 20% 단축, LUBRICATION_FLOW 52% 증가 조치를 실행하여 15분 내 목표 압력(2,400 kN) 달성 및 약 2억 2천만원의 손실을 방지할 수 있습니다.",
+    "detected_issues": [
+      {
+        "issue": "PRESS_FORCE 급격한 상승",
+        "severity": "critical",
+        "description": "2,380 kN에서 2,850 kN으로 1시간 10분간 상승, 임계치 95% 도달",
+        "affected_timeframe": "2025-05-01T13:00:00Z ~ 2025-05-01T14:10:00Z",
+        "current_value": 2850,
+        "critical_threshold": 3000,
+        "time_to_critical_minutes": 13
+      },
+      {
+        "issue": "윤활유 공급 시스템 고장",
+        "severity": "critical",
+        "description": "LUBRICATION_FLOW가 3.2 L/min에서 2.1 L/min으로 34% 감소",
+        "root_cause": true
+      },
+      {
+        "issue": "금형 온도 급등",
+        "severity": "high",
+        "description": "DIE_TEMPERATURE가 152.1°C에서 178.3°C로 26.2°C 상승",
+        "thermal_damage_risk": "high"
+      }
+    ],
+    "predictions": [
+      {
+        "target": "PRESS_FORCE",
+        "prediction_horizon_minutes": 30,
+        "critical_event": {
+          "description": "임계치(3,000 kN) 도달",
+          "expected_time": "2025-05-01T14:23:00Z",
+          "time_until_event_minutes": 13
+        },
+        "final_predicted_value_no_control": 3279,
+        "die_damage_probability": 91.2,
+        "confidence": 0.93
+      },
+      {
+        "target": "PRESS_FORCE",
+        "scenario": "with_control",
+        "prediction_horizon_minutes": 20,
+        "expected_value_at_15min": 2405,
+        "target_achievement": true,
+        "die_damage_probability_with_control": 4.8
+      }
+    ],
+    "control_actions": [
+      {
+        "priority": "critical",
+        "action": "최적 제어 실행 (AutoControl)",
+        "control_variables": {
+          "RAM_SPEED": {
+            "from": 25.1,
+            "to": 21.3,
+            "unit": "mm/s",
+            "change_percent": -15.1
+          },
+          "HOLDING_TIME": {
+            "from": 3.0,
+            "to": 2.4,
+            "unit": "s",
+            "change_percent": -20.0
+          },
+          "LUBRICATION_FLOW": {
+            "from": 2.1,
+            "to": 3.2,
+            "unit": "L/min",
+            "change_percent": 52.4
+          }
+        },
+        "expected_effect": "15분 내 PRESS_FORCE 2,400 kN 달성, 금형 손상 방지",
+        "economic_impact": "약 222,250,000원 손실 방지",
+        "status": "executed",
+        "safety_verified": true
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "urgent",
+        "action": "윤활 펌프 및 필터 긴급 점검",
+        "details": "펌프 동작 확인, 필터 교체, 윤활유 레벨 보충",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "high",
+        "action": "금형 표면 상태 검사",
+        "details": "육안 검사, 정밀 측정 (마모, 균열 여부)",
+        "implementation_time": "1시간 이내"
+      },
+      {
+        "priority": "medium",
+        "action": "제어 효과 모니터링",
+        "details": "5분 간격 PRESS_FORCE, DIE_TEMPERATURE, QUALITY_SCORE 추적",
+        "implementation_time": "지속"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 5300,
+      "prediction_time_ms": 6200,
+      "autocontrol_time_ms": 5100,
+      "total_analysis_time_ms": 16600,
+      "data_points_analyzed": 5100,
+      "prediction_horizon_minutes": 30,
+      "control_horizon_minutes": 15,
+      "model_accuracy_rmse": 18.7,
+      "control_confidence": 0.95,
+      "expected_loss_prevention_krw": 222250000
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration",
+      "AutoControl",
+      "Orchestration"
+    ],
+    "expected_agents_count": 4,
+    "should_predict": true,
+    "should_control": true,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct",
+      "POST /api/v1/autocontrol/run-direct"
+    ]
+  }
+}

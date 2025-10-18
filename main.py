@@ -207,7 +207,7 @@ class NLParsedResponse(BaseModel):
     data: DirectSpec
     metadata: Dict[str, str]
 
-llm = LLMBridge(base_url= os.getenv("OPENAI_BASE_URL"), model= os.getenv("OPENAI_MODEL") , api_key="EMPTY")
+llm = LLMBridge(base_url= os.getenv("OPENAI_BASE_URL"), model= os.getenv("OPENAI_MODEL") , api_key=os.getenv("OPENAI_API_KEY"))#"EMPTY")
 
 @app.post("/api/v1/prediction/request-processing", response_model=NLParsedResponse, tags=["Prediction"])
 def nl_parse(body: NLRequest):

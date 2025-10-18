@@ -1,0 +1,1094 @@
+{
+  "scenario_id": "SCENARIO_15",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "배터리 에이징 공정 SOH 최적 제어",
+    "title_en": "Battery Aging Process SOH Optimal Control",
+    "industry": "battery",
+    "process": "Aging",
+    "workflow_type": "monitoring_prediction_control",
+    "workflow_level": 3,
+    "complexity": "high",
+    "description": "배터리 에이징(Aging) 공정에서 SOH(State of Health, 건강 상태)가 예상보다 빠르게 저하되는 현상을 감지하고, 향후 저하 추이를 예측하여 최적 에이징 조건(온도, 습도)을 자동으로 조정하는 시나리오. 에이징은 배터리 초기 불량 제거 및 성능 안정화를 위한 핵심 공정임",
+    "description_en": "Scenario for detecting faster-than-expected SOH (State of Health) degradation in battery aging process, predicting future degradation trend, and automatically adjusting optimal aging conditions (temperature, humidity). Aging is a critical process for initial defect screening and performance stabilization",
+    "tags": [
+      "battery",
+      "aging",
+      "soh",
+      "temperature_control",
+      "humidity_control",
+      "quality_optimization"
+    ]
+  },
+  "query": {
+    "text": "에이징 챔버의 배터리 SOH가 예상보다 빠르게 저하되고 있습니다. 자동으로 조건을 최적화해주세요.",
+    "text_en": "Battery SOH in aging chamber is degrading faster than expected. Please automatically optimize the conditions.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T12:00:00Z"
+    },
+    "user_id": "battery_quality_engineer_03",
+    "priority": "high",
+    "expected_workflow": "monitoring_prediction_control"
+  },
+  "timeseries_data": {
+    "source_file": "/test_data/battery/aging_data.csv",
+    "parameters": [
+      {
+        "name": "SOH",
+        "unit": "%",
+        "description": "배터리 건강 상태",
+        "normal_range": [
+          98,
+          100
+        ],
+        "critical_threshold": 95
+      },
+      {
+        "name": "SOC",
+        "unit": "%",
+        "description": "충전 상태",
+        "normal_range": [
+          40,
+          60
+        ],
+        "critical_threshold": 70
+      },
+      {
+        "name": "CAPACITY",
+        "unit": "mAh",
+        "description": "실제 용량",
+        "normal_range": [
+          2950,
+          3050
+        ],
+        "critical_threshold": 2900
+      },
+      {
+        "name": "TEMPERATURE",
+        "unit": "°C",
+        "description": "에이징 챔버 온도",
+        "normal_range": [
+          40,
+          50
+        ],
+        "critical_threshold": 55
+      },
+      {
+        "name": "HUMIDITY",
+        "unit": "%",
+        "description": "에이징 챔버 습도",
+        "normal_range": [
+          30,
+          50
+        ],
+        "critical_threshold": 60
+      },
+      {
+        "name": "AGING_DAYS",
+        "unit": "days",
+        "description": "에이징 경과 일수",
+        "normal_range": [
+          0,
+          14
+        ],
+        "critical_threshold": 21
+      }
+    ],
+    "sampling_interval": "10s",
+    "data_points": 4320,
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T12:00:00Z"
+    },
+    "anomaly_info": {
+      "type": "soh_accelerated_degradation",
+      "description": "SOH가 99.8%에서 97.2%로 예상보다 빠르게 감소",
+      "start_time": "2025-05-01T06:00:00Z",
+      "peak_time": "2025-05-01T12:00:00Z",
+      "affected_parameters": [
+        "SOH",
+        "CAPACITY",
+        "TEMPERATURE"
+      ]
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T12:00:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "에이징 챔버의 배터리 SOH가 예상보다 빠르게 저하되고 있습니다. 자동으로 조건을 최적화해주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T12:00:00Z"
+        },
+        "user_id": "battery_quality_engineer_03",
+        "priority": "high"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "workflow_type": "monitoring_prediction_control",
+        "message": "배터리 에이징 공정 SOH 최적 제어 워크플로우를 시작합니다.",
+        "next_agent": "Monitoring Agent"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration Agent",
+      "to": "Monitoring Agent",
+      "timestamp": "2025-05-01T12:00:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "workflow_type": "monitoring_prediction_control",
+        "task": "analyze_soh_degradation",
+        "query": {
+          "text": "에이징 챔버의 배터리 SOH가 예상보다 빠르게 저하되고 있습니다. 자동으로 조건을 최적화해주세요.",
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T12:00:00Z"
+          }
+        },
+        "context": {
+          "industry": "battery",
+          "process": "Aging",
+          "priority": "high"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "agent": "Monitoring Agent",
+        "analysis_result": {
+          "anomaly_detected": true,
+          "anomaly_type": "soh_accelerated_degradation",
+          "severity": "high",
+          "affected_parameters": [
+            {
+              "name": "SOH",
+              "current_value": 97.2,
+              "normal_range": [
+                98,
+                100
+              ],
+              "expected_value": 99.5,
+              "deviation": -2.3,
+              "status": "below_target"
+            },
+            {
+              "name": "SOC",
+              "current_value": 48.5,
+              "normal_range": [
+                40,
+                60
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "CAPACITY",
+              "current_value": 2915,
+              "normal_range": [
+                2950,
+                3050
+              ],
+              "expected_value": 2985,
+              "deviation": -70,
+              "status": "below_target"
+            },
+            {
+              "name": "TEMPERATURE",
+              "current_value": 48.2,
+              "normal_range": [
+                40,
+                50
+              ],
+              "target_value": 45,
+              "deviation": 3.2,
+              "status": "above_optimal"
+            },
+            {
+              "name": "HUMIDITY",
+              "current_value": 45.8,
+              "normal_range": [
+                30,
+                50
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "AGING_DAYS",
+              "current_value": 7,
+              "normal_range": [
+                0,
+                14
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            }
+          ],
+          "trend_analysis": {
+            "SOH": {
+              "direction": "decreasing",
+              "rate": -0.433,
+              "duration": "6 hours",
+              "statistical_significance": 0.97,
+              "expected_rate": -0.05,
+              "acceleration_factor": 8.66
+            },
+            "CAPACITY": {
+              "direction": "decreasing",
+              "rate": -11.67,
+              "duration": "6 hours",
+              "correlation_with_soh": 0.94
+            },
+            "TEMPERATURE": {
+              "direction": "stable_high",
+              "average": 48.2,
+              "target": 45.0,
+              "deviation": 3.2,
+              "correlation_with_soh_degradation": 0.76
+            }
+          },
+          "root_cause_hypothesis": [
+            "과도한 에이징 온도로 인한 가속 열화",
+            "높은 온도에서 SEI 층 과성장",
+            "전해액 분해 가속화",
+            "리튬 이온 확산 장벽 증가",
+            "초기 불량 셀 혼입 (제조 공정 결함)"
+          ],
+          "quality_impact": {
+            "expected_soh_at_7days": 99.5,
+            "actual_soh_at_7days": 97.2,
+            "soh_deficit": 2.3,
+            "grade_downgrade_risk": "high",
+            "estimated_lifespan_reduction": "약 15-20%"
+          },
+          "recommendation": "예측 분석 및 온도/습도 최적화 필요",
+          "summary_report": "## 배터리 에이징 공정 SOH 저하 분석 결과\n\n### 이상 감지\n- **이상 유형**: SOH 가속 저하 (Accelerated Degradation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 12:00:00 UTC\n\n### 주요 지표 현황\n| 파라미터 | 현재값 | 예상값 | 정상범위 | 편차 | 상태 |\n|---------|--------|--------|----------|------|------|\n| SOH | 97.2% | 99.5% | 98-100% | -2.3%p | ⚠️ 목표 미달 |\n| 실제 용량 | 2915 mAh | 2985 mAh | 2950-3050 mAh | -70 mAh | ⚠️ 목표 미달 |\n| 챔버 온도 | 48.2°C | 45°C | 40-50°C | +3.2°C | ⚠️ 최적 초과 |\n| 챔버 습도 | 45.8% | - | 30-50% | 0 | ✅ 정상 |\n| 충전 상태 | 48.5% | - | 40-60% | 0 | ✅ 정상 |\n| 에이징 일수 | 7일 | - | 0-14일 | 0 | ✅ 정상 |\n\n### 추세 분석\n- **SOH 감소율**: -0.433%/시간 (지난 6시간 동안)\n- **예상 감소율**: -0.05%/시간 (정상)\n- **가속 계수**: **8.66배** (정상 대비)\n- **용량 감소율**: -11.67 mAh/시간\n- **SOH-용량 상관관계**: 0.94 (매우 강한 양의 상관)\n\n### 온도 영향 분석\n- **평균 온도**: 48.2°C (목표: 45°C)\n- **온도 편차**: +3.2°C\n- **온도-SOH 저하 상관관계**: 0.76 (강한 양의 상관)\n- **해석**: 과도한 온도가 SOH 가속 저하의 주요 원인으로 추정\n\n### 원인 가설\n1. **과도한 에이징 온도** (가능성 매우 높음)\n   - 48.2°C는 최적 온도(45°C)보다 3.2°C 높음\n   - 높은 온도에서 화학 반응 가속화\n   - 열화 속도가 온도에 지수적으로 비례\n\n2. **SEI 층 과성장**\n   - 높은 온도에서 SEI 층이 과도하게 성장\n   - 리튬 이온 확산 저항 증가\n\n3. **전해액 분해 가속화**\n   - 고온에서 전해액 분해 반응 촉진\n   - 가스 발생 및 내부 압력 증가\n\n4. **리튬 이온 확산 장벽 증가**\n   - 전극 구조 변화로 이온 이동 경로 차단\n\n5. **초기 불량 셀**\n   - 제조 공정 결함으로 인한 조기 열화\n\n### 품질 영향\n- **예상 SOH (7일차)**: 99.5%\n- **실제 SOH (7일차)**: 97.2%\n- **SOH 결손**: 2.3%p\n- **등급 강등 위험**: 높음 (A급 → B급)\n- **수명 감소 예상**: 약 15-20%\n\n### 권고사항\n예측 분석을 통한 향후 SOH 추이 파악 및 에이징 온도/습도 최적화가 필요합니다."
+        },
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T12:00:25Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "status": "monitoring_completed",
+        "monitoring_result": {
+          "status": "success",
+          "workflow_id": "wf_battery_aging_003",
+          "agent": "Predictive Agent",
+          "prediction_result": {
+            "forecast_completed": true,
+            "model_used": "Physics-based Battery Degradation Model",
+            "model_accuracy": 0.91,
+            "forecast_horizon": "7 days",
+            "predictions": [
+              {
+                "day": 8,
+                "timestamp": "2025-05-02T00:00:00Z",
+                "SOH_no_control": {
+                  "predicted_value": 96.0,
+                  "confidence_interval": [
+                    95.7,
+                    96.3
+                  ],
+                  "confidence_level": 0.95
+                },
+                "CAPACITY_no_control": {
+                  "predicted_value": 2880,
+                  "confidence_interval": [
+                    2865,
+                    2895
+                  ],
+                  "confidence_level": 0.95
+                }
+              },
+              {
+                "day": 10,
+                "timestamp": "2025-05-03T00:00:00Z",
+                "SOH_no_control": {
+                  "predicted_value": 94.1,
+                  "confidence_interval": [
+                    93.6,
+                    94.6
+                  ],
+                  "confidence_level": 0.95
+                },
+                "CAPACITY_no_control": {
+                  "predicted_value": 2823,
+                  "confidence_interval": [
+                    2805,
+                    2841
+                  ],
+                  "confidence_level": 0.95
+                }
+              },
+              {
+                "day": 12,
+                "timestamp": "2025-05-05T00:00:00Z",
+                "SOH_no_control": {
+                  "predicted_value": 92.3,
+                  "confidence_interval": [
+                    91.7,
+                    92.9
+                  ],
+                  "confidence_level": 0.95
+                },
+                "CAPACITY_no_control": {
+                  "predicted_value": 2769,
+                  "confidence_interval": [
+                    2748,
+                    2790
+                  ],
+                  "confidence_level": 0.95
+                }
+              },
+              {
+                "day": 14,
+                "timestamp": "2025-05-07T00:00:00Z",
+                "SOH_no_control": {
+                  "predicted_value": 90.6,
+                  "confidence_interval": [
+                    89.8,
+                    91.4
+                  ],
+                  "confidence_level": 0.95
+                },
+                "CAPACITY_no_control": {
+                  "predicted_value": 2718,
+                  "confidence_interval": [
+                    2694,
+                    2742
+                  ],
+                  "confidence_level": 0.95
+                }
+              }
+            ],
+            "quality_forecast": {
+              "grade_classification": {
+                "day_14_no_control": "C급 (SOH 90.6%)",
+                "target_grade": "A급 (SOH ≥ 98%)",
+                "grade_downgrade": "A급 → C급 (2단계 강등)"
+              },
+              "defect_risk": {
+                "early_failure_probability": 0.68,
+                "warranty_claim_risk": "high",
+                "customer_satisfaction_impact": "severe"
+              }
+            },
+            "economic_impact": {
+              "no_control_scenario": {
+                "grade_a_loss": "100% (전량 불가)",
+                "grade_b_loss": "100% (SOH 95% 미달)",
+                "grade_c_classification": "100% (SOH 90.6%)",
+                "price_per_cell": {
+                  "grade_a": 50000,
+                  "grade_b": 30000,
+                  "grade_c": 15000
+                },
+                "batch_size": 1000,
+                "revenue_loss": "약 3,500만원 (A급 대비)"
+              }
+            },
+            "recommendation": "즉시 온도 제어 필요 - 45°C로 하향 조정하여 SOH 저하 억제 권장",
+            "summary_report": "## 배터리 에이징 SOH 저하 예측 결과\n\n### 예측 모델 정보\n- **모델**: 물리 기반 배터리 열화 모델 (Physics-based Degradation Model)\n- **정확도**: 91%\n- **예측 구간**: 향후 7일 (14일차까지)\n\n### SOH 예측 추이 (제어 없이)\n| 날짜 | 예측 SOH | 신뢰구간 (95%) | 예측 용량 | 등급 | 상태 |\n|------|----------|----------------|----------|------|------|\n| 7일차 (현재) | 97.2% | - | 2915 mAh | B급 | 현재 |\n| 8일차 | 96.0% | 95.7-96.3% | 2880 mAh | B급 | ⚠️ |\n| 10일차 | 94.1% | 93.6-94.6% | 2823 mAh | C급 | 🚨 |\n| 12일차 | 92.3% | 91.7-92.9% | 2769 mAh | C급 | 🚨 |\n| 14일차 | **90.6%** | 89.8-91.4% | **2718 mAh** | **C급** | 🚨 |\n\n(A급 기준: SOH ≥ 98%, B급: 95-98%, C급: < 95%)\n\n### 품질 등급 예측\n- **현재 (7일차)**: B급 (SOH 97.2%)\n- **14일차 예상**: **C급 (SOH 90.6%)** 🚨\n- **등급 강등**: A급 → C급 (2단계 강등)\n- **목표 등급**: A급 (SOH ≥ 98%)\n\n### 불량 리스크 평가\n- **조기 고장 확률**: 68%\n- **보증 클레임 위험**: 높음\n- **고객 만족도 영향**: 심각 (Severe)\n\n### 경제적 영향 (제어 없이)\n\n**배치 정보**\n- 배치 크기: 1,000 셀\n- 현재 진행: 7일차 / 14일\n\n**셀 가격 (등급별)**\n- A급: 50,000원/셀\n- B급: 30,000원/셀\n- C급: 15,000원/셀\n\n**14일차 예상 손실**\n| 등급 | 예상 분류 | 단가 | 총 매출 |\n|------|----------|------|--------|\n| A급 (목표) | 0% | 50,000원 | 0원 |\n| B급 | 0% | 30,000원 | 0원 |\n| C급 (실제) | **100%** | 15,000원 | **1,500만원** |\n\n**매출 손실**: **3,500만원** (A급 대비: 5,000만원 - 1,500만원)\n\n### 권고사항\n현재 추세가 지속될 경우 14일차에 전량이 C급으로 분류되어 3,500만원의 매출 손실이 발생합니다. 즉시 에이징 온도를 48.2°C에서 45°C로 하향 조정하여 SOH 저하를 억제할 것을 권장합니다."
+          },
+          "next_step": "control_optimization"
+        },
+        "next_agent_recommendation": "Predictive Agent"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "message": "모니터링 완료. 예측 분석 시작.",
+        "next_agent": "Predictive Agent"
+      }
+    },
+    "step_4_orchestration_to_predictive": {
+      "from": "Orchestration Agent",
+      "to": "Predictive Agent",
+      "timestamp": "2025-05-01T12:00:30Z",
+      "api_endpoint": "POST /api/v1/prediction/run",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "prediction_task": "soh_degradation_forecast",
+        "input_data": {
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T12:00:00Z"
+          },
+          "parameters": [
+            "SOH",
+            "SOC",
+            "CAPACITY",
+            "TEMPERATURE",
+            "HUMIDITY",
+            "AGING_DAYS"
+          ],
+          "current_state": {
+            "SOH": 97.2,
+            "SOC": 48.5,
+            "CAPACITY": 2915,
+            "TEMPERATURE": 48.2,
+            "HUMIDITY": 45.8,
+            "AGING_DAYS": 7
+          },
+          "anomaly_context": {
+            "type": "soh_accelerated_degradation",
+            "severity": "high",
+            "degradation_rate": -0.433,
+            "acceleration_factor": 8.66,
+            "temperature_deviation": 3.2
+          }
+        },
+        "forecast_horizon": "7_days",
+        "model_type": "degradation_physics_model"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "agent": "Predictive Agent",
+        "prediction_result": {
+          "forecast_completed": true,
+          "model_used": "Physics-based Battery Degradation Model",
+          "model_accuracy": 0.91,
+          "forecast_horizon": "7 days",
+          "predictions": [
+            {
+              "day": 8,
+              "timestamp": "2025-05-02T00:00:00Z",
+              "SOH_no_control": {
+                "predicted_value": 96.0,
+                "confidence_interval": [
+                  95.7,
+                  96.3
+                ],
+                "confidence_level": 0.95
+              },
+              "CAPACITY_no_control": {
+                "predicted_value": 2880,
+                "confidence_interval": [
+                  2865,
+                  2895
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "day": 10,
+              "timestamp": "2025-05-03T00:00:00Z",
+              "SOH_no_control": {
+                "predicted_value": 94.1,
+                "confidence_interval": [
+                  93.6,
+                  94.6
+                ],
+                "confidence_level": 0.95
+              },
+              "CAPACITY_no_control": {
+                "predicted_value": 2823,
+                "confidence_interval": [
+                  2805,
+                  2841
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "day": 12,
+              "timestamp": "2025-05-05T00:00:00Z",
+              "SOH_no_control": {
+                "predicted_value": 92.3,
+                "confidence_interval": [
+                  91.7,
+                  92.9
+                ],
+                "confidence_level": 0.95
+              },
+              "CAPACITY_no_control": {
+                "predicted_value": 2769,
+                "confidence_interval": [
+                  2748,
+                  2790
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "day": 14,
+              "timestamp": "2025-05-07T00:00:00Z",
+              "SOH_no_control": {
+                "predicted_value": 90.6,
+                "confidence_interval": [
+                  89.8,
+                  91.4
+                ],
+                "confidence_level": 0.95
+              },
+              "CAPACITY_no_control": {
+                "predicted_value": 2718,
+                "confidence_interval": [
+                  2694,
+                  2742
+                ],
+                "confidence_level": 0.95
+              }
+            }
+          ],
+          "quality_forecast": {
+            "grade_classification": {
+              "day_14_no_control": "C급 (SOH 90.6%)",
+              "target_grade": "A급 (SOH ≥ 98%)",
+              "grade_downgrade": "A급 → C급 (2단계 강등)"
+            },
+            "defect_risk": {
+              "early_failure_probability": 0.68,
+              "warranty_claim_risk": "high",
+              "customer_satisfaction_impact": "severe"
+            }
+          },
+          "economic_impact": {
+            "no_control_scenario": {
+              "grade_a_loss": "100% (전량 불가)",
+              "grade_b_loss": "100% (SOH 95% 미달)",
+              "grade_c_classification": "100% (SOH 90.6%)",
+              "price_per_cell": {
+                "grade_a": 50000,
+                "grade_b": 30000,
+                "grade_c": 15000
+              },
+              "batch_size": 1000,
+              "revenue_loss": "약 3,500만원 (A급 대비)"
+            }
+          },
+          "recommendation": "즉시 온도 제어 필요 - 45°C로 하향 조정하여 SOH 저하 억제 권장",
+          "summary_report": "## 배터리 에이징 SOH 저하 예측 결과\n\n### 예측 모델 정보\n- **모델**: 물리 기반 배터리 열화 모델 (Physics-based Degradation Model)\n- **정확도**: 91%\n- **예측 구간**: 향후 7일 (14일차까지)\n\n### SOH 예측 추이 (제어 없이)\n| 날짜 | 예측 SOH | 신뢰구간 (95%) | 예측 용량 | 등급 | 상태 |\n|------|----------|----------------|----------|------|------|\n| 7일차 (현재) | 97.2% | - | 2915 mAh | B급 | 현재 |\n| 8일차 | 96.0% | 95.7-96.3% | 2880 mAh | B급 | ⚠️ |\n| 10일차 | 94.1% | 93.6-94.6% | 2823 mAh | C급 | 🚨 |\n| 12일차 | 92.3% | 91.7-92.9% | 2769 mAh | C급 | 🚨 |\n| 14일차 | **90.6%** | 89.8-91.4% | **2718 mAh** | **C급** | 🚨 |\n\n(A급 기준: SOH ≥ 98%, B급: 95-98%, C급: < 95%)\n\n### 품질 등급 예측\n- **현재 (7일차)**: B급 (SOH 97.2%)\n- **14일차 예상**: **C급 (SOH 90.6%)** 🚨\n- **등급 강등**: A급 → C급 (2단계 강등)\n- **목표 등급**: A급 (SOH ≥ 98%)\n\n### 불량 리스크 평가\n- **조기 고장 확률**: 68%\n- **보증 클레임 위험**: 높음\n- **고객 만족도 영향**: 심각 (Severe)\n\n### 경제적 영향 (제어 없이)\n\n**배치 정보**\n- 배치 크기: 1,000 셀\n- 현재 진행: 7일차 / 14일\n\n**셀 가격 (등급별)**\n- A급: 50,000원/셀\n- B급: 30,000원/셀\n- C급: 15,000원/셀\n\n**14일차 예상 손실**\n| 등급 | 예상 분류 | 단가 | 총 매출 |\n|------|----------|------|--------|\n| A급 (목표) | 0% | 50,000원 | 0원 |\n| B급 | 0% | 30,000원 | 0원 |\n| C급 (실제) | **100%** | 15,000원 | **1,500만원** |\n\n**매출 손실**: **3,500만원** (A급 대비: 5,000만원 - 1,500만원)\n\n### 권고사항\n현재 추세가 지속될 경우 14일차에 전량이 C급으로 분류되어 3,500만원의 매출 손실이 발생합니다. 즉시 에이징 온도를 48.2°C에서 45°C로 하향 조정하여 SOH 저하를 억제할 것을 권장합니다."
+        },
+        "next_step": "control_optimization"
+      }
+    },
+    "step_5_predictive_to_orchestration": {
+      "from": "Predictive Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T12:00:50Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "status": "prediction_completed",
+        "prediction_result": {
+          "status": "success",
+          "workflow_id": "wf_battery_aging_003",
+          "agent": "AutoControl Agent",
+          "control_result": {
+            "optimization_completed": true,
+            "control_method": "PID Control with Multi-objective Optimization",
+            "optimization_algorithm": "Particle Swarm Optimization (PSO)",
+            "optimal_parameters": {
+              "TEMPERATURE": {
+                "current": 48.2,
+                "optimal": 43.0,
+                "change": -5.2,
+                "unit": "°C",
+                "rationale": "온도 하향으로 열화 속도 억제 (Arrhenius 방정식)"
+              },
+              "HUMIDITY": {
+                "current": 45.8,
+                "optimal": 40.0,
+                "change": -5.8,
+                "unit": "%",
+                "rationale": "적정 습도 유지로 전해액 안정화"
+              }
+            },
+            "predicted_improvement": {
+              "SOH_day_8": {
+                "without_control": 96.0,
+                "with_control": 97.5,
+                "improvement": 1.5
+              },
+              "SOH_day_10": {
+                "without_control": 94.1,
+                "with_control": 97.8,
+                "improvement": 3.7
+              },
+              "SOH_day_14": {
+                "without_control": 90.6,
+                "with_control": 98.2,
+                "improvement": 7.6
+              },
+              "CAPACITY_day_14": {
+                "without_control": 2718,
+                "with_control": 2946,
+                "improvement": 228
+              }
+            },
+            "control_sequence": [
+              {
+                "step": 1,
+                "time": "2025-05-01T12:00:50Z",
+                "action": "TEMPERATURE 하향 조정 시작",
+                "value": "48.2°C → 46.5°C (-1.7°C)",
+                "duration": "2시간"
+              },
+              {
+                "step": 2,
+                "time": "2025-05-01T14:00:50Z",
+                "action": "HUMIDITY 하향 조정 시작",
+                "value": "45.8% → 42.5% (-3.3%)",
+                "duration": "1시간"
+              },
+              {
+                "step": 3,
+                "time": "2025-05-01T15:00:50Z",
+                "action": "TEMPERATURE 추가 하향",
+                "value": "46.5°C → 44.5°C (-2.0°C)",
+                "duration": "2시간"
+              },
+              {
+                "step": 4,
+                "time": "2025-05-01T17:00:50Z",
+                "action": "HUMIDITY 추가 하향",
+                "value": "42.5% → 40.0% (-2.5%)",
+                "duration": "1시간"
+              },
+              {
+                "step": 5,
+                "time": "2025-05-01T18:00:50Z",
+                "action": "TEMPERATURE 최종 조정",
+                "value": "44.5°C → 43.0°C (-1.5°C)",
+                "duration": "2시간"
+              },
+              {
+                "step": 6,
+                "time": "2025-05-01T20:00:50Z",
+                "action": "안정화 및 모니터링",
+                "value": "온도 43°C, 습도 40% 유지",
+                "duration": "나머지 기간"
+              }
+            ],
+            "execution_plan": {
+              "total_duration": "8시간",
+              "expected_stabilization": "2025-05-01T20:00:50Z",
+              "monitoring_interval": "10분",
+              "rollback_conditions": [
+                "SOH < 95%",
+                "TEMPERATURE < 38°C",
+                "HUMIDITY < 25%"
+              ]
+            },
+            "grade_classification_forecast": {
+              "without_control": {
+                "grade_a": "0%",
+                "grade_b": "0%",
+                "grade_c": "100%",
+                "average_soh": 90.6
+              },
+              "with_control": {
+                "grade_a": "100%",
+                "grade_b": "0%",
+                "grade_c": "0%",
+                "average_soh": 98.2
+              }
+            },
+            "economic_benefit_analysis": {
+              "batch_size": 1000,
+              "revenue_without_control": 15000000,
+              "revenue_with_control": 50000000,
+              "revenue_increase": 35000000,
+              "control_implementation_cost": {
+                "energy_adjustment": "약 15만원",
+                "time_cost": "8시간 (자동 제어)"
+              },
+              "net_benefit": 34850000,
+              "roi": "약 232배",
+              "payback_period": "즉시 (손실 방지)"
+            },
+            "quality_assurance": {
+              "soh_target_achievement": true,
+              "grade_a_guarantee": true,
+              "early_failure_risk_reduction": "68% → 5%",
+              "warranty_claim_reduction": "85%",
+              "customer_satisfaction": "개선 예상"
+            },
+            "safety_validation": {
+              "all_constraints_satisfied": true,
+              "safety_margin": 0.16,
+              "risk_level": "low",
+              "approval_required": false
+            },
+            "summary_report": "## 배터리 에이징 최적 제어 결과\n\n### 제어 최적화 완료\n- **제어 방법**: PID 제어 + 다목적 최적화\n- **최적화 알고리즘**: Particle Swarm Optimization (PSO)\n- **안전성 검증**: 통과 ✅\n\n### 최적 제어 파라미터\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 챔버 온도 | 48.2°C | **43.0°C** | -5.2°C | 열화 속도 억제 (Arrhenius) |\n| 챔버 습도 | 45.8% | **40.0%** | -5.8% | 전해액 안정화 |\n\n### SOH 예상 개선 효과\n| 날짜 | 제어 없이 | 제어 적용 시 | 개선폭 | 등급 |\n|------|-----------|-------------|--------|------|\n| 8일차 | 96.0% | **97.5%** | +1.5%p | B→B |\n| 10일차 | 94.1% | **97.8%** | +3.7%p | C→B |\n| 14일차 | 90.6% | **98.2%** | **+7.6%p** | **C→A** |\n\n### 용량 예상 개선\n| 날짜 | 제어 없이 | 제어 적용 시 | 개선폭 |\n|------|-----------|-------------|--------|\n| 14일차 | 2718 mAh | **2946 mAh** | +228 mAh |\n\n### 제어 실행 계획\n1. **1단계** (0-2h): 온도 48.2°C → 46.5°C\n2. **2단계** (2-3h): 습도 45.8% → 42.5%\n3. **3단계** (3-5h): 온도 46.5°C → 44.5°C\n4. **4단계** (5-6h): 습도 42.5% → 40.0%\n5. **5단계** (6-8h): 온도 44.5°C → 43.0°C\n6. **6단계** (8h~): 안정화 (43°C, 40%)\n\n**총 소요 시간**: 8시간  \n**예상 안정화 시점**: 2025-05-01 20:00 UTC\n\n### 등급 분류 예측 (14일차)\n\n**제어 없이**\n- A급 (≥98%): 0%\n- B급 (95-98%): 0%\n- C급 (<95%): **100%** 🚨\n- 평균 SOH: 90.6%\n\n**제어 적용 시**\n- A급 (≥98%): **100%** ✅\n- B급 (95-98%): 0%\n- C급 (<95%): 0%\n- 평균 SOH: 98.2%\n\n### 경제적 효과 분석\n\n**배치 정보**\n- 배치 크기: 1,000 셀\n\n**매출 비교**\n| 시나리오 | 등급 분포 | 매출 | 손익 |\n|---------|----------|------|------|\n| 제어 없이 | C급 100% | 1,500만원 | 기준 |\n| 제어 적용 | **A급 100%** | **5,000만원** | **+3,500만원** |\n\n**제어 비용**\n- 에너지 조정: 약 15만원\n- 시간 비용: 8시간 (자동)\n\n**순 편익**: **3,485만원**  \n**투자수익률 (ROI)**: 약 **232배**  \n**회수 기간**: 즉시 (손실 방지)\n\n### 품질 보증\n- ✅ SOH 목표 (98%) 달성\n- ✅ A급 분류 보장\n- ✅ 조기 고장 위험: 68% → 5%\n- ✅ 보증 클레임: 85% 감소\n- ✅ 고객 만족도 개선\n\n### 안전성 검증\n- ✅ 모든 운전 제약조건 만족\n- ✅ 안전 여유도: 16%\n- ✅ 리스크 수준: 낮음\n- ✅ 승인 불필요 (자동 실행 가능)\n\n### 권고사항\n최적 제어 파라미터를 즉시 적용하여 SOH 저하를 억제하고 3,485만원의 매출 손실을 방지할 것을 강력히 권장합니다.",
+            "auto_execution_enabled": true,
+            "execution_status": "ready_to_execute"
+          },
+          "next_step": "return_to_orchestration"
+        },
+        "next_agent_recommendation": "AutoControl Agent"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "message": "예측 분석 완료. 자동 제어 시작.",
+        "next_agent": "AutoControl Agent"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration Agent",
+      "to": "AutoControl Agent",
+      "timestamp": "2025-05-01T12:00:55Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "control_task": "optimize_aging_conditions",
+        "current_state": {
+          "SOH": 97.2,
+          "SOC": 48.5,
+          "CAPACITY": 2915,
+          "TEMPERATURE": 48.2,
+          "HUMIDITY": 45.8,
+          "AGING_DAYS": 7
+        },
+        "target_state": {
+          "SOH": ">=98.0",
+          "TEMPERATURE": "optimize",
+          "HUMIDITY": "optimize"
+        },
+        "constraints": {
+          "TEMPERATURE": {
+            "min": 35,
+            "max": 50,
+            "rate_limit": 2.0
+          },
+          "HUMIDITY": {
+            "min": 25,
+            "max": 55,
+            "rate_limit": 5.0
+          },
+          "SOH": {
+            "min_acceptable": 95.0,
+            "target": 98.0
+          },
+          "aging_days_remaining": 7,
+          "optimization_time": "minimize"
+        },
+        "prediction_context": {
+          "forecast_severity": "high",
+          "soh_14days_no_control": 90.6,
+          "grade_downgrade_risk": "severe",
+          "revenue_loss_risk": 35000000
+        },
+        "control_method": "pid_with_optimization"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "agent": "AutoControl Agent",
+        "control_result": {
+          "optimization_completed": true,
+          "control_method": "PID Control with Multi-objective Optimization",
+          "optimization_algorithm": "Particle Swarm Optimization (PSO)",
+          "optimal_parameters": {
+            "TEMPERATURE": {
+              "current": 48.2,
+              "optimal": 43.0,
+              "change": -5.2,
+              "unit": "°C",
+              "rationale": "온도 하향으로 열화 속도 억제 (Arrhenius 방정식)"
+            },
+            "HUMIDITY": {
+              "current": 45.8,
+              "optimal": 40.0,
+              "change": -5.8,
+              "unit": "%",
+              "rationale": "적정 습도 유지로 전해액 안정화"
+            }
+          },
+          "predicted_improvement": {
+            "SOH_day_8": {
+              "without_control": 96.0,
+              "with_control": 97.5,
+              "improvement": 1.5
+            },
+            "SOH_day_10": {
+              "without_control": 94.1,
+              "with_control": 97.8,
+              "improvement": 3.7
+            },
+            "SOH_day_14": {
+              "without_control": 90.6,
+              "with_control": 98.2,
+              "improvement": 7.6
+            },
+            "CAPACITY_day_14": {
+              "without_control": 2718,
+              "with_control": 2946,
+              "improvement": 228
+            }
+          },
+          "control_sequence": [
+            {
+              "step": 1,
+              "time": "2025-05-01T12:00:50Z",
+              "action": "TEMPERATURE 하향 조정 시작",
+              "value": "48.2°C → 46.5°C (-1.7°C)",
+              "duration": "2시간"
+            },
+            {
+              "step": 2,
+              "time": "2025-05-01T14:00:50Z",
+              "action": "HUMIDITY 하향 조정 시작",
+              "value": "45.8% → 42.5% (-3.3%)",
+              "duration": "1시간"
+            },
+            {
+              "step": 3,
+              "time": "2025-05-01T15:00:50Z",
+              "action": "TEMPERATURE 추가 하향",
+              "value": "46.5°C → 44.5°C (-2.0°C)",
+              "duration": "2시간"
+            },
+            {
+              "step": 4,
+              "time": "2025-05-01T17:00:50Z",
+              "action": "HUMIDITY 추가 하향",
+              "value": "42.5% → 40.0% (-2.5%)",
+              "duration": "1시간"
+            },
+            {
+              "step": 5,
+              "time": "2025-05-01T18:00:50Z",
+              "action": "TEMPERATURE 최종 조정",
+              "value": "44.5°C → 43.0°C (-1.5°C)",
+              "duration": "2시간"
+            },
+            {
+              "step": 6,
+              "time": "2025-05-01T20:00:50Z",
+              "action": "안정화 및 모니터링",
+              "value": "온도 43°C, 습도 40% 유지",
+              "duration": "나머지 기간"
+            }
+          ],
+          "execution_plan": {
+            "total_duration": "8시간",
+            "expected_stabilization": "2025-05-01T20:00:50Z",
+            "monitoring_interval": "10분",
+            "rollback_conditions": [
+              "SOH < 95%",
+              "TEMPERATURE < 38°C",
+              "HUMIDITY < 25%"
+            ]
+          },
+          "grade_classification_forecast": {
+            "without_control": {
+              "grade_a": "0%",
+              "grade_b": "0%",
+              "grade_c": "100%",
+              "average_soh": 90.6
+            },
+            "with_control": {
+              "grade_a": "100%",
+              "grade_b": "0%",
+              "grade_c": "0%",
+              "average_soh": 98.2
+            }
+          },
+          "economic_benefit_analysis": {
+            "batch_size": 1000,
+            "revenue_without_control": 15000000,
+            "revenue_with_control": 50000000,
+            "revenue_increase": 35000000,
+            "control_implementation_cost": {
+              "energy_adjustment": "약 15만원",
+              "time_cost": "8시간 (자동 제어)"
+            },
+            "net_benefit": 34850000,
+            "roi": "약 232배",
+            "payback_period": "즉시 (손실 방지)"
+          },
+          "quality_assurance": {
+            "soh_target_achievement": true,
+            "grade_a_guarantee": true,
+            "early_failure_risk_reduction": "68% → 5%",
+            "warranty_claim_reduction": "85%",
+            "customer_satisfaction": "개선 예상"
+          },
+          "safety_validation": {
+            "all_constraints_satisfied": true,
+            "safety_margin": 0.16,
+            "risk_level": "low",
+            "approval_required": false
+          },
+          "summary_report": "## 배터리 에이징 최적 제어 결과\n\n### 제어 최적화 완료\n- **제어 방법**: PID 제어 + 다목적 최적화\n- **최적화 알고리즘**: Particle Swarm Optimization (PSO)\n- **안전성 검증**: 통과 ✅\n\n### 최적 제어 파라미터\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 챔버 온도 | 48.2°C | **43.0°C** | -5.2°C | 열화 속도 억제 (Arrhenius) |\n| 챔버 습도 | 45.8% | **40.0%** | -5.8% | 전해액 안정화 |\n\n### SOH 예상 개선 효과\n| 날짜 | 제어 없이 | 제어 적용 시 | 개선폭 | 등급 |\n|------|-----------|-------------|--------|------|\n| 8일차 | 96.0% | **97.5%** | +1.5%p | B→B |\n| 10일차 | 94.1% | **97.8%** | +3.7%p | C→B |\n| 14일차 | 90.6% | **98.2%** | **+7.6%p** | **C→A** |\n\n### 용량 예상 개선\n| 날짜 | 제어 없이 | 제어 적용 시 | 개선폭 |\n|------|-----------|-------------|--------|\n| 14일차 | 2718 mAh | **2946 mAh** | +228 mAh |\n\n### 제어 실행 계획\n1. **1단계** (0-2h): 온도 48.2°C → 46.5°C\n2. **2단계** (2-3h): 습도 45.8% → 42.5%\n3. **3단계** (3-5h): 온도 46.5°C → 44.5°C\n4. **4단계** (5-6h): 습도 42.5% → 40.0%\n5. **5단계** (6-8h): 온도 44.5°C → 43.0°C\n6. **6단계** (8h~): 안정화 (43°C, 40%)\n\n**총 소요 시간**: 8시간  \n**예상 안정화 시점**: 2025-05-01 20:00 UTC\n\n### 등급 분류 예측 (14일차)\n\n**제어 없이**\n- A급 (≥98%): 0%\n- B급 (95-98%): 0%\n- C급 (<95%): **100%** 🚨\n- 평균 SOH: 90.6%\n\n**제어 적용 시**\n- A급 (≥98%): **100%** ✅\n- B급 (95-98%): 0%\n- C급 (<95%): 0%\n- 평균 SOH: 98.2%\n\n### 경제적 효과 분석\n\n**배치 정보**\n- 배치 크기: 1,000 셀\n\n**매출 비교**\n| 시나리오 | 등급 분포 | 매출 | 손익 |\n|---------|----------|------|------|\n| 제어 없이 | C급 100% | 1,500만원 | 기준 |\n| 제어 적용 | **A급 100%** | **5,000만원** | **+3,500만원** |\n\n**제어 비용**\n- 에너지 조정: 약 15만원\n- 시간 비용: 8시간 (자동)\n\n**순 편익**: **3,485만원**  \n**투자수익률 (ROI)**: 약 **232배**  \n**회수 기간**: 즉시 (손실 방지)\n\n### 품질 보증\n- ✅ SOH 목표 (98%) 달성\n- ✅ A급 분류 보장\n- ✅ 조기 고장 위험: 68% → 5%\n- ✅ 보증 클레임: 85% 감소\n- ✅ 고객 만족도 개선\n\n### 안전성 검증\n- ✅ 모든 운전 제약조건 만족\n- ✅ 안전 여유도: 16%\n- ✅ 리스크 수준: 낮음\n- ✅ 승인 불필요 (자동 실행 가능)\n\n### 권고사항\n최적 제어 파라미터를 즉시 적용하여 SOH 저하를 억제하고 3,485만원의 매출 손실을 방지할 것을 강력히 권장합니다.",
+          "auto_execution_enabled": true,
+          "execution_status": "ready_to_execute"
+        },
+        "next_step": "return_to_orchestration"
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T12:01:25Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_battery_aging_003",
+        "status": "completed",
+        "results": {
+          "monitoring_result": "soh_accelerated_degradation_detected",
+          "prediction_result": "severe_degradation_forecasted",
+          "control_result": "optimal_parameters_calculated",
+          "execution_ready": true
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "message": "워크플로우 완료. 사용자에게 결과 전달.",
+        "next_step": "return_to_user"
+      }
+    },
+    "step_8_orchestration_to_user": {
+      "from": "Orchestration Agent",
+      "to": "User",
+      "timestamp": "2025-05-01T12:01:30Z",
+      "api_endpoint": "N/A",
+      "request": {},
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_aging_003",
+        "workflow_type": "monitoring_prediction_control",
+        "summary": "배터리 에이징 챔버에서 SOH가 97.2%로 하락하여 예상치(99.5%) 대비 2.3%p 낮은 상태입니다. 과도한 온도(48.2°C, 목표 45°C)로 인해 SOH 저하 속도가 정상 대비 8.66배 가속화되고 있습니다. 예측 분석 결과, 현재 조건 유지 시 14일차에 SOH가 90.6%까지 떨어져 전량이 C급으로 분류되며 3,500만원의 매출 손실이 예상됩니다. 최적 제어 분석 결과, 온도를 43°C로, 습도를 40%로 조정하면 14일차 SOH를 98.2%까지 회복하여 전량 A급 분류가 가능합니다. 제어 비용은 약 15만원이며, 8시간 내 자동 조정 완료 후 3,485만원의 순 편익(ROI 232배)을 얻을 수 있어 즉시 실행을 권장합니다.",
+        "detailed_results": {
+          "monitoring": {
+            "anomaly_type": "soh_accelerated_degradation",
+            "severity": "high",
+            "current_soh": 97.2,
+            "expected_soh": 99.5,
+            "soh_deficit": 2.3,
+            "degradation_rate": -0.433,
+            "acceleration_factor": 8.66,
+            "temperature_deviation": 3.2
+          },
+          "prediction": {
+            "soh_14days_no_control": 90.6,
+            "grade_classification_no_control": "C급 100%",
+            "revenue_loss": 35000000,
+            "early_failure_probability": 0.68,
+            "forecast_accuracy": 0.91
+          },
+          "control": {
+            "optimal_temperature": 43.0,
+            "optimal_humidity": 40.0,
+            "execution_time": "8시간",
+            "soh_14days_with_control": 98.2,
+            "grade_classification_with_control": "A급 100%",
+            "revenue_recovery": 50000000,
+            "net_benefit": 34850000,
+            "roi": 232
+          }
+        },
+        "recommendations": [
+          "즉시 최적 제어 파라미터 적용 (온도 43°C, 습도 40%)",
+          "제어 실행 후 10분 간격으로 SOH 모니터링",
+          "8시간 후 안정화 확인 및 품질 검증",
+          "향후 에이징 공정 표준 온도를 45°C에서 43°C로 조정 검토"
+        ],
+        "full_report": "## 🔋 배터리 에이징 공정 SOH 최적 제어 분석 결과\n\n---\n\n### 📊 1. 현황 모니터링 결과\n\n**이상 감지 정보**\n- **이상 유형**: SOH 가속 저하 (Accelerated Degradation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 12:00:00 UTC\n- **에이징 경과**: 7일차 / 14일\n\n**주요 지표 현황**\n| 파라미터 | 현재값 | 예상값 | 정상범위 | 편차 | 상태 |\n|---------|--------|--------|----------|------|------|\n| **SOH** | **97.2%** | 99.5% | 98-100% | **-2.3%p** | ⚠️ **목표 미달** |\n| 실제 용량 | 2915 mAh | 2985 mAh | 2950-3050 mAh | -70 mAh | ⚠️ 목표 미달 |\n| 챔버 온도 | **48.2°C** | 45°C | 40-50°C | **+3.2°C** | ⚠️ **최적 초과** |\n| 챔버 습도 | 45.8% | - | 30-50% | 0 | ✅ 정상 |\n| 충전 상태 | 48.5% | - | 40-60% | 0 | ✅ 정상 |\n\n**추세 분석**\n- SOH 감소율: **-0.433%/시간** (지난 6시간)\n- 예상 감소율: -0.05%/시간 (정상)\n- **가속 계수**: **8.66배** 🚨\n- 용량 감소율: -11.67 mAh/시간\n- SOH-용량 상관관계: 0.94\n\n**온도 영향 분석**\n- 평균 온도: 48.2°C (목표: 45°C)\n- 온도 편차: +3.2°C\n- **온도-SOH 저하 상관관계**: 0.76\n- **주요 원인**: 과도한 온도로 인한 가속 열화\n\n**원인 분석**\n1. 🔴 **과도한 에이징 온도** (가능성 매우 높음)\n   - 48.2°C > 최적 45°C\n   - Arrhenius 방정식: 열화 속도가 온도에 지수적 비례\n2. 🟠 **SEI 층 과성장**\n   - 리튬 이온 확산 저항 증가\n3. 🟡 **전해액 분해 가속화**\n   - 가스 발생 및 내부 압력 증가\n\n---\n\n### 🔮 2. 예측 분석 결과\n\n**예측 모델**: 물리 기반 배터리 열화 모델 (정확도 91%)\n\n**SOH 예측 추이 (제어 없이)**\n| 날짜 | 예측 SOH | 신뢰구간 (95%) | 예측 용량 | 등급 | 상태 |\n|------|----------|----------------|----------|------|------|\n| 7일차 (현재) | 97.2% | - | 2915 mAh | B급 | 현재 |\n| 8일차 | 96.0% | 95.7-96.3% | 2880 mAh | B급 | ⚠️ |\n| 10일차 | 94.1% | 93.6-94.6% | 2823 mAh | C급 | 🚨 |\n| 12일차 | 92.3% | 91.7-92.9% | 2769 mAh | C급 | 🚨 |\n| **14일차** | **90.6%** | 89.8-91.4% | **2718 mAh** | **C급** | 🚨 |\n\n(A급 기준: SOH ≥ 98%, B급: 95-98%, C급: < 95%)\n\n**등급 분류 예측 (14일차, 제어 없이)**\n- A급 (≥98%): **0%** 🚨\n- B급 (95-98%): **0%**\n- C급 (<95%): **100%**\n- 평균 SOH: 90.6%\n\n**품질 리스크**\n- 조기 고장 확률: **68%**\n- 보증 클레임 위험: **높음**\n- 고객 만족도 영향: **심각**\n\n**경제적 영향 (배치 1,000 셀)**\n| 등급 | 분류 | 단가 | 총 매출 |\n|------|------|------|--------|\n| A급 (목표) | 0% | 50,000원 | 0원 |\n| C급 (실제) | **100%** | 15,000원 | **1,500만원** |\n\n**매출 손실**: **3,500만원** (A급 대비)\n\n---\n\n### ⚙️ 3. 최적 제어 결과\n\n**제어 방법**: PID 제어 + 다목적 최적화 (PSO)\n\n**최적 제어 파라미터**\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 챔버 온도 | 48.2°C | **43.0°C** | **-5.2°C** | 열화 속도 억제 |\n| 챔버 습도 | 45.8% | **40.0%** | -5.8% | 전해액 안정화 |\n\n**SOH 예상 개선 효과**\n| 날짜 | 제어 없이 | 제어 적용 시 | 개선폭 | 등급 변화 |\n|------|-----------|-------------|--------|----------|\n| 8일차 | 96.0% | **97.5%** | +1.5%p | B → B |\n| 10일차 | 94.1% | **97.8%** | +3.7%p | C → B |\n| **14일차** | 90.6% | **98.2%** | **+7.6%p** | **C → A** ✅ |\n\n**용량 개선**\n- 제어 없이 (14일차): 2718 mAh\n- 제어 적용 시 (14일차): **2946 mAh**\n- **개선폭**: +228 mAh\n\n**제어 실행 계획**\n1. **1단계** (0-2h): 온도 48.2°C → 46.5°C\n2. **2단계** (2-3h): 습도 45.8% → 42.5%\n3. **3단계** (3-5h): 온도 46.5°C → 44.5°C\n4. **4단계** (5-6h): 습도 42.5% → 40.0%\n5. **5단계** (6-8h): 온도 44.5°C → 43.0°C\n6. **6단계** (8h~): 안정화 (43°C, 40% 유지)\n\n**총 소요 시간**: 8시간  \n**예상 안정화**: 2025-05-01 20:00 UTC\n\n**등급 분류 예측 (14일차, 제어 적용)**\n- **A급 (≥98%): 100%** ✅\n- B급 (95-98%): 0%\n- C급 (<95%): 0%\n- 평균 SOH: 98.2%\n\n---\n\n### 💰 4. 경제적 효과 분석\n\n**배치 정보**\n- 배치 크기: 1,000 셀\n- 현재 진행: 7일차 / 14일\n\n**매출 비교 (14일차)**\n| 시나리오 | 등급 분포 | 매출 | 손익 |\n|---------|----------|------|------|\n| 제어 없이 | C급 100% | 1,500만원 | 기준 |\n| **제어 적용** | **A급 100%** | **5,000만원** | **+3,500만원** |\n\n**제어 비용**\n- 에너지 조정: 약 15만원\n- 시간 비용: 8시간 (자동 제어)\n- **총 비용**: 약 15만원\n\n**경제성 분석**\n- 매출 증대: **3,500만원**\n- 순 편익: **3,485만원**\n- **투자수익률 (ROI)**: 약 **232배**\n- 회수 기간: **즉시** (손실 방지)\n\n**품질 개선 효과**\n- ✅ SOH 목표 (98%) 달성\n- ✅ A급 분류 100% 보장\n- ✅ 조기 고장 위험: 68% → 5% (-63%p)\n- ✅ 보증 클레임: 85% 감소\n- ✅ 고객 만족도: 개선\n\n---\n\n### 🎯 5. 권고사항\n\n**즉시 조치** ⚡\n\n1. ✅ **최적 제어 파라미터 즉시 적용**\n   - 온도: 48.2°C → 43.0°C\n   - 습도: 45.8% → 40.0%\n   - 자동 제어 시작\n\n2. 📊 **제어 실행 후 모니터링 강화**\n   - SOH 측정 주기: 10분 간격\n   - 8시간 후 안정화 확인\n   - 14일차 품질 검증\n\n3. 🔬 **근본 원인 분석**\n   - 온도 설정 과다 원인 조사\n   - 챔버 온도 제어 시스템 점검\n   - 센서 교정 상태 확인\n\n4. 📝 **공정 표준 개선 (장기)**\n   - 에이징 표준 온도: 45°C → 43°C로 조정 검토\n   - 실시간 SOH 모니터링 시스템 구축\n   - AI 기반 자동 최적화 시스템 도입\n\n**예상 효과**\n\n**8시간 후**:\n- ✅ 온도/습도 최적값 도달\n- ✅ SOH 저하 속도 정상화\n\n**14일차**:\n- ✅ SOH 98.2% 달성 (A급)\n- ✅ 용량 2946 mAh 확보\n- ✅ 매출 5,000만원 달성\n- ✅ 손실 3,500만원 방지\n\n---\n\n### 📋 6. 종합 결론\n\n배터리 에이징 챔버에서 과도한 온도(48.2°C)로 인해 SOH가 정상 대비 8.66배 빠르게 저하되고 있습니다. 현재 추세가 지속될 경우:\n\n- 🚨 **14일차 SOH 90.6%로 하락**\n- 💰 **전량 C급 분류, 3,500만원 손실**\n- ⚠️ **조기 고장 확률 68%, 보증 클레임 급증**\n\n**즉시 조치 (온도 43°C, 습도 40% 조정)를 통해**:\n- ✅ **14일차 SOH 98.2% 회복 (A급 100%)**\n- 💰 **매출 5,000만원 달성 (3,485만원 순 편익)**\n- 📈 **ROI 232배, 8시간 내 자동 완료**\n\n즉시 실행을 강력히 권장합니다."
+      }
+    }
+  },
+  "expected_answer": {
+    "workflow_type": "monitoring_prediction_control",
+    "agents_involved": [
+      "Orchestration",
+      "Monitoring",
+      "Predictive",
+      "AutoControl"
+    ],
+    "key_findings": {
+      "anomaly_detected": true,
+      "anomaly_type": "soh_accelerated_degradation",
+      "current_soh": 97.2,
+      "expected_soh": 99.5,
+      "soh_deficit": 2.3,
+      "defect_forecasted": true,
+      "soh_14days_no_control": 90.6,
+      "optimal_control_found": true,
+      "optimal_temperature": 43.0,
+      "optimal_humidity": 40.0,
+      "soh_14days_with_control": 98.2
+    },
+    "recommendations": [
+      "즉시 최적 제어 파라미터 적용",
+      "제어 후 지속적 모니터링",
+      "14일차 품질 검증",
+      "공정 표준 개선"
+    ],
+    "economic_impact": {
+      "control_cost": 150000,
+      "revenue_recovery": 35000000,
+      "net_benefit": 34850000,
+      "roi": 232
+    }
+  },
+  "test_validation": {
+    "validate_workflow": {
+      "expected_steps": 6,
+      "required_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "workflow_sequence": [
+        "User → Orchestration",
+        "Orchestration → Monitoring",
+        "Monitoring → Predictive",
+        "Predictive → AutoControl",
+        "AutoControl → Orchestration",
+        "Orchestration → User"
+      ]
+    },
+    "validate_monitoring": {
+      "must_detect_anomaly": true,
+      "must_identify_soh_degradation": true,
+      "must_analyze_trend": true,
+      "must_assess_quality_impact": true,
+      "must_recommend_prediction": true
+    },
+    "validate_prediction": {
+      "must_forecast_soh": true,
+      "must_predict_grade_classification": true,
+      "must_calculate_economic_impact": true,
+      "forecast_horizon_min_days": 7,
+      "must_recommend_control": true
+    },
+    "validate_control": {
+      "must_optimize_parameters": true,
+      "must_provide_sequence": true,
+      "must_verify_safety": true,
+      "must_calculate_benefit": true,
+      "must_enable_execution": true
+    },
+    "validate_api_compliance": {
+      "all_requests_valid": true,
+      "all_responses_valid": true,
+      "endpoints_match_spec": true
+    },
+    "performance_criteria": {
+      "total_workflow_time_max_seconds": 120,
+      "prediction_accuracy_min": 0.9,
+      "safety_margin_min": 0.1,
+      "roi_min": 50
+    }
+  }
+}

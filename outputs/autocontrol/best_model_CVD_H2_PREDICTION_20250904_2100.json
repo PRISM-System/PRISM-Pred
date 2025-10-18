@@ -1,0 +1,50 @@
+{
+  "taskId": "CVD_H2_PREDICTION_20250904_2100",
+  "best_model": "DLinear",
+  "feature_names": [
+    "SUSCEPTOR_TEMP",
+    "CHAMBER_PRESSURE",
+    "PRECURSOR_FLOW_TEOS",
+    "PRECURSOR_FLOW_SILANE",
+    "PRECURSOR_FLOW_WF6",
+    "CARRIER_GAS_N2",
+    "CARRIER_GAS_H2",
+    "SHOWERHEAD_TEMP",
+    "LINER_TEMP",
+    "DEPOSITION_RATE",
+    "FILM_STRESS"
+  ],
+  "input_time_range": "2025-09-04 21:00:00 ~ 2025-09-04 21:20:00",
+  "output_offsets": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "pred_len": 11,
+  "target_col": "CARRIER_GAS_H2",
+  "prediction": [
+    2.908859,
+    3.114391,
+    3.244135,
+    2.912205,
+    2.699417,
+    2.840811,
+    3.005308,
+    3.205883,
+    2.878277,
+    3.188082,
+    3.275911
+  ],
+  "prediction_text": "2.908859, 3.114391, 3.244135, 2.912205, 2.699417, 2.840811, 3.005308, 3.205883, 2.878277, 3.188082, 3.275911",
+  "prediction_count": 11,
+  "weight_path": "/home/dm3/Jinju/AGI/outputs/DLinear/ckpt.pt",
+  "saved_at": "2025-09-03T21:15:25Z"
+}

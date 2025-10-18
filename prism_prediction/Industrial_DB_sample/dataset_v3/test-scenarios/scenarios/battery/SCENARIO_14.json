@@ -1,0 +1,710 @@
+{
+  "scenario_id": "SCENARIO_14",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "배터리 코팅 공정 두께 예측 분석",
+    "title_en": "Battery Coating Thickness Predictive Analysis",
+    "industry": "battery",
+    "process": "Coating",
+    "workflow_type": "monitoring_prediction",
+    "workflow_level": 2,
+    "complexity": "medium",
+    "description": "배터리 전극 코팅 공정에서 코팅 두께가 목표치를 벗어나는 추세를 감지하고, 향후 품질 불량 발생 시점을 예측하는 시나리오. 코팅 두께 불균일은 배터리 용량, 출력, 수명에 직접적인 영향을 미치며, 대량 불량으로 이어질 수 있음",
+    "description_en": "Scenario for detecting coating thickness deviation trend in battery electrode coating process and predicting future quality defect occurrence time. Coating thickness non-uniformity directly affects battery capacity, power, and lifespan, and can lead to mass defects",
+    "tags": [
+      "battery",
+      "coating",
+      "thickness",
+      "slurry",
+      "quality_prediction",
+      "electrode"
+    ]
+  },
+  "query": {
+    "text": "코팅 라인의 COATING_THICKNESS가 목표치를 벗어나고 있습니다. 품질 불량 발생 시점을 예측해주세요.",
+    "text_en": "Coating line COATING_THICKNESS is deviating from target. Please predict the quality defect occurrence time.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T10:00:00Z"
+    },
+    "user_id": "battery_production_manager_02",
+    "priority": "high",
+    "expected_workflow": "monitoring_prediction"
+  },
+  "timeseries_data": {
+    "source_file": "/test_data/battery/coating_data.csv",
+    "parameters": [
+      {
+        "name": "COATING_THICKNESS",
+        "unit": "μm",
+        "description": "전극 코팅 두께",
+        "normal_range": [
+          62,
+          68
+        ],
+        "critical_threshold": 70
+      },
+      {
+        "name": "COATING_SPEED",
+        "unit": "m/min",
+        "description": "코팅 속도",
+        "normal_range": [
+          25,
+          35
+        ],
+        "critical_threshold": 40
+      },
+      {
+        "name": "SLURRY_VISCOSITY",
+        "unit": "cP",
+        "description": "슬러리 점도",
+        "normal_range": [
+          2800,
+          3200
+        ],
+        "critical_threshold": 3500
+      },
+      {
+        "name": "TEMPERATURE",
+        "unit": "°C",
+        "description": "건조 온도",
+        "normal_range": [
+          115,
+          125
+        ],
+        "critical_threshold": 130
+      },
+      {
+        "name": "HUMIDITY",
+        "unit": "%",
+        "description": "코팅 챔버 습도",
+        "normal_range": [
+          10,
+          20
+        ],
+        "critical_threshold": 30
+      }
+    ],
+    "sampling_interval": "10s",
+    "data_points": 3600,
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T10:00:00Z"
+    },
+    "anomaly_info": {
+      "type": "coating_thickness_drift",
+      "description": "코팅 두께가 65μm에서 68.5μm로 서서히 증가",
+      "start_time": "2025-05-01T06:00:00Z",
+      "peak_time": "2025-05-01T10:00:00Z",
+      "affected_parameters": [
+        "COATING_THICKNESS",
+        "SLURRY_VISCOSITY"
+      ]
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T10:00:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "코팅 라인의 COATING_THICKNESS가 목표치를 벗어나고 있습니다. 품질 불량 발생 시점을 예측해주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T10:00:00Z"
+        },
+        "user_id": "battery_production_manager_02",
+        "priority": "high"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "workflow_type": "monitoring_prediction",
+        "message": "배터리 코팅 공정 두께 예측 워크플로우를 시작합니다.",
+        "next_agent": "Monitoring Agent"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration Agent",
+      "to": "Monitoring Agent",
+      "timestamp": "2025-05-01T10:00:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_battery_coating_002",
+        "workflow_type": "monitoring_prediction",
+        "task": "analyze_coating_thickness_trend",
+        "query": {
+          "text": "코팅 라인의 COATING_THICKNESS가 목표치를 벗어나고 있습니다. 품질 불량 발생 시점을 예측해주세요.",
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T10:00:00Z"
+          }
+        },
+        "context": {
+          "industry": "battery",
+          "process": "Coating",
+          "priority": "high"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "agent": "Monitoring Agent",
+        "analysis_result": {
+          "anomaly_detected": true,
+          "anomaly_type": "coating_thickness_drift",
+          "severity": "high",
+          "affected_parameters": [
+            {
+              "name": "COATING_THICKNESS",
+              "current_value": 68.5,
+              "normal_range": [
+                62,
+                68
+              ],
+              "target_value": 65,
+              "deviation": 3.5,
+              "status": "above_target"
+            },
+            {
+              "name": "COATING_SPEED",
+              "current_value": 28.2,
+              "normal_range": [
+                25,
+                35
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "SLURRY_VISCOSITY",
+              "current_value": 3150,
+              "normal_range": [
+                2800,
+                3200
+              ],
+              "deviation": 0.0,
+              "status": "normal_high"
+            },
+            {
+              "name": "TEMPERATURE",
+              "current_value": 120.5,
+              "normal_range": [
+                115,
+                125
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "HUMIDITY",
+              "current_value": 15.2,
+              "normal_range": [
+                10,
+                20
+              ],
+              "deviation": 0.0,
+              "status": "normal"
+            }
+          ],
+          "trend_analysis": {
+            "COATING_THICKNESS": {
+              "direction": "increasing",
+              "rate": 0.875,
+              "duration": "4 hours",
+              "statistical_significance": 0.96,
+              "baseline": 65.0,
+              "current_deviation": 3.5
+            },
+            "SLURRY_VISCOSITY": {
+              "direction": "increasing",
+              "rate": 87.5,
+              "duration": "4 hours",
+              "correlation_with_thickness": 0.88
+            }
+          },
+          "root_cause_hypothesis": [
+            "슬러리 점도 증가로 인한 코팅 두께 상승",
+            "슬러리 용매 증발로 고형분 농도 증가",
+            "코팅 닥터 블레이드 간격 확대",
+            "펌프 유량 제어 오차 누적"
+          ],
+          "quality_risk_assessment": {
+            "current_defect_rate": "약 5%",
+            "target_defect_rate": "< 1%",
+            "affected_area": "코팅 두께 불균일",
+            "downstream_impact": [
+              "전극 용량 불균형",
+              "내부 저항 증가",
+              "사이클 수명 감소",
+              "출력 성능 저하"
+            ]
+          },
+          "recommendation": "예측 분석을 통한 품질 불량 시점 및 영향 범위 파악 필요",
+          "summary_report": "## 배터리 코팅 공정 두께 이상 감지 결과\n\n### 이상 감지\n- **이상 유형**: 코팅 두께 상향 드리프트 (Coating Thickness Drift)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 10:00:00 UTC\n\n### 주요 지표 현황\n| 파라미터 | 현재값 | 목표값 | 정상범위 | 편차 | 상태 |\n|---------|--------|--------|----------|------|------|\n| 코팅 두께 | 68.5 μm | 65 μm | 62-68 μm | +3.5 μm | ⚠️ 목표 초과 |\n| 코팅 속도 | 28.2 m/min | - | 25-35 m/min | 0 | ✅ 정상 |\n| 슬러리 점도 | 3150 cP | 3000 cP | 2800-3200 cP | 0 | ⚠️ 정상 상한 |\n| 건조 온도 | 120.5°C | - | 115-125°C | 0 | ✅ 정상 |\n| 챔버 습도 | 15.2% | - | 10-20% | 0 | ✅ 정상 |\n\n### 추세 분석\n- **코팅 두께 증가율**: +0.875 μm/시간 (지난 4시간 동안)\n- **슬러리 점도 증가율**: +87.5 cP/시간 (지난 4시간 동안)\n- **두께-점도 상관관계**: 0.88 (강한 양의 상관)\n- **통계적 유의성**: 96%\n\n### 원인 가설\n1. 슬러리 점도 증가로 인한 코팅 두께 상승 (가능성 높음)\n2. 슬러리 용매 증발로 고형분 농도 증가 (가능성 높음)\n3. 코팅 닥터 블레이드 간격 확대 (가능성 중간)\n4. 펌프 유량 제어 오차 누적 (가능성 낮음)\n\n### 품질 리스크 평가\n- **현재 불량률**: 약 5% (목표: < 1%)\n- **영향 영역**: 코팅 두께 불균일\n- **후속 공정 영향**:\n  - 전극 용량 불균형\n  - 내부 저항 증가\n  - 사이클 수명 감소\n  - 출력 성능 저하\n\n### 권고사항\n예측 모델을 통해 품질 불량 발생 시점 및 영향 범위를 정량적으로 파악하여 선제적 조치를 취할 필요가 있습니다."
+        },
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T10:00:20Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "agent": "Predictive Agent",
+        "prediction_result": {
+          "forecast_completed": true,
+          "model_used": "ARIMA Multivariate Time Series Model",
+          "model_accuracy": 0.93,
+          "forecast_horizon": "4 hours",
+          "predictions": [
+            {
+              "timestamp": "2025-05-01T11:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 69.3,
+                "confidence_interval": [
+                  69.0,
+                  69.6
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 4.3
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3235,
+                "confidence_interval": [
+                  3210,
+                  3260
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T12:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 70.2,
+                "confidence_interval": [
+                  69.8,
+                  70.6
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 5.2,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3322,
+                "confidence_interval": [
+                  3290,
+                  3354
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T13:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 71.0,
+                "confidence_interval": [
+                  70.5,
+                  71.5
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 6.0,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3408,
+                "confidence_interval": [
+                  3370,
+                  3446
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T14:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 71.8,
+                "confidence_interval": [
+                  71.2,
+                  72.4
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 6.8,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3495,
+                "confidence_interval": [
+                  3450,
+                  3540
+                ],
+                "confidence_level": 0.95,
+                "critical_threshold_exceeded": true
+              }
+            }
+          ],
+          "defect_forecast": {
+            "defect_threshold_thickness": 70.0,
+            "expected_threshold_crossing": "2025-05-01T12:00:00Z",
+            "time_to_defect": "2 hours",
+            "defect_probability_1h": 0.15,
+            "defect_probability_2h": 0.78,
+            "defect_probability_3h": 0.94,
+            "defect_probability_4h": 0.98
+          },
+          "production_impact": {
+            "current_production_rate": "1200 sheets/hour",
+            "expected_defective_sheets_2h": "약 187 sheets",
+            "expected_defective_sheets_4h": "약 470 sheets",
+            "material_loss": {
+              "2h_scenario": "약 935만원",
+              "4h_scenario": "약 2,350만원"
+            },
+            "downstream_rework_cost": {
+              "2h_scenario": "약 560만원 (재처리 비용)",
+              "4h_scenario": "약 1,410만원 (재처리 비용)"
+            },
+            "total_loss": {
+              "2h_scenario": "약 1,495만원",
+              "4h_scenario": "약 3,760만원"
+            }
+          },
+          "quality_degradation_forecast": {
+            "capacity_deviation_2h": "+2.8%",
+            "capacity_deviation_4h": "+4.5%",
+            "internal_resistance_increase_2h": "+1.2%",
+            "internal_resistance_increase_4h": "+2.1%",
+            "cycle_life_reduction_2h": "-5%",
+            "cycle_life_reduction_4h": "-10%",
+            "customer_complaint_risk": "high"
+          },
+          "recommendation": "2시간 내 조치 필요 - 슬러리 점도 조정 및 코팅 파라미터 보정 권장",
+          "summary_report": "## 배터리 코팅 공정 품질 예측 결과\n\n### 예측 모델 정보\n- **모델**: ARIMA 다변량 시계열 모델\n- **정확도**: 93%\n- **예측 구간**: 향후 4시간\n\n### 코팅 두께 예측 추이\n| 시간 | 예측 두께 | 목표치 | 편차 | 임계값 초과 | 불량 확률 |\n|------|-----------|--------|------|-------------|----------|\n| 현재 | 68.5 μm | 65 μm | +3.5 μm | - | - |\n| +1시간 | 69.3 μm | 65 μm | +4.3 μm | - | 15% |\n| +2시간 | **70.2 μm** | 65 μm | +5.2 μm | ✅ | **78%** |\n| +3시간 | **71.0 μm** | 65 μm | +6.0 μm | ✅ | **94%** |\n| +4시간 | **71.8 μm** | 65 μm | +6.8 μm | ✅ | **98%** |\n\n(임계값: 70 μm)\n\n### 품질 불량 예측\n- **불량 임계값**: 70 μm\n- **임계값 도달 예상**: **2025-05-01 12:00 UTC (2시간 후)**\n- **2시간 후 불량 확률**: **78%**\n- **4시간 후 불량 확률**: **98%**\n\n### 생산 영향 예측\n\n**생산량**\n- 현재 생산 속도: 1200 sheets/시간\n\n**예상 불량품 발생**\n| 시나리오 | 불량 예상 수량 | 재료 손실 | 재처리 비용 | 총 손실 |\n|---------|---------------|----------|------------|--------|\n| 2시간 후 조치 | 약 187 sheets | 935만원 | 560만원 | **1,495만원** |\n| 4시간 후 조치 | 약 470 sheets | 2,350만원 | 1,410만원 | **3,760만원** |\n\n### 품질 저하 예측\n\n| 항목 | 2시간 후 | 4시간 후 |\n|------|----------|----------|\n| 용량 편차 | +2.8% | +4.5% |\n| 내부 저항 증가 | +1.2% | +2.1% |\n| 사이클 수명 감소 | -5% | -10% |\n| 고객 불만 리스크 | 중간 | **높음** |\n\n### 슬러리 점도 예측\n| 시간 | 예측 점도 | 정상범위 | 임계값 초과 |\n|------|-----------|----------|-------------|\n| +1시간 | 3235 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +2시간 | 3322 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +3시간 | 3408 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +4시간 | **3495 cP** | 2800-3200 cP | 🚨 **임계값 초과** |\n\n(임계값: 3500 cP)\n\n### 권고사항\n현재 추세가 지속될 경우 2시간 후 코팅 두께가 임계값(70 μm)을 초과하여 품질 불량이 발생할 것으로 예측됩니다 (확률 78%). 4시간 방치 시 약 3,760만원의 손실이 예상되므, **2시간 내 조치가 필요**합니다:\n\n1. 슬러리 점도 조정 (용매 추가)\n2. 코팅 속도 미세 조정\n3. 닥터 블레이드 간격 재설정\n4. 슬러리 탱크 밀폐 확인 (용매 증발 방지)"
+        },
+        "next_step": "return_to_orchestration"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "message": "Monitoring 완료. Predictive Agent로 전달.",
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration Agent",
+      "to": "Predictive Agent",
+      "timestamp": "2025-05-01T10:00:20Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "workflow_id": "wf_battery_coating_002",
+        "prediction_task": "quality_defect_forecast",
+        "input_data": {
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T10:00:00Z"
+          },
+          "parameters": [
+            "COATING_THICKNESS",
+            "COATING_SPEED",
+            "SLURRY_VISCOSITY",
+            "TEMPERATURE",
+            "HUMIDITY"
+          ],
+          "current_state": {
+            "COATING_THICKNESS": 68.5,
+            "COATING_SPEED": 28.2,
+            "SLURRY_VISCOSITY": 3150,
+            "TEMPERATURE": 120.5,
+            "HUMIDITY": 15.2
+          },
+          "anomaly_context": {
+            "type": "coating_thickness_drift",
+            "severity": "high",
+            "trend": "increasing",
+            "rate": 0.875,
+            "correlation": {
+              "thickness_viscosity": 0.88
+            }
+          }
+        },
+        "forecast_horizon": "4_hours",
+        "model_type": "arima_multivariate"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "agent": "Predictive Agent",
+        "prediction_result": {
+          "forecast_completed": true,
+          "model_used": "ARIMA Multivariate Time Series Model",
+          "model_accuracy": 0.93,
+          "forecast_horizon": "4 hours",
+          "predictions": [
+            {
+              "timestamp": "2025-05-01T11:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 69.3,
+                "confidence_interval": [
+                  69.0,
+                  69.6
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 4.3
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3235,
+                "confidence_interval": [
+                  3210,
+                  3260
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T12:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 70.2,
+                "confidence_interval": [
+                  69.8,
+                  70.6
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 5.2,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3322,
+                "confidence_interval": [
+                  3290,
+                  3354
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T13:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 71.0,
+                "confidence_interval": [
+                  70.5,
+                  71.5
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 6.0,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3408,
+                "confidence_interval": [
+                  3370,
+                  3446
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T14:00:00Z",
+              "COATING_THICKNESS": {
+                "predicted_value": 71.8,
+                "confidence_interval": [
+                  71.2,
+                  72.4
+                ],
+                "confidence_level": 0.95,
+                "target_deviation": 6.8,
+                "critical_threshold_exceeded": true
+              },
+              "SLURRY_VISCOSITY": {
+                "predicted_value": 3495,
+                "confidence_interval": [
+                  3450,
+                  3540
+                ],
+                "confidence_level": 0.95,
+                "critical_threshold_exceeded": true
+              }
+            }
+          ],
+          "defect_forecast": {
+            "defect_threshold_thickness": 70.0,
+            "expected_threshold_crossing": "2025-05-01T12:00:00Z",
+            "time_to_defect": "2 hours",
+            "defect_probability_1h": 0.15,
+            "defect_probability_2h": 0.78,
+            "defect_probability_3h": 0.94,
+            "defect_probability_4h": 0.98
+          },
+          "production_impact": {
+            "current_production_rate": "1200 sheets/hour",
+            "expected_defective_sheets_2h": "약 187 sheets",
+            "expected_defective_sheets_4h": "약 470 sheets",
+            "material_loss": {
+              "2h_scenario": "약 935만원",
+              "4h_scenario": "약 2,350만원"
+            },
+            "downstream_rework_cost": {
+              "2h_scenario": "약 560만원 (재처리 비용)",
+              "4h_scenario": "약 1,410만원 (재처리 비용)"
+            },
+            "total_loss": {
+              "2h_scenario": "약 1,495만원",
+              "4h_scenario": "약 3,760만원"
+            }
+          },
+          "quality_degradation_forecast": {
+            "capacity_deviation_2h": "+2.8%",
+            "capacity_deviation_4h": "+4.5%",
+            "internal_resistance_increase_2h": "+1.2%",
+            "internal_resistance_increase_4h": "+2.1%",
+            "cycle_life_reduction_2h": "-5%",
+            "cycle_life_reduction_4h": "-10%",
+            "customer_complaint_risk": "high"
+          },
+          "recommendation": "2시간 내 조치 필요 - 슬러리 점도 조정 및 코팅 파라미터 보정 권장",
+          "summary_report": "## 배터리 코팅 공정 품질 예측 결과\n\n### 예측 모델 정보\n- **모델**: ARIMA 다변량 시계열 모델\n- **정확도**: 93%\n- **예측 구간**: 향후 4시간\n\n### 코팅 두께 예측 추이\n| 시간 | 예측 두께 | 목표치 | 편차 | 임계값 초과 | 불량 확률 |\n|------|-----------|--------|------|-------------|----------|\n| 현재 | 68.5 μm | 65 μm | +3.5 μm | - | - |\n| +1시간 | 69.3 μm | 65 μm | +4.3 μm | - | 15% |\n| +2시간 | **70.2 μm** | 65 μm | +5.2 μm | ✅ | **78%** |\n| +3시간 | **71.0 μm** | 65 μm | +6.0 μm | ✅ | **94%** |\n| +4시간 | **71.8 μm** | 65 μm | +6.8 μm | ✅ | **98%** |\n\n(임계값: 70 μm)\n\n### 품질 불량 예측\n- **불량 임계값**: 70 μm\n- **임계값 도달 예상**: **2025-05-01 12:00 UTC (2시간 후)**\n- **2시간 후 불량 확률**: **78%**\n- **4시간 후 불량 확률**: **98%**\n\n### 생산 영향 예측\n\n**생산량**\n- 현재 생산 속도: 1200 sheets/시간\n\n**예상 불량품 발생**\n| 시나리오 | 불량 예상 수량 | 재료 손실 | 재처리 비용 | 총 손실 |\n|---------|---------------|----------|------------|--------|\n| 2시간 후 조치 | 약 187 sheets | 935만원 | 560만원 | **1,495만원** |\n| 4시간 후 조치 | 약 470 sheets | 2,350만원 | 1,410만원 | **3,760만원** |\n\n### 품질 저하 예측\n\n| 항목 | 2시간 후 | 4시간 후 |\n|------|----------|----------|\n| 용량 편차 | +2.8% | +4.5% |\n| 내부 저항 증가 | +1.2% | +2.1% |\n| 사이클 수명 감소 | -5% | -10% |\n| 고객 불만 리스크 | 중간 | **높음** |\n\n### 슬러리 점도 예측\n| 시간 | 예측 점도 | 정상범위 | 임계값 초과 |\n|------|-----------|----------|-------------|\n| +1시간 | 3235 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +2시간 | 3322 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +3시간 | 3408 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +4시간 | **3495 cP** | 2800-3200 cP | 🚨 **임계값 초과** |\n\n(임계값: 3500 cP)\n\n### 권고사항\n현재 추세가 지속될 경우 2시간 후 코팅 두께가 임계값(70 μm)을 초과하여 품질 불량이 발생할 것으로 예측됩니다 (확률 78%). 4시간 방치 시 약 3,760만원의 손실이 예상되므, **2시간 내 조치가 필요**합니다:\n\n1. 슬러리 점도 조정 (용매 추가)\n2. 코팅 속도 미세 조정\n3. 닥터 블레이드 간격 재설정\n4. 슬러리 탱크 밀폐 확인 (용매 증발 방지)"
+        },
+        "next_step": "return_to_orchestration"
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T10:00:45Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_battery_coating_002",
+        "status": "completed",
+        "results": {
+          "monitoring_result": "coating_thickness_drift_detected",
+          "prediction_result": "defect_forecasted"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "message": "워크플로우 완료. 사용자에게 결과 전달.",
+        "next_step": "return_to_user"
+      }
+    },
+    "step_6_orchestration_to_user": {
+      "from": "Orchestration Agent",
+      "to": "User",
+      "timestamp": "2025-05-01T10:00:50Z",
+      "api_endpoint": "N/A",
+      "request": {},
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_coating_002",
+        "workflow_type": "monitoring_prediction",
+        "summary": "배터리 코팅 라인에서 코팅 두께가 목표치(65μm)를 벗어나 68.5μm까지 증가했으며, 시간당 0.875μm씩 상승하는 추세입니다. 슬러리 점도도 3150 cP로 증가하고 있어 강한 상관관계(0.88)를 보입니다. 예측 분석 결과, 현재 추세가 지속될 경우 2시간 후(12:00 UTC) 코팅 두께가 임계값 70μm을 초과하여 품질 불량이 발생할 확률이 78%입니다. 4시간 방치 시 약 470장의 불량품 발생과 3,760만원의 손실이 예상됩니다. 2시간 내 슬러리 점도 조정(용매 추가) 및 코팅 파라미터 보정을 권장합니다.",
+        "detailed_results": {
+          "monitoring": {
+            "anomaly_type": "coating_thickness_drift",
+            "severity": "high",
+            "current_thickness": 68.5,
+            "target_thickness": 65.0,
+            "deviation": 3.5,
+            "drift_rate": 0.875,
+            "thickness_viscosity_correlation": 0.88
+          },
+          "prediction": {
+            "time_to_defect_hours": 2.0,
+            "defect_probability_2h": 0.78,
+            "predicted_thickness_2h": 70.2,
+            "expected_defective_sheets_2h": 187,
+            "expected_loss_2h": 14950000,
+            "expected_loss_4h": 37600000,
+            "forecast_accuracy": 0.93
+          }
+        },
+        "recommendations": [
+          "2시간 내 슬러리 점도 조정 (용매 추가)",
+          "코팅 속도 미세 조정",
+          "닥터 블레이드 간격 재설정",
+          "슬러리 탱크 밀폐 확인 (용매 증발 방지)",
+          "품질 검사 주기 단축 (30분 → 10분)"
+        ],
+        "full_report": "## 🔋 배터리 코팅 공정 두께 예측 분석 결과\n\n---\n\n### 📊 1. 현황 모니터링 결과\n\n**이상 감지 정보**\n- **이상 유형**: 코팅 두께 상향 드리프트 (Coating Thickness Drift)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 10:00:00 UTC\n- **이상 시작**: 2025-05-01 06:00:00 UTC (4시간 전)\n\n**주요 지표 현황**\n| 파라미터 | 현재값 | 목표값 | 정상범위 | 편차 | 상태 |\n|---------|--------|--------|----------|------|------|\n| **코팅 두께** | **68.5 μm** | 65 μm | 62-68 μm | **+3.5 μm** | ⚠️ **목표 초과** |\n| 코팅 속도 | 28.2 m/min | - | 25-35 m/min | 0 | ✅ 정상 |\n| 슬러리 점도 | 3150 cP | 3000 cP | 2800-3200 cP | +150 cP | ⚠️ 정상 상한 |\n| 건조 온도 | 120.5°C | - | 115-125°C | 0 | ✅ 정상 |\n| 챔버 습도 | 15.2% | - | 10-20% | 0 | ✅ 정상 |\n\n**추세 분석**\n- 코팅 두께 증가율: **+0.875 μm/시간** (지난 4시간)\n- 슬러리 점도 증가율: **+87.5 cP/시간** (지난 4시간)\n- **두께-점도 상관관계**: **0.88** (강한 양의 상관)\n- 통계적 유의성: 96%\n\n**원인 분석**\n1. **슬러리 점도 증가** (가능성: 높음) 🔴\n   - 점도 상승 → 코팅 두께 증가\n   - 상관계수 0.88로 강한 인과관계\n\n2. **슬러리 용매 증발** (가능성: 높음) 🔴\n   - 고형분 농도 증가 → 점도 상승\n   - 탱크 밀폐 불량 의심\n\n3. **닥터 블레이드 간격 확대** (가능성: 중간) 🟡\n   - 기계적 마모 또는 설정 변경\n\n4. **펌프 유량 제어 오차** (가능성: 낮음) 🟢\n   - 누적 오차 가능성\n\n---\n\n### 🔮 2. 예측 분석 결과\n\n**예측 모델**: ARIMA 다변량 시계열 모델 (정확도 93%)\n\n**코팅 두께 예측 추이**\n| 시간 | 예측 두께 | 신뢰구간 (95%) | 편차 | 임계값 초과 | 불량 확률 |\n|------|-----------|----------------|------|-------------|----------|\n| 현재 | 68.5 μm | - | +3.5 μm | - | - |\n| +1시간 | 69.3 μm | 69.0-69.6 | +4.3 μm | - | 15% |\n| +2시간 | **70.2 μm** | 69.8-70.6 | **+5.2 μm** | 🚨 **초과** | **78%** |\n| +3시간 | **71.0 μm** | 70.5-71.5 | **+6.0 μm** | 🚨 **초과** | **94%** |\n| +4시간 | **71.8 μm** | 71.2-72.4 | **+6.8 μm** | 🚨 **초과** | **98%** |\n\n(목표: 65 μm, 임계값: 70 μm)\n\n**품질 불량 예측**\n- **불량 임계값**: 70 μm\n- **임계값 도달 예상**: **2025-05-01 12:00 UTC (2시간 후)** ⚠️\n- **불량 발생 확률**:\n  - 1시간 후: 15%\n  - **2시간 후: 78%** 🚨\n  - 3시간 후: 94%\n  - 4시간 후: 98%\n\n**슬러리 점도 예측**\n| 시간 | 예측 점도 | 정상범위 | 상태 |\n|------|-----------|----------|------|\n| +1시간 | 3235 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +2시간 | 3322 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +3시간 | 3408 cP | 2800-3200 cP | ⚠️ 상한 초과 |\n| +4시간 | **3495 cP** | 2800-3200 cP | 🚨 **임계값 근접** |\n\n(임계값: 3500 cP)\n\n---\n\n### 💰 3. 생산 및 경제적 영향\n\n**생산 현황**\n- 현재 생산 속도: **1200 sheets/시간**\n- 코팅 라인 가동: 24시간\n\n**예상 불량품 발생**\n| 조치 시점 | 불량 예상 수량 | 재료 손실 | 재처리 비용 | **총 손실** |\n|----------|---------------|----------|------------|------------|\n| **2시간 후** | 약 187 sheets | 935만원 | 560만원 | **1,495만원** |\n| **4시간 후** | 약 470 sheets | 2,350만원 | 1,410만원 | **3,760만원** |\n\n**손실 차이**: 4시간 지연 시 **추가 2,265만원 손실** ⚠️\n\n**품질 저하 예측**\n| 항목 | 2시간 후 | 4시간 후 | 정상 대비 |\n|------|----------|----------|----------|\n| 용량 편차 | +2.8% | +4.5% | 목표: ±1% |\n| 내부 저항 증가 | +1.2% | +2.1% | 목표: < 0.5% |\n| 사이클 수명 감소 | -5% | -10% | 목표: 0% |\n| 고객 불만 리스크 | 중간 | **높음** | 🚨 |\n\n**후속 공정 영향**\n- ❌ 전극 용량 불균형 → 셀 밸런싱 어려움\n- ❌ 내부 저항 증가 → 출력 성능 저하\n- ❌ 사이클 수명 감소 → 보증 기간 내 고장 증가\n- ❌ 고객 불만 및 리콜 위험\n\n---\n\n### 🎯 4. 권고사항\n\n**즉시 조치 (2시간 내)** ⚡\n\n1. **슬러리 점도 조정** (우선순위 1)\n   - 용매(NMP) 추가로 점도 3000 cP로 낮춤\n   - 예상 소요 시간: 30분\n   - 비용: 약 50만원\n\n2. **슬러리 탱크 밀폐 확인** (우선순위 2)\n   - 용매 증발 방지\n   - 탱크 뚜껑 및 배관 누출 점검\n   - 예상 소요 시간: 15분\n\n3. **닥터 블레이드 간격 재설정** (우선순위 3)\n   - 간격 측정 및 조정\n   - 목표 두께 65 μm 달성 확인\n   - 예상 소요 시간: 20분\n\n4. **코팅 속도 미세 조정** (우선순위 4)\n   - 속도 28.2 → 30 m/min으로 증가\n   - 두께 감소 효과 (약 -1 μm)\n   - 즉시 적용 가능\n\n**모니터링 강화**\n\n5. **품질 검사 주기 단축**\n   - 현재: 30분 간격 → **10분 간격**\n   - 실시간 두께 측정 강화\n\n6. **슬러리 점도 연속 측정**\n   - 온라인 점도계 설치 검토\n   - 현재: 2시간 간격 → **30분 간격**\n\n**근본 대책 (장기)**\n\n7. **슬러리 관리 시스템 개선**\n   - 자동 점도 제어 시스템 도입\n   - 탱크 밀폐 자동 경보 시스템\n\n8. **코팅 공정 자동화**\n   - 실시간 두께 피드백 제어\n   - AI 기반 파라미터 최적화\n\n---\n\n### 📌 5. 예상 효과\n\n**2시간 내 조치 시**\n- ✅ 코팅 두께 65 μm로 회복 (1시간 내)\n- ✅ 불량률 1% 이하로 감소\n- ✅ 손실 1,495만원으로 제한\n- ✅ 품질 정상화 및 고객 만족도 유지\n\n**4시간 방치 시**\n- ❌ 코팅 두께 71.8 μm까지 증가\n- ❌ 불량률 15% 이상\n- ❌ 손실 3,760만원 발생\n- ❌ 고객 불만 및 브랜드 이미지 손상\n\n**손실 방지 효과**: **2,265만원** (조치 비용: 약 50만원)\n**투자수익률 (ROI)**: **약 45배**\n\n---\n\n### 📋 6. 종합 결론\n\n배터리 코팅 라인에서 슬러리 점도 증가로 인해 코팅 두께가 목표치(65 μm)를 벗어나 68.5 μm까지 상승했습니다. 현재 추세(+0.875 μm/시간)가 지속될 경우:\n\n- ⚠️ **2시간 후 품질 불량 발생 확률 78%**\n- 💰 **4시간 방치 시 3,760만원 손실 예상**\n- 🚨 **고객 불만 및 리콜 위험 높음**\n\n**즉시 조치 (2시간 내)를 통해**:\n- ✅ 슬러리 점도 조정 (용매 추가)\n- ✅ 탱크 밀폐 점검\n- ✅ 블레이드 간격 재설정\n\n**2,265만원의 손실을 방지**하고 품질을 정상화할 수 있습니다."
+      }
+    }
+  },
+  "expected_answer": {
+    "workflow_type": "monitoring_prediction",
+    "agents_involved": [
+      "Orchestration",
+      "Monitoring",
+      "Predictive"
+    ],
+    "key_findings": {
+      "anomaly_detected": true,
+      "anomaly_type": "coating_thickness_drift",
+      "current_thickness": 68.5,
+      "target_thickness": 65.0,
+      "deviation": 3.5,
+      "defect_forecasted": true,
+      "time_to_defect_hours": 2.0,
+      "defect_probability_2h": 0.78,
+      "expected_loss_2h": 14950000,
+      "expected_loss_4h": 37600000
+    },
+    "recommendations": [
+      "2시간 내 슬러리 점도 조정",
+      "탱크 밀폐 점검",
+      "블레이드 간격 재설정",
+      "품질 검사 주기 단축"
+    ],
+    "economic_impact": {
+      "loss_prevention": 22650000,
+      "action_cost": 500000,
+      "roi": 45.3
+    }
+  },
+  "test_validation": {
+    "validate_workflow": {
+      "expected_steps": 5,
+      "required_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive"
+      ],
+      "workflow_sequence": [
+        "User → Orchestration",
+        "Orchestration → Monitoring",
+        "Monitoring → Predictive",
+        "Predictive → Orchestration",
+        "Orchestration → User"
+      ]
+    },
+    "validate_monitoring": {
+      "must_detect_anomaly": true,
+      "must_identify_thickness_drift": true,
+      "must_analyze_trend": true,
+      "must_assess_quality_risk": true,
+      "must_recommend_prediction": true
+    },
+    "validate_prediction": {
+      "must_forecast_thickness": true,
+      "must_predict_defect_time": true,
+      "must_calculate_defect_probability": true,
+      "must_estimate_production_impact": true,
+      "forecast_horizon_min_hours": 4,
+      "must_recommend_action": true
+    },
+    "validate_api_compliance": {
+      "all_requests_valid": true,
+      "all_responses_valid": true,
+      "endpoints_match_spec": true
+    },
+    "performance_criteria": {
+      "total_workflow_time_max_seconds": 90,
+      "prediction_accuracy_min": 0.9,
+      "forecast_horizon_min_hours": 2,
+      "economic_impact_required": true
+    }
+  }
+}

@@ -1,0 +1,1115 @@
+{
+  "description": "Test data templates for PRISM workflow scenarios - Updated for all 20 scenarios",
+  "version": "2.0",
+  "last_updated": "2025-10-14",
+  "data_requirements": {
+    "time_interval": "10 seconds",
+    "min_data_points": 5000,
+    "min_variables": 10,
+    "start_time": "2025-05-01T00:00:00Z",
+    "format": "CSV",
+    "encoding": "UTF-8",
+    "timestamp_format": "ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)"
+  },
+  "templates": {
+    "semiconductor": {
+      "cmp_sensors": {
+        "dataset_file": "semiconductor_cmp_001.csv",
+        "scenario_id": "SCENARIO_01",
+        "columns": [
+          "TIMESTAMP",
+          "SENSOR_ID",
+          "MOTOR_CURRENT",
+          "SLURRY_FLOW_RATE",
+          "HEAD_ROTATION",
+          "PRESSURE",
+          "TEMPERATURE",
+          "POLISH_TIME",
+          "PAD_THICKNESS",
+          "SLURRY_TEMP",
+          "VIBRATION"
+        ],
+        "units": {
+          "MOTOR_CURRENT": "A",
+          "SLURRY_FLOW_RATE": "mL/min",
+          "HEAD_ROTATION": "RPM",
+          "PRESSURE": "bar",
+          "TEMPERATURE": "°C",
+          "POLISH_TIME": "seconds",
+          "PAD_THICKNESS": "mm",
+          "SLURRY_TEMP": "°C",
+          "VIBRATION": "mm/s"
+        },
+        "normal_ranges": {
+          "MOTOR_CURRENT": [
+            15.0,
+            18.0
+          ],
+          "SLURRY_FLOW_RATE": [
+            200,
+            300
+          ],
+          "HEAD_ROTATION": [
+            100,
+            140
+          ],
+          "PRESSURE": [
+            2.8,
+            3.5
+          ],
+          "TEMPERATURE": [
+            23.0,
+            27.0
+          ]
+        },
+        "anomaly_scenario": "Slurry flow rate instability around timestamp 13:50:00"
+      },
+      "etch_sensors": {
+        "dataset_file": "semiconductor_etch_002.csv",
+        "scenario_id": "SCENARIO_02",
+        "columns": [
+          "TIMESTAMP",
+          "CHAMBER_ID",
+          "PRESSURE",
+          "VACUUM_PUMP",
+          "GAS_FLOW_RATE",
+          "RF_POWER",
+          "TEMPERATURE",
+          "ETCH_RATE",
+          "BIAS_VOLTAGE",
+          "CHAMBER_HUMIDITY",
+          "GAS_COMPOSITION"
+        ],
+        "units": {
+          "PRESSURE": "mTorr",
+          "VACUUM_PUMP": "%",
+          "GAS_FLOW_RATE": "sccm",
+          "RF_POWER": "W",
+          "TEMPERATURE": "°C",
+          "ETCH_RATE": "nm/min",
+          "BIAS_VOLTAGE": "V",
+          "CHAMBER_HUMIDITY": "%",
+          "GAS_COMPOSITION": "ratio"
+        },
+        "normal_ranges": {
+          "PRESSURE": [
+            50,
+            100
+          ],
+          "VACUUM_PUMP": [
+            85,
+            95
+          ],
+          "GAS_FLOW_RATE": [
+            100,
+            150
+          ],
+          "RF_POWER": [
+            800,
+            1200
+          ],
+          "TEMPERATURE": [
+            20,
+            30
+          ]
+        },
+        "anomaly_scenario": "Pressure continuously increasing toward critical threshold"
+      },
+      "deposition_sensors": {
+        "dataset_file": "semiconductor_deposition_003.csv",
+        "scenario_id": "SCENARIO_03",
+        "columns": [
+          "TIMESTAMP",
+          "CHAMBER_ID",
+          "TEMPERATURE",
+          "PRESSURE",
+          "GAS_FLOW_RATE",
+          "RF_POWER",
+          "DEPOSITION_RATE",
+          "FILM_THICKNESS",
+          "SUBSTRATE_TEMP",
+          "PRECURSOR_FLOW",
+          "UNIFORMITY"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "PRESSURE": "mTorr",
+          "GAS_FLOW_RATE": "sccm",
+          "RF_POWER": "W",
+          "DEPOSITION_RATE": "nm/min",
+          "FILM_THICKNESS": "nm",
+          "SUBSTRATE_TEMP": "°C",
+          "PRECURSOR_FLOW": "sccm",
+          "UNIFORMITY": "%"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            350,
+            450
+          ],
+          "PRESSURE": [
+            200,
+            300
+          ],
+          "GAS_FLOW_RATE": [
+            150,
+            250
+          ],
+          "RF_POWER": [
+            500,
+            700
+          ],
+          "DEPOSITION_RATE": [
+            80,
+            120
+          ]
+        },
+        "anomaly_scenario": "Temperature instability requiring auto control"
+      },
+      "full_process_sensors": {
+        "dataset_file": "semiconductor_full_004.csv",
+        "scenario_id": "SCENARIO_04",
+        "columns": [
+          "TIMESTAMP",
+          "EQUIPMENT_ID",
+          "RF_POWER",
+          "PRESSURE",
+          "TEMPERATURE",
+          "GAS_FLOW_RATE",
+          "VACUUM_PUMP",
+          "PLASMA_DENSITY",
+          "ELECTRON_TEMP",
+          "PROCESS_YIELD",
+          "DEFECT_COUNT",
+          "COMPLIANCE_STATUS"
+        ],
+        "units": {
+          "RF_POWER": "W",
+          "PRESSURE": "mTorr",
+          "TEMPERATURE": "°C",
+          "GAS_FLOW_RATE": "sccm",
+          "VACUUM_PUMP": "%",
+          "PLASMA_DENSITY": "cm^-3",
+          "ELECTRON_TEMP": "eV",
+          "PROCESS_YIELD": "%",
+          "DEFECT_COUNT": "count",
+          "COMPLIANCE_STATUS": "binary"
+        },
+        "normal_ranges": {
+          "RF_POWER": [
+            900,
+            1100
+          ],
+          "PRESSURE": [
+            70,
+            90
+          ],
+          "TEMPERATURE": [
+            25,
+            35
+          ],
+          "PROCESS_YIELD": [
+            95,
+            100
+          ]
+        },
+        "anomaly_scenario": "RF_POWER increasing trend requiring prediction, control, and compliance check"
+      }
+    },
+    "chemical": {
+      "reactor_sensors": {
+        "dataset_file": "chemical_reactor_001.csv",
+        "scenario_id": "SCENARIO_05",
+        "columns": [
+          "TIMESTAMP",
+          "REACTOR_ID",
+          "TEMPERATURE",
+          "PRESSURE",
+          "pH",
+          "CONCENTRATION",
+          "FEED_RATE",
+          "CATALYST_RATIO",
+          "AGITATOR_SPEED",
+          "COOLING_WATER_FLOW",
+          "REACTION_RATE"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "PRESSURE": "bar",
+          "pH": "pH",
+          "CONCENTRATION": "%",
+          "FEED_RATE": "L/min",
+          "CATALYST_RATIO": "ratio",
+          "AGITATOR_SPEED": "RPM",
+          "COOLING_WATER_FLOW": "L/min",
+          "REACTION_RATE": "mol/min"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            180,
+            190
+          ],
+          "PRESSURE": [
+            2.0,
+            2.5
+          ],
+          "pH": [
+            7.0,
+            7.5
+          ],
+          "CONCENTRATION": [
+            75,
+            85
+          ],
+          "FEED_RATE": [
+            40,
+            50
+          ]
+        },
+        "anomaly_scenario": "Rapid temperature increase in reactor REACT_A3"
+      },
+      "distillation_sensors": {
+        "dataset_file": "chemical_distillation_002.csv",
+        "scenario_id": "SCENARIO_06",
+        "columns": [
+          "TIMESTAMP",
+          "TOWER_ID",
+          "PRESSURE",
+          "TEMPERATURE",
+          "REFLUX_RATIO",
+          "REBOILER_HEAT",
+          "FEED_FLOW_RATE",
+          "TOP_TEMP",
+          "BOTTOM_TEMP",
+          "DISTILLATE_PURITY",
+          "CONDENSATE_FLOW"
+        ],
+        "units": {
+          "PRESSURE": "bar",
+          "TEMPERATURE": "°C",
+          "REFLUX_RATIO": "ratio",
+          "REBOILER_HEAT": "kW",
+          "FEED_FLOW_RATE": "L/min",
+          "TOP_TEMP": "°C",
+          "BOTTOM_TEMP": "°C",
+          "DISTILLATE_PURITY": "%",
+          "CONDENSATE_FLOW": "L/min"
+        },
+        "normal_ranges": {
+          "PRESSURE": [
+            1.8,
+            2.2
+          ],
+          "TEMPERATURE": [
+            95,
+            105
+          ],
+          "REFLUX_RATIO": [
+            2.0,
+            3.0
+          ],
+          "REBOILER_HEAT": [
+            180,
+            220
+          ],
+          "FEED_FLOW_RATE": [
+            55,
+            65
+          ]
+        },
+        "anomaly_scenario": "Pressure continuously increasing toward safety limit"
+      },
+      "refining_sensors": {
+        "dataset_file": "chemical_refining_003.csv",
+        "scenario_id": "SCENARIO_07",
+        "columns": [
+          "TIMESTAMP",
+          "REFINE_ID",
+          "PURITY",
+          "TEMPERATURE",
+          "FILTER_PRESSURE",
+          "FLOW_RATE",
+          "FILTRATION_RATE",
+          "CONTAMINANT_LEVEL",
+          "MEMBRANE_CONDUCTIVITY",
+          "PERMEATE_QUALITY",
+          "BACKWASH_CYCLE"
+        ],
+        "units": {
+          "PURITY": "%",
+          "TEMPERATURE": "°C",
+          "FILTER_PRESSURE": "bar",
+          "FLOW_RATE": "L/min",
+          "FILTRATION_RATE": "L/m²/h",
+          "CONTAMINANT_LEVEL": "ppm",
+          "MEMBRANE_CONDUCTIVITY": "μS/cm",
+          "PERMEATE_QUALITY": "%",
+          "BACKWASH_CYCLE": "count"
+        },
+        "normal_ranges": {
+          "PURITY": [
+            92,
+            98
+          ],
+          "TEMPERATURE": [
+            35,
+            45
+          ],
+          "FILTER_PRESSURE": [
+            2.5,
+            3.5
+          ],
+          "FLOW_RATE": [
+            45,
+            55
+          ]
+        },
+        "anomaly_scenario": "Purity degradation below target requiring auto control"
+      },
+      "full_process_sensors": {
+        "dataset_file": "chemical_full_004.csv",
+        "scenario_id": "SCENARIO_08",
+        "columns": [
+          "TIMESTAMP",
+          "PROCESS_ID",
+          "CATALYST_RATIO",
+          "TEMPERATURE",
+          "PRESSURE",
+          "pH",
+          "CONCENTRATION",
+          "YIELD",
+          "SELECTIVITY",
+          "EMISSION_LEVEL",
+          "WASTE_TREATMENT",
+          "COMPLIANCE_STATUS"
+        ],
+        "units": {
+          "CATALYST_RATIO": "ratio",
+          "TEMPERATURE": "°C",
+          "PRESSURE": "bar",
+          "pH": "pH",
+          "CONCENTRATION": "%",
+          "YIELD": "%",
+          "SELECTIVITY": "%",
+          "EMISSION_LEVEL": "ppm",
+          "WASTE_TREATMENT": "pH",
+          "COMPLIANCE_STATUS": "binary"
+        },
+        "normal_ranges": {
+          "CATALYST_RATIO": [
+            0.05,
+            0.12
+          ],
+          "TEMPERATURE": [
+            175,
+            195
+          ],
+          "PRESSURE": [
+            2.1,
+            2.4
+          ],
+          "pH": [
+            6.8,
+            7.4
+          ],
+          "YIELD": [
+            85,
+            95
+          ]
+        },
+        "anomaly_scenario": "Catalyst ratio increasing requiring environmental compliance verification"
+      }
+    },
+    "automotive": {
+      "welding_sensors": {
+        "dataset_file": "automotive_welding_001.csv",
+        "scenario_id": "SCENARIO_09",
+        "columns": [
+          "TIMESTAMP",
+          "LINE_ID",
+          "WELD_CURRENT",
+          "WELD_VOLTAGE",
+          "WIRE_SPEED",
+          "TRAVEL_SPEED",
+          "SHIELDING_GAS",
+          "ARC_LENGTH",
+          "HEAT_INPUT",
+          "PENETRATION_DEPTH",
+          "WELD_QUALITY_INDEX"
+        ],
+        "units": {
+          "WELD_CURRENT": "A",
+          "WELD_VOLTAGE": "V",
+          "WIRE_SPEED": "m/min",
+          "TRAVEL_SPEED": "cm/min",
+          "SHIELDING_GAS": "L/min",
+          "ARC_LENGTH": "mm",
+          "HEAT_INPUT": "kJ/mm",
+          "PENETRATION_DEPTH": "mm",
+          "WELD_QUALITY_INDEX": "score"
+        },
+        "normal_ranges": {
+          "WELD_CURRENT": [
+            180,
+            220
+          ],
+          "WELD_VOLTAGE": [
+            24,
+            28
+          ],
+          "WIRE_SPEED": [
+            8,
+            12
+          ],
+          "TRAVEL_SPEED": [
+            40,
+            60
+          ],
+          "SHIELDING_GAS": [
+            15,
+            20
+          ]
+        },
+        "anomaly_scenario": "Welding current fluctuation affecting quality"
+      },
+      "painting_sensors": {
+        "dataset_file": "automotive_painting_002.csv",
+        "scenario_id": "SCENARIO_10",
+        "columns": [
+          "TIMESTAMP",
+          "BOOTH_ID",
+          "TEMPERATURE",
+          "HUMIDITY",
+          "SPRAY_PRESSURE",
+          "PAINT_FLOW_RATE",
+          "BOOTH_AIRFLOW",
+          "ATOMIZATION_QUALITY",
+          "FILM_THICKNESS",
+          "OVERSPRAY_RATE",
+          "CURING_TEMP"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "HUMIDITY": "%",
+          "SPRAY_PRESSURE": "bar",
+          "PAINT_FLOW_RATE": "mL/min",
+          "BOOTH_AIRFLOW": "m³/min",
+          "ATOMIZATION_QUALITY": "μm",
+          "FILM_THICKNESS": "μm",
+          "OVERSPRAY_RATE": "%",
+          "CURING_TEMP": "°C"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            22,
+            26
+          ],
+          "HUMIDITY": [
+            50,
+            65
+          ],
+          "SPRAY_PRESSURE": [
+            2.5,
+            3.5
+          ],
+          "PAINT_FLOW_RATE": [
+            180,
+            220
+          ],
+          "BOOTH_AIRFLOW": [
+            1800,
+            2200
+          ]
+        },
+        "anomaly_scenario": "Humidity continuously rising affecting coating quality"
+      },
+      "press_sensors": {
+        "dataset_file": "automotive_press_003.csv",
+        "scenario_id": "SCENARIO_11",
+        "columns": [
+          "TIMESTAMP",
+          "PRESS_ID",
+          "PRESS_FORCE",
+          "DIE_TEMPERATURE",
+          "STROKE_SPEED",
+          "BLANK_THICKNESS",
+          "LUBRICATION",
+          "FORMING_DEPTH",
+          "SPRING_BACK",
+          "SURFACE_ROUGHNESS",
+          "DEFECT_RATE"
+        ],
+        "units": {
+          "PRESS_FORCE": "kN",
+          "DIE_TEMPERATURE": "°C",
+          "STROKE_SPEED": "mm/s",
+          "BLANK_THICKNESS": "mm",
+          "LUBRICATION": "ml/cycle",
+          "FORMING_DEPTH": "mm",
+          "SPRING_BACK": "mm",
+          "SURFACE_ROUGHNESS": "μm",
+          "DEFECT_RATE": "%"
+        },
+        "normal_ranges": {
+          "PRESS_FORCE": [
+            800,
+            1200
+          ],
+          "DIE_TEMPERATURE": [
+            180,
+            220
+          ],
+          "STROKE_SPEED": [
+            80,
+            120
+          ],
+          "BLANK_THICKNESS": [
+            0.8,
+            1.2
+          ],
+          "DEFECT_RATE": [
+            0,
+            2
+          ]
+        },
+        "anomaly_scenario": "Press force imbalance requiring auto adjustment"
+      },
+      "assembly_sensors": {
+        "dataset_file": "automotive_assembly_004.csv",
+        "scenario_id": "SCENARIO_12",
+        "columns": [
+          "TIMESTAMP",
+          "STATION_ID",
+          "TORQUE",
+          "PRESSURE",
+          "TEMPERATURE",
+          "CYCLE_TIME",
+          "DEFECT_RATE",
+          "TIGHTENING_ANGLE",
+          "BOLT_COUNT",
+          "POSITION_ACCURACY",
+          "QUALITY_SCORE",
+          "SAFETY_STATUS"
+        ],
+        "units": {
+          "TORQUE": "Nm",
+          "PRESSURE": "bar",
+          "TEMPERATURE": "°C",
+          "CYCLE_TIME": "seconds",
+          "DEFECT_RATE": "%",
+          "TIGHTENING_ANGLE": "degrees",
+          "BOLT_COUNT": "count",
+          "POSITION_ACCURACY": "mm",
+          "QUALITY_SCORE": "score",
+          "SAFETY_STATUS": "binary"
+        },
+        "normal_ranges": {
+          "TORQUE": [
+            80,
+            120
+          ],
+          "PRESSURE": [
+            5.5,
+            6.5
+          ],
+          "TEMPERATURE": [
+            20,
+            28
+          ],
+          "CYCLE_TIME": [
+            45,
+            55
+          ],
+          "DEFECT_RATE": [
+            0,
+            1.5
+          ]
+        },
+        "anomaly_scenario": "Torque increasing requiring safety compliance verification"
+      }
+    },
+    "battery": {
+      "formation_sensors": {
+        "dataset_file": "battery_formation_001.csv",
+        "scenario_id": "SCENARIO_13",
+        "columns": [
+          "TIMESTAMP",
+          "CELL_ID",
+          "VOLTAGE",
+          "CURRENT",
+          "CAPACITY",
+          "TEMPERATURE",
+          "SOC",
+          "CYCLE",
+          "INTERNAL_RESISTANCE",
+          "CHARGE_RATE",
+          "DISCHARGE_RATE"
+        ],
+        "units": {
+          "VOLTAGE": "V",
+          "CURRENT": "A",
+          "CAPACITY": "Ah",
+          "TEMPERATURE": "°C",
+          "SOC": "%",
+          "CYCLE": "count",
+          "INTERNAL_RESISTANCE": "mΩ",
+          "CHARGE_RATE": "C",
+          "DISCHARGE_RATE": "C"
+        },
+        "normal_ranges": {
+          "VOLTAGE": [
+            4.05,
+            4.2
+          ],
+          "CURRENT": [
+            1.0,
+            1.5
+          ],
+          "CAPACITY": [
+            3.3,
+            3.7
+          ],
+          "TEMPERATURE": [
+            40,
+            50
+          ],
+          "SOC": [
+            80,
+            90
+          ]
+        },
+        "anomaly_scenario": "Cell voltage abnormal fluctuation"
+      },
+      "coating_sensors": {
+        "dataset_file": "battery_coating_002.csv",
+        "scenario_id": "SCENARIO_14",
+        "columns": [
+          "TIMESTAMP",
+          "LINE_ID",
+          "COATING_THICKNESS",
+          "COATING_SPEED",
+          "SLURRY_VISCOSITY",
+          "TEMPERATURE",
+          "HUMIDITY",
+          "DRYING_TEMP",
+          "ADHESION_STRENGTH",
+          "UNIFORMITY",
+          "DEFECT_DENSITY"
+        ],
+        "units": {
+          "COATING_THICKNESS": "μm",
+          "COATING_SPEED": "m/min",
+          "SLURRY_VISCOSITY": "cP",
+          "TEMPERATURE": "°C",
+          "HUMIDITY": "%",
+          "DRYING_TEMP": "°C",
+          "ADHESION_STRENGTH": "N/m",
+          "UNIFORMITY": "%",
+          "DEFECT_DENSITY": "count/m²"
+        },
+        "normal_ranges": {
+          "COATING_THICKNESS": [
+            95,
+            105
+          ],
+          "COATING_SPEED": [
+            8,
+            12
+          ],
+          "SLURRY_VISCOSITY": [
+            1800,
+            2200
+          ],
+          "TEMPERATURE": [
+            23,
+            27
+          ],
+          "HUMIDITY": [
+            35,
+            45
+          ]
+        },
+        "anomaly_scenario": "Coating thickness deviating from target"
+      },
+      "aging_sensors": {
+        "dataset_file": "battery_aging_003.csv",
+        "scenario_id": "SCENARIO_15",
+        "columns": [
+          "TIMESTAMP",
+          "CELL_ID",
+          "SOH",
+          "SOC",
+          "CAPACITY",
+          "TEMPERATURE",
+          "HUMIDITY",
+          "AGING_DAYS",
+          "CAPACITY_RETENTION",
+          "IMPEDANCE_GROWTH",
+          "SELF_DISCHARGE_RATE"
+        ],
+        "units": {
+          "SOH": "%",
+          "SOC": "%",
+          "CAPACITY": "Ah",
+          "TEMPERATURE": "°C",
+          "HUMIDITY": "%",
+          "AGING_DAYS": "days",
+          "CAPACITY_RETENTION": "%",
+          "IMPEDANCE_GROWTH": "%",
+          "SELF_DISCHARGE_RATE": "%/month"
+        },
+        "normal_ranges": {
+          "SOH": [
+            95,
+            100
+          ],
+          "SOC": [
+            45,
+            55
+          ],
+          "CAPACITY": [
+            3.4,
+            3.6
+          ],
+          "TEMPERATURE": [
+            23,
+            27
+          ],
+          "HUMIDITY": [
+            45,
+            55
+          ]
+        },
+        "anomaly_scenario": "SOH degrading faster than expected"
+      },
+      "production_sensors": {
+        "dataset_file": "battery_production_004.csv",
+        "scenario_id": "SCENARIO_16",
+        "columns": [
+          "TIMESTAMP",
+          "PRODUCTION_LINE",
+          "TEMPERATURE",
+          "VOLTAGE",
+          "CURRENT",
+          "CAPACITY",
+          "SOC",
+          "CELL_WEIGHT",
+          "ELECTROLYTE_FILL",
+          "SEAL_QUALITY",
+          "YIELD_RATE",
+          "SAFETY_STATUS"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "VOLTAGE": "V",
+          "CURRENT": "A",
+          "CAPACITY": "Ah",
+          "SOC": "%",
+          "CELL_WEIGHT": "g",
+          "ELECTROLYTE_FILL": "mL",
+          "SEAL_QUALITY": "score",
+          "YIELD_RATE": "%",
+          "SAFETY_STATUS": "binary"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            24,
+            28
+          ],
+          "VOLTAGE": [
+            4.1,
+            4.18
+          ],
+          "CURRENT": [
+            1.1,
+            1.4
+          ],
+          "CAPACITY": [
+            3.4,
+            3.6
+          ],
+          "YIELD_RATE": [
+            96,
+            100
+          ]
+        },
+        "anomaly_scenario": "Temperature increasing requiring safety compliance"
+      }
+    },
+    "steel": {
+      "rolling_sensors": {
+        "dataset_file": "steel_rolling_001.csv",
+        "scenario_id": "SCENARIO_17",
+        "columns": [
+          "TIMESTAMP",
+          "LINE_ID",
+          "THICKNESS",
+          "ROLL_GAP",
+          "ROLLING_SPEED",
+          "TENSION",
+          "TEMPERATURE",
+          "ROLL_FORCE",
+          "WIDTH",
+          "FLATNESS",
+          "SURFACE_QUALITY"
+        ],
+        "units": {
+          "THICKNESS": "mm",
+          "ROLL_GAP": "mm",
+          "ROLLING_SPEED": "m/min",
+          "TENSION": "MPa",
+          "TEMPERATURE": "°C",
+          "ROLL_FORCE": "kN",
+          "WIDTH": "mm",
+          "FLATNESS": "I-unit",
+          "SURFACE_QUALITY": "score"
+        },
+        "normal_ranges": {
+          "THICKNESS": [
+            3.6,
+            4.0
+          ],
+          "ROLL_GAP": [
+            3.8,
+            4.2
+          ],
+          "ROLLING_SPEED": [
+            160,
+            200
+          ],
+          "TENSION": [
+            270,
+            300
+          ],
+          "TEMPERATURE": [
+            820,
+            880
+          ]
+        },
+        "anomaly_scenario": "Thickness exceeding target deviation"
+      },
+      "converter_sensors": {
+        "dataset_file": "steel_converter_002.csv",
+        "scenario_id": "SCENARIO_18",
+        "columns": [
+          "TIMESTAMP",
+          "CONVERTER_ID",
+          "TEMPERATURE",
+          "OXYGEN_FLOW",
+          "LANCE_POSITION",
+          "PRESSURE",
+          "SLAG_COMPOSITION",
+          "CARBON_CONTENT",
+          "PHOSPHORUS_LEVEL",
+          "SULFUR_LEVEL",
+          "BATH_LEVEL"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "OXYGEN_FLOW": "Nm³/min",
+          "LANCE_POSITION": "mm",
+          "PRESSURE": "bar",
+          "SLAG_COMPOSITION": "CaO/SiO2",
+          "CARBON_CONTENT": "%",
+          "PHOSPHORUS_LEVEL": "ppm",
+          "SULFUR_LEVEL": "ppm",
+          "BATH_LEVEL": "mm"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            1600,
+            1700
+          ],
+          "OXYGEN_FLOW": [
+            450,
+            550
+          ],
+          "LANCE_POSITION": [
+            1400,
+            1600
+          ],
+          "PRESSURE": [
+            0.9,
+            1.1
+          ],
+          "SLAG_COMPOSITION": [
+            2.8,
+            3.5
+          ]
+        },
+        "anomaly_scenario": "Temperature and oxygen flow fluctuation affecting slag status"
+      },
+      "casting_sensors": {
+        "dataset_file": "steel_casting_003.csv",
+        "scenario_id": "SCENARIO_19",
+        "columns": [
+          "TIMESTAMP",
+          "CASTER_ID",
+          "SLAB_THICKNESS",
+          "CASTING_SPEED",
+          "MOLD_WIDTH",
+          "TEMPERATURE",
+          "COOLING_WATER_FLOW",
+          "MOLD_LEVEL",
+          "STRAND_TEMPERATURE",
+          "WITHDRAWAL_FORCE",
+          "SURFACE_DEFECTS"
+        ],
+        "units": {
+          "SLAB_THICKNESS": "mm",
+          "CASTING_SPEED": "m/min",
+          "MOLD_WIDTH": "mm",
+          "TEMPERATURE": "°C",
+          "COOLING_WATER_FLOW": "m³/h",
+          "MOLD_LEVEL": "mm",
+          "STRAND_TEMPERATURE": "°C",
+          "WITHDRAWAL_FORCE": "kN",
+          "SURFACE_DEFECTS": "count"
+        },
+        "normal_ranges": {
+          "SLAB_THICKNESS": [
+            220,
+            240
+          ],
+          "CASTING_SPEED": [
+            0.8,
+            1.2
+          ],
+          "MOLD_WIDTH": [
+            1500,
+            1600
+          ],
+          "TEMPERATURE": [
+            1540,
+            1580
+          ],
+          "SURFACE_DEFECTS": [
+            0,
+            2
+          ]
+        },
+        "anomaly_scenario": "Slab thickness imbalance requiring casting speed adjustment"
+      },
+      "production_sensors": {
+        "dataset_file": "steel_production_004.csv",
+        "scenario_id": "SCENARIO_20",
+        "columns": [
+          "TIMESTAMP",
+          "PRODUCTION_LINE",
+          "TEMPERATURE",
+          "PRESSURE",
+          "OXYGEN_FLOW",
+          "SLAG_COMPOSITION",
+          "THICKNESS",
+          "PRODUCTION_RATE",
+          "QUALITY_INDEX",
+          "EMISSION_LEVEL",
+          "ENERGY_CONSUMPTION",
+          "COMPLIANCE_STATUS"
+        ],
+        "units": {
+          "TEMPERATURE": "°C",
+          "PRESSURE": "bar",
+          "OXYGEN_FLOW": "Nm³/min",
+          "SLAG_COMPOSITION": "CaO/SiO2",
+          "THICKNESS": "mm",
+          "PRODUCTION_RATE": "tons/hour",
+          "QUALITY_INDEX": "score",
+          "EMISSION_LEVEL": "mg/Nm³",
+          "ENERGY_CONSUMPTION": "kWh/ton",
+          "COMPLIANCE_STATUS": "binary"
+        },
+        "normal_ranges": {
+          "TEMPERATURE": [
+            1620,
+            1680
+          ],
+          "PRESSURE": [
+            0.95,
+            1.05
+          ],
+          "OXYGEN_FLOW": [
+            480,
+            520
+          ],
+          "THICKNESS": [
+            3.7,
+            3.9
+          ],
+          "PRODUCTION_RATE": [
+            180,
+            220
+          ]
+        },
+        "anomaly_scenario": "Temperature increasing requiring environmental compliance verification"
+      }
+    }
+  },
+  "data_generation_guide": {
+    "normal_data": {
+      "description": "Normal operating conditions within specification limits",
+      "characteristics": [
+        "Values within target ±10%",
+        "Low variance (std < 5% of mean)",
+        "No outliers",
+        "Smooth trends",
+        "Gaussian distribution"
+      ],
+      "generation_method": "Use normal distribution around mean values with low standard deviation"
+    },
+    "anomaly_data": {
+      "description": "Abnormal conditions for anomaly detection testing",
+      "characteristics": [
+        "Values exceeding specification limits",
+        "High variance (std > 15% of mean)",
+        "Outliers present",
+        "Sudden spikes or drops",
+        "Pattern changes"
+      ],
+      "generation_method": "Inject anomalies at specific timestamps matching scenario descriptions"
+    },
+    "trend_data": {
+      "description": "Gradual trending data for prediction scenarios",
+      "characteristics": [
+        "Linear or exponential trends",
+        "Gradual drift toward limits",
+        "Predictable patterns",
+        "Time-dependent changes"
+      ],
+      "generation_method": "Apply linear or polynomial trends to simulate degradation or buildup"
+    },
+    "control_response_data": {
+      "description": "Data showing response to control actions",
+      "characteristics": [
+        "Step changes after control",
+        "Return to normal ranges",
+        "Stabilization patterns",
+        "Reduced variance post-control"
+      ],
+      "generation_method": "Model control actions as step functions with first-order responses"
+    }
+  },
+  "csv_file_structure": {
+    "header_row": "Required - Contains column names",
+    "timestamp_column": "First column, ISO 8601 format",
+    "sensor_id_column": "Second column, identifies specific equipment",
+    "data_columns": "10+ sensor variables per specification",
+    "missing_values": "Use empty string or null for missing data",
+    "decimal_precision": "2 decimal places for most measurements",
+    "row_count": "Minimum 5000 rows (13.9 hours at 10-second intervals)"
+  },
+  "scenario_timing": {
+    "start_time": "2025-05-01T00:00:00Z",
+    "interval": "10 seconds",
+    "total_duration": "13.9+ hours (5000+ data points)",
+    "anomaly_injection_time": "Varies by scenario, typically around 13:00-14:00",
+    "notes": "All datasets start at same time for consistency"
+  },
+  "quality_requirements": {
+    "completeness": "No gaps in time series except intentional missing values",
+    "consistency": "Sensor correlations must be realistic",
+    "accuracy": "Values must match physical constraints",
+    "realism": "Must represent actual manufacturing conditions",
+    "variability": "Include normal process noise"
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "scenario_id": "SCENARIO_01",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "반도체 CMP 공정 이상 모니터링",
+    "title_en": "Semiconductor CMP Process Anomaly Monitoring",
+    "industry": "semiconductor",
+    "process": "CMP",
+    "workflow_type": "monitoring_only",
+    "workflow_level": 1,
+    "complexity": "low",
+    "description": "CMP(Chemical Mechanical Planarization) 공정에서 Slurry 유량 이상을 감지하고 분석하는 시나리오"
+  },
+  "query": {
+    "text": "CMP 공정에서 Slurry 유량이 불안정합니다. 현재 상황을 분석해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:50:00Z"
+    },
+    "user_id": "cmp_operator_01",
+    "priority": "high"
+  },
+  "timeseries_data": {
+    "file": "semiconductor_cmp_001.csv",
+    "file_path": "test_data/semiconductor/semiconductor_cmp_001.csv",
+    "columns": [
+      "TIMESTAMP",
+      "TOOL_ID",
+      "MOTOR_CURRENT",
+      "HEAD_ROTATION",
+      "SLURRY_FLOW_RATE",
+      "PRESSURE",
+      "TEMPERATURE",
+      "DOWN_FORCE",
+      "PAD_CONDITION",
+      "REMOVAL_RATE",
+      "UNIFORMITY"
+    ],
+    "key_variables": [
+      "SLURRY_FLOW_RATE",
+      "MOTOR_CURRENT",
+      "REMOVAL_RATE"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:50:00Z",
+      "total_points": 4980,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:50:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "CMP 공정에서 Slurry 유량이 불안정합니다. 현재 상황을 분석해주세요.",
+        "session_id": "cmp_session_20250501_001",
+        "user_id": "cmp_operator_01",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "anomaly_detection_and_analysis",
+          "target_process": "cmp_planarization",
+          "target_variable": "SLURRY_FLOW_RATE",
+          "action_required": "current_state_analysis",
+          "urgency": "high"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_only",
+          "reason": "User requests current state analysis without prediction or control",
+          "required_agents": [
+            "Monitoring"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "CMP_TASK_20250501_001",
+          "name": "CMP Slurry 유량 이상 감지 및 분석",
+          "assigned_agent": "Monitoring",
+          "priority": "high"
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T13:50:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "CMP_TASK_20250501_001",
+        "query": "CMP 툴 TOOL_CMP01~CMP04의 SLURRY_FLOW_RATE 이상 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T13:50:00Z. 주요 변수: SLURRY_FLOW_RATE, MOTOR_CURRENT, REMOVAL_RATE"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:50:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### CMP Slurry 유량 이상 탐지 분석 결과\n\n---\n\n#### 📊 1. 탐지 결과 개요\n- **분석 대상**: CMP 툴 TOOL_CMP01~CMP04\n- **분석 시간**: 2025-05-01 00:00:00 ~ 13:50:00 (13시간 50분)\n- **총 데이터 포인트**: 4,980건\n- **이상치 감지**: 178건 (3.6%)\n- **이상 감지 시작 시간**: 2025-05-01T13:10:00Z\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 SLURRY_FLOW_RATE 불안정\n- **현상**: 간헐적 급감(intermittent drop) 패턴 감지\n- **정상 범위**: 180-220 mL/min\n- **현재 평균값**: 165.3 mL/min (목표 대비 -17.4%)\n- **최저값**: 132.8 mL/min (13:35 발생)\n- **변동 폭**: ±38.5 mL/min\n- **표준편차**: 28.7 mL/min (정상 대비 380% 증가)\n- **드롭 발생 빈도**: 평균 5분마다 1회\n- **추세**: 불안정(unstable with drops)\n\n##### 2.2 REMOVAL_RATE 저하\n- **정상 범위**: 250-300 nm/min\n- **현재 평균**: 218.5 nm/min (목표 대비 -20.5%)\n- **SLURRY_FLOW_RATE와 상관계수**: 0.88 (매우 강한 양의 상관관계)\n- **해석**: Slurry 공급 부족으로 연마율 저하\n- **불량 웨이퍼**: 34장 (13:10 이후)\n\n##### 2.3 UNIFORMITY 악화\n- **정상 범위**: ≥ 95%\n- **현재 평균**: 87.2% (목표 대비 -7.8%p)\n- **최악값**: 79.3% (13:35 발생)\n- **해석**: 불균일한 Slurry 공급으로 웨이퍼 면내 불균일 발생\n\n##### 2.4 MOTOR_CURRENT 스파이크\n- **정상 범위**: 8.5-10.5 A\n- **이상 패턴**: 간헐적 스파이크 (최대 13.2 A)\n- **스파이크 발생**: Slurry 드롭과 동시 발생\n- **해석**: Slurry 부족으로 패드-웨이퍼 마찰 증가\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 후보**:\n1. **Slurry 공급 펌프 불량** (가능성: 매우 높음)\n   - 간헐적 드롭 패턴\n   - 5분 주기 반복 (펌프 내부 기계적 문제 의심)\n   - 펌프 캐비테이션 또는 체크 밸브 고장 가능\n   \n2. **Slurry 라인 막힘** (가능성: 높음)\n   - Slurry 응고 또는 입자 침전\n   - 필터 막힘\n   - 라인 내 기포 유입\n   \n3. **Slurry 저장 탱크 레벨 저하** (가능성: 중간)\n   - 탱크 레벨 센서 오류 가능\n   - 실제 Slurry 부족\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 정상 평균 | 현재 평균 | 최소값 | 최대값 | 목표 범위 | 이탈율 |\n|------|----------|----------|--------|--------|-----------|--------|\n| SLURRY_FLOW_RATE | 200 mL/min | 165.3 mL/min | 132.8 mL/min | 198.5 mL/min | 180-220 mL/min | 17.4% |\n| REMOVAL_RATE | 275 nm/min | 218.5 nm/min | 185.2 nm/min | 267.3 nm/min | 250-300 nm/min | 20.5% |\n| UNIFORMITY | 96.8% | 87.2% | 79.3% | 94.5% | ≥95% | 9.9% |\n| MOTOR_CURRENT | 9.5 A | 10.8 A | 9.1 A | 13.2 A | 8.5-10.5 A | 13.3% |\n\n#### 💡 5. 권장 조치사항\n\n**즉시 조치 (우선순위: 긴급)**\n1. Slurry 공급 펌프 점검\n   - 펌프 압력 게이지 확인\n   - 펌프 모터 진동 측정\n   - 체크 밸브 동작 확인\n   \n2. Slurry 라인 점검\n   - 필터 압력차 측정\n   - 라인 플러싱 수행\n   - 기포 유입 여부 확인\n\n**단기 조치 (2시간 내)**\n3. Slurry 저장 탱크 확인\n   - 레벨 센서 교정\n   - 실제 Slurry 잔량 육안 확인\n   - 필요시 Slurry 보충\n\n4. 불량 웨이퍼 처리\n   - 13:10 이후 가공 웨이퍼 34장 재검사\n   - UNIFORMITY < 90% 웨이퍼 재가공 또는 폐기\n\n**중기 조치 (24시간 내)**\n5. 예방 정비 스케줄 조정\n   - Slurry 공급 시스템 전체 점검\n   - 펌프 교체 검토\n   - 필터 교체 주기 단축\n\n#### 📌 6. 영향 범위 및 리스크\n\n- **생산 영향**: 중간 (34장 웨이퍼 불량, 재가공 필요)\n- **품질 영향**: 높음 (UNIFORMITY 저하, 칩 성능 편차 우려)\n- **수율 영향**: 웨이퍼당 양품 칩 수 약 15% 감소 예상\n- **경제적 손실**: 약 28,000,000원 (웨이퍼 34장 × 820,000원/장)\n- **고객 불만 가능성**: 중간 (품질 불량 지속 시)\n\n#### 🎯 7. 성능 지표 요약\n\n**정상 상태 (13:10 이전)**:\n- SLURRY_FLOW_RATE: 200.3 mL/min (안정)\n- REMOVAL_RATE: 276.8 nm/min (목표 달성)\n- UNIFORMITY: 96.8% (우수)\n- 불량률: 0.2%\n\n**이상 상태 (13:10 이후)**:\n- SLURRY_FLOW_RATE: 165.3 mL/min (17.4% 저하)\n- REMOVAL_RATE: 218.5 nm/min (20.5% 저하)\n- UNIFORMITY: 87.2% (9.9%p 저하)\n- 불량률: 42.5% (178배 증가)\n\n---\n**분석 완료 시각**: 2025-05-01T13:50:05Z  \n**분석 소요 시간**: 4.5초  \n**신뢰도**: 91%"
+      }
+    },
+    "step_4_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T13:50:06Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "cmp_session_20250501_001",
+        "final_answer": "CMP 공정의 Slurry 유량이 165.3 mL/min으로 목표 범위(180-220 mL/min) 대비 17.4% 저하되어 간헐적 드롭 패턴이 5분마다 발생하고 있습니다. 이로 인해 연마율이 20.5% 감소하고 웨이퍼 면내 균일도가 87.2%로 저하되었으며, 13:10 이후 34장의 웨이퍼가 불량 처리되었습니다. Slurry 공급 펌프의 기계적 문제(캐비테이션 또는 체크 밸브 고장)가 주요 원인으로 추정되며, 즉시 펌프 및 라인 점검이 필요합니다.",
+        "final_markdown": "### CMP Slurry 유량 이상 탐지 분석 결과\n\n(상세 내용은 monitoring response 참조)",
+        "task_history": [
+          {
+            "id": "CMP_TASK_20250501_001",
+            "name": "CMP Slurry 유량 이상 감지 및 분석",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "high"
+          }
+        ],
+        "tools_used": [
+          "Monitoring"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "anomalies_detected": 178,
+            "severity": "high",
+            "affected_wafers": 34,
+            "economic_loss_krw": 28000000
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "CMP 공정의 Slurry 유량이 13:10부터 불안정해져 평균 165.3 mL/min으로 목표 대비 17.4% 저하되었습니다. 5분 주기로 간헐적 드롭이 발생하며, 이로 인해 연마율 20.5% 감소, 균일도 87.2%로 저하, 34장 웨이퍼 불량이 발생했습니다. Slurry 공급 펌프의 기계적 문제가 주요 원인으로 추정됩니다.",
+    "detected_issues": [
+      {
+        "issue": "SLURRY_FLOW_RATE 간헐적 드롭",
+        "severity": "high",
+        "description": "165.3 mL/min으로 목표 범위(180-220 mL/min) 대비 17.4% 저하, 5분 주기 드롭 패턴",
+        "affected_timeframe": "2025-05-01T13:10:00Z ~ 2025-05-01T13:50:00Z",
+        "occurrence_count": 178,
+        "drop_frequency": "5분마다 1회"
+      },
+      {
+        "issue": "REMOVAL_RATE 저하",
+        "severity": "high",
+        "description": "연마율 218.5 nm/min으로 20.5% 감소, Slurry 부족으로 인한 연마 성능 저하",
+        "impact": "웨이퍼당 양품 칩 수 15% 감소"
+      },
+      {
+        "issue": "UNIFORMITY 악화",
+        "severity": "medium",
+        "description": "면내 균일도 87.2%로 목표치(≥95%) 미달, 최악값 79.3%",
+        "impact": "칩 성능 편차 우려"
+      },
+      {
+        "issue": "MOTOR_CURRENT 스파이크",
+        "severity": "medium",
+        "description": "Slurry 드롭과 동시에 전류 스파이크 발생 (최대 13.2 A)",
+        "root_cause_hint": "패드-웨이퍼 마찰 증가"
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "urgent",
+        "action": "Slurry 공급 펌프 긴급 점검",
+        "details": "펌프 압력 게이지 확인, 모터 진동 측정, 체크 밸브 동작 확인",
+        "expected_effect": "Slurry 유량 안정화"
+      },
+      {
+        "priority": "high",
+        "action": "Slurry 라인 점검 및 플러싱",
+        "details": "필터 압력차 측정, 라인 플러싱, 기포 유입 확인",
+        "expected_effect": "라인 막힘 제거"
+      },
+      {
+        "priority": "medium",
+        "action": "불량 웨이퍼 재검사 및 처리",
+        "details": "34장 웨이퍼 재검사, UNIFORMITY < 90% 웨이퍼 재가공/폐기",
+        "implementation_time": "2시간 내"
+      }
+    ],
+    "metrics": {
+      "analysis_time_ms": 4500,
+      "data_points_analyzed": 4980,
+      "anomalies_detected": 178,
+      "anomaly_rate_percent": 3.6,
+      "affected_wafers": 34,
+      "defect_rate_percent": 42.5,
+      "economic_loss_krw": 28000000,
+      "confidence_score": 0.91
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration"
+    ],
+    "expected_agents_count": 2,
+    "should_predict": false,
+    "should_control": false,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "mode": "csv",
-  "csv_path": "prism_prediction/Industrial_DB_sample/SEMI_CMP_SENSORS_predict.csv",
+  "csv_path": "prism_prediction/Industrial_DB_sample/dataset_v2/SEMI_CMP_SENSORS.csv",
   "seq_len": 48,
   "label_len": 24,
   "pred_len": 11,
@@ -9,39 +9,40 @@
   "eval_channel_idx": 8,
   "selection_metric": "val_rmse_focus",
   "best_model": "TimesNet",
-  "best_val_rmse_focus": 3.2319672107696533,
-  "best_val_rmse_all": 235.93780517578125,
+  "best_val_rmse_focus": 1.5753964185714722,
+  "best_val_rmse_all": 3401.642333984375,
   "results": {
     "Autoformer": {
-      "val_rmse_all": 248.3970184326172,
-      "val_rmse_focus": 108.75589752197266
+      "error": "Cannot import model module for 'Autoformer'. Tried prism_prediction.models.Autoformer, models.Autoformer, and Autoformer",
+      "trace": "Traceback (most recent call last):\n  File \"/home/dmlab/AGI/run.py\", line 468, in main\n    focus_rmse, metrics, model_obj, ckpt_path = train_and_validate(\n                                                ^^^^^^^^^^^^^^^^^^^\n  File \"/home/dmlab/AGI/run.py\", line 274, in train_and_validate\n    model = build_model(name, cfg, device)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/dmlab/AGI/run.py\", line 198, in build_model\n    mod = import_model_module(name)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/dmlab/AGI/run.py\", line 195, in import_model_module\n    raise ImportError(f\"Cannot import model module for '{name}'. Tried prism_prediction.models.{name}, models.{name}, and {name}\")\nImportError: Cannot import model module for 'Autoformer'. Tried prism_prediction.models.Autoformer, models.Autoformer, and Autoformer\n"
     },
     "DLinear": {
-      "val_rmse_all": 255.54910278320312,
-      "val_rmse_focus": 3.3810741901397705
+      "val_rmse_all": 3196.71923828125,
+      "val_rmse_focus": 3.071143627166748
     },
     "TimesNet": {
-      "val_rmse_all": 235.93780517578125,
-      "val_rmse_focus": 3.2319672107696533
+      "val_rmse_all": 3401.642333984375,
+      "val_rmse_focus": 1.5753964185714722
     },
     "LightTS": {
-      "val_rmse_all": 1152.325439453125,
-      "val_rmse_focus": 19.069955825805664
+      "val_rmse_all": 3627.707763671875,
+      "val_rmse_focus": 5.005735397338867
     }
   },
   "prediction": [
-    18.095299,
-    16.372711,
-    18.664963,
-    14.825407,
-    16.47625,
-    16.487608,
-    17.424318,
-    16.602634,
-    17.291752,
-    15.002139,
-    18.01297
+    15.071225,
+    15.348767,
+    14.956857,
+    15.569021,
+    16.002924,
+    15.280668,
+    15.684923,
+    14.707626,
+    16.583435,
+    15.792115,
+    16.094166
   ],
   "target_col_name": "MOTOR_CURRENT",
-  "feature_start_col": 5
+  "feature_start_col": 5,
+  "best_weight_path": "outputs/TimesNet/ckpt.pt"
 }

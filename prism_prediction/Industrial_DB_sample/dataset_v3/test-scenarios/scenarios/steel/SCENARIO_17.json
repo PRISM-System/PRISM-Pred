@@ -1,0 +1,369 @@
+{
+  "scenario_id": "SCENARIO_17",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "철강 압연 공정 두께 이상 모니터링",
+    "title_en": "Steel Rolling Process Thickness Anomaly Monitoring",
+    "industry": "steel",
+    "process": "Rolling",
+    "workflow_type": "monitoring_only",
+    "workflow_level": 1,
+    "complexity": "low",
+    "description": "열간 압연 공정에서 강판 두께가 목표치를 벗어나는 현상을 실시간으로 감지하고 원인을 분석하는 시나리오. 압연 두께 편차는 제품 품질, 후속 공정, 고객 요구사항에 직접적인 영향을 미치며, 즉각적인 조치가 필요함",
+    "description_en": "Scenario for real-time detection and analysis of steel plate thickness deviation from target in hot rolling process. Rolling thickness deviation directly affects product quality, downstream processes, and customer requirements, requiring immediate action",
+    "tags": ["steel", "rolling", "thickness", "quality_control", "hot_rolling", "gauge_control"]
+  },
+  "query": {
+    "text": "압연 라인 ROLL_004의 THICKNESS가 목표 편차를 초과하고 있습니다. 현재 상황을 분석해주세요.",
+    "text_en": "Rolling line ROLL_004 THICKNESS is exceeding target deviation. Please analyze the current situation.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T06:00:00Z"
+    },
+    "user_id": "steel_operator_01",
+    "priority": "high",
+    "expected_workflow": "monitoring_only"
+  },
+  "timeseries_data": {
+    "source_file": "/test_data/steel/rolling_data.csv",
+    "parameters": [
+      {
+        "name": "THICKNESS",
+        "unit": "mm",
+        "description": "압연 강판 두께",
+        "normal_range": [4.9, 5.1],
+        "critical_threshold": 5.3
+      },
+      {
+        "name": "ROLL_GAP",
+        "unit": "mm",
+        "description": "롤 간격",
+        "normal_range": [4.7, 4.9],
+        "critical_threshold": 5.1
+      },
+      {
+        "name": "ROLLING_SPEED",
+        "unit": "m/min",
+        "description": "압연 속도",
+        "normal_range": [180, 220],
+        "critical_threshold": 250
+      },
+      {
+        "name": "TENSION",
+        "unit": "kN",
+        "description": "장력",
+        "normal_range": [120, 160],
+        "critical_threshold": 180
+      },
+      {
+        "name": "TEMPERATURE",
+        "unit": "°C",
+        "description": "강판 온도",
+        "normal_range": [950, 1050],
+        "critical_threshold": 1100
+      }
+    ],
+    "sampling_interval": "10s",
+    "data_points": 2160,
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T06:00:00Z"
+    },
+    "anomaly_info": {
+      "type": "thickness_deviation",
+      "description": "강판 두께가 목표 5.0mm에서 5.25mm로 편차 증가",
+      "start_time": "2025-05-01T03:00:00Z",
+      "peak_time": "2025-05-01T06:00:00Z",
+      "affected_parameters": ["THICKNESS", "ROLL_GAP"]
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T06:00:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "압연 라인 ROLL_004의 THICKNESS가 목표 편차를 초과하고 있습니다. 현재 상황을 분석해주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T06:00:00Z"
+        },
+        "user_id": "steel_operator_01",
+        "priority": "high"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_rolling_001",
+        "workflow_type": "monitoring_only",
+        "message": "철강 압연 공정 두께 이상 모니터링 워크플로우를 시작합니다.",
+        "next_agent": "Monitoring Agent"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration Agent",
+      "to": "Monitoring Agent",
+      "timestamp": "2025-05-01T06:00:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_steel_rolling_001",
+        "workflow_type": "monitoring_only",
+        "task": "analyze_thickness_deviation",
+        "query": {
+          "text": "압연 라인 ROLL_004의 THICKNESS가 목표 편차를 초과하고 있습니다. 현재 상황을 분석해주세요.",
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T06:00:00Z"
+          }
+        },
+        "context": {
+          "industry": "steel",
+          "process": "Rolling",
+          "priority": "high"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_rolling_001",
+        "agent": "Monitoring Agent",
+        "analysis_result": {
+          "anomaly_detected": true,
+          "anomaly_type": "thickness_deviation",
+          "severity": "high",
+          "affected_parameters": [
+            {
+              "name": "THICKNESS",
+              "current_value": 5.25,
+              "normal_range": [4.9, 5.1],
+              "target_value": 5.0,
+              "deviation": 0.25,
+              "tolerance": 0.1,
+              "status": "out_of_tolerance"
+            },
+            {
+              "name": "ROLL_GAP",
+              "current_value": 5.02,
+              "normal_range": [4.7, 4.9],
+              "target_value": 4.8,
+              "deviation": 0.22,
+              "status": "above_target"
+            },
+            {
+              "name": "ROLLING_SPEED",
+              "current_value": 198.5,
+              "normal_range": [180, 220],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "TENSION",
+              "current_value": 138.2,
+              "normal_range": [120, 160],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "TEMPERATURE",
+              "current_value": 1015.0,
+              "normal_range": [950, 1050],
+              "deviation": 0.0,
+              "status": "normal"
+            }
+          ],
+          "trend_analysis": {
+            "THICKNESS": {
+              "direction": "increasing",
+              "rate": 0.083,
+              "duration": "3 hours",
+              "statistical_significance": 0.95,
+              "baseline": 5.0,
+              "current_deviation": 0.25
+            },
+            "ROLL_GAP": {
+              "direction": "increasing",
+              "rate": 0.073,
+              "duration": "3 hours",
+              "correlation_with_thickness": 0.92
+            }
+          },
+          "root_cause_hypothesis": [
+            "롤 간격 확대로 인한 두께 증가 (롤 마모, 유압 시스템 이상)",
+            "AGC(Automatic Gauge Control) 시스템 오차 누적",
+            "소재 온도 편차로 인한 변형 저항 변화",
+            "입측 두께 변동 (상위 공정 영향)",
+            "롤 크라운(Crown) 변화로 인한 중앙부 두께 증가"
+          ],
+          "quality_impact_assessment": {
+            "thickness_tolerance_exceeded": true,
+            "customer_specification": {
+              "target": "5.0mm ± 0.1mm",
+              "current": "5.25mm",
+              "deviation": "+0.25mm",
+              "status": "out_of_spec"
+            },
+            "affected_products": {
+              "total_length": "약 3,500m (3시간 생산)",
+              "estimated_weight": "약 137톤",
+              "defect_classification": "치수 불량"
+            },
+            "downstream_impact": [
+              "후속 가공 공정 문제 (프레스, 용접 등)",
+              "중량 초과로 인한 재료비 손실",
+              "고객 반품 가능성"
+            ]
+          },
+          "production_metrics": {
+            "rolling_speed": "198.5 m/min",
+            "production_duration": "3 hours",
+            "total_production_length": "약 35,730m",
+            "affected_length": "약 3,500m (9.8%)",
+            "quality_loss": "약 9.8% 품질 저하"
+          },
+          "statistical_analysis": {
+            "thickness_mean": 5.12,
+            "thickness_std": 0.08,
+            "thickness_min": 5.01,
+            "thickness_max": 5.25,
+            "thickness_range": 0.24,
+            "normal_std_threshold": 0.03,
+            "cpk": 0.42,
+            "cpk_target": 1.33,
+            "process_capability": "부적합 (Cpk < 1.0)"
+          },
+          "comparative_analysis": {
+            "normal_shift_average_thickness": 5.02,
+            "current_shift_average_thickness": 5.12,
+            "shift_deviation": 0.10,
+            "normal_shift_defect_rate": "1.5%",
+            "current_shift_defect_rate": "9.8%",
+            "defect_rate_increase": "6.5배"
+          },
+          "recommendation": "즉시 롤 간격 조정 및 AGC 시스템 점검 필요",
+          "summary_report": "## 철강 압연 공정 두께 이상 감지 결과\n\n### 이상 감지\n- **이상 유형**: 강판 두께 편차 초과 (Thickness Deviation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 06:00:00 UTC\n- **이상 시작 시점**: 2025-05-01 03:00:00 UTC (3시간 전)\n\n### 주요 지표 현황\n| 파라미터 | 현재값 | 목표값 | 정상범위 | 편차 | 공차 | 상태 |\n|---------|--------|--------|----------|------|------|------|\n| 강판 두께 | **5.25mm** | 5.0mm | 4.9-5.1mm | **+0.25mm** | ±0.1mm | 🚨 **공차 초과** |\n| 롤 간격 | 5.02mm | 4.8mm | 4.7-4.9mm | +0.22mm | - | ⚠️ 목표 초과 |\n| 압연 속도 | 198.5 m/min | - | 180-220 m/min | 0 | - | ✅ 정상 |\n| 장력 | 138.2 kN | - | 120-160 kN | 0 | - | ✅ 정상 |\n| 강판 온도 | 1015°C | - | 950-1050°C | 0 | - | ✅ 정상 |\n\n### 추세 분석\n- **두께 증가율**: +0.083mm/시간 (지난 3시간 동안)\n- **롤 간격 증가율**: +0.073mm/시간 (지난 3시간 동안)\n- **두께-롤 간격 상관관계**: 0.92 (매우 강한 양의 상관)\n- **통계적 유의성**: 95%\n\n### 원인 분석 (우선순위 순)\n\n1. **롤 간격 확대** (가능성 매우 높음) 🔴\n   - 현재 롤 간격: 5.02mm (목표 4.8mm보다 0.22mm 큼)\n   - 두께와 강한 상관관계 (0.92)\n   - 원인: 롤 마모, 유압 시스템 이상, AGC 오차\n\n2. **AGC 시스템 오차 누적** (가능성 높음) 🟠\n   - 자동 게이지 제어 시스템 보정 필요\n   - 센서 교정 또는 제어 알고리즘 조정\n\n3. **소재 온도 편차** (가능성 중간) 🟡\n   - 온도 변화로 변형 저항 변화\n   - 현재 온도는 정상 범위 (1015°C)\n\n4. **입측 두께 변동** (가능성 중간) 🟡\n   - 상위 공정(가열로, 조압연)에서 편차 유입\n\n5. **롤 크라운 변화** (가능성 낮음) 🟢\n   - 중앙부 두께 증가 (롤 마모 패턴)\n\n### 품질 영향 평가\n\n**고객 사양 준수**\n- 목표 사양: **5.0mm ± 0.1mm**\n- 현재 두께: **5.25mm**\n- 편차: **+0.25mm** 🚨\n- **상태**: 사양 초과 (Out of Spec)\n\n**불량 제품 현황**\n- 영향 받은 길이: 약 3,500m (3시간 생산)\n- 예상 중량: 약 137톤\n- 총 생산 대비: 9.8%\n- **분류**: 치수 불량\n\n**후속 공정 영향**\n- ❌ 프레스 가공 문제 (두께 초과로 성형 불량)\n- ❌ 용접 품질 저하 (두께 편차로 열 입력 불균일)\n- ❌ 중량 초과로 재료비 손실 (+5%)\n- ❌ 고객 반품 가능성\n\n### 생산 지표\n- 압연 속도: 198.5 m/min\n- 생산 기간: 3시간\n- 총 생산 길이: 약 35,730m\n- 불량 길이: 약 3,500m\n- **품질 손실률**: 9.8%\n\n### 통계 분석\n\n**두께 분포**\n- 평균: 5.12mm\n- 표준편차: 0.08mm (정상: 0.03mm)\n- 최소: 5.01mm\n- 최대: 5.25mm\n- 범위: 0.24mm\n\n**공정 능력 지수**\n- Cpk: **0.42** (목표: 1.33 이상)\n- **평가**: 부적합 (Cpk < 1.0) 🚨\n- 의미: 공정 능력 크게 부족, 즉시 개선 필요\n\n### 비교 분석 (정상 교대 대비)\n\n| 항목 | 정상 교대 | 현재 교대 | 차이 |\n|------|----------|----------|------|\n| 평균 두께 | 5.02mm | 5.12mm | +0.10mm |\n| 불량률 | 1.5% | **9.8%** | **6.5배 증가** |\n| Cpk | 1.45 | 0.42 | -71% |\n\n### 권고사항\n\n1. ✅ **즉시 롤 간격 조정** (우선순위 1)\n   - 현재 5.02mm → 목표 4.8mm로 조정\n   - 예상 소요 시간: 10-15분\n\n2. 🔧 **AGC 시스템 점검** (우선순위 2)\n   - 센서 교정 확인\n   - 제어 알고리즘 파라미터 검증\n   - 유압 시스템 압력 점검\n\n3. 🔍 **롤 마모 상태 확인** (우선순위 3)\n   - 롤 교체 주기 검토\n   - 롤 크라운 측정\n\n4. 📊 **불량 제품 처리** (우선순위 4)\n   - 3,500m 구간 별도 표시\n   - 고객 협의 (재가공 또는 등급 하향)\n   - 손실 비용 산정\n\n5. 📝 **상위 공정 점검** (우선순위 5)\n   - 입측 두께 변동 원인 파악\n   - 가열로 온도 균일성 확인\n\n---\n\n**결론**: 압연 라인 ROLL_004에서 롤 간격 확대로 인해 강판 두께가 목표 5.0mm에서 5.25mm로 증가하여 고객 사양(±0.1mm)을 초과했습니다. 즉시 롤 간격을 조정하고 AGC 시스템을 점검하여 품질을 정상화해야 합니다."
+        },
+        "next_step": "return_to_orchestration"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T06:00:30Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_rolling_001",
+        "status": "completed",
+        "results": {
+          "monitoring_result": "thickness_deviation_detected"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_rolling_001",
+        "message": "워크플로우 완료. 사용자에게 결과 전달.",
+        "next_step": "return_to_user"
+      }
+    },
+    "step_4_orchestration_to_user": {
+      "from": "Orchestration Agent",
+      "to": "User",
+      "timestamp": "2025-05-01T06:00:35Z",
+      "api_endpoint": "N/A",
+      "request": {},
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_rolling_001",
+        "workflow_type": "monitoring_only",
+        "summary": "압연 라인 ROLL_004에서 강판 두께가 5.25mm로 목표치(5.0mm ± 0.1mm)를 0.25mm 초과하여 고객 사양을 벗어났습니다. 지난 3시간 동안 시간당 0.083mm씩 증가하는 추세이며, 롤 간격도 5.02mm로 목표(4.8mm)보다 0.22mm 크게 측정되었습니다. 두께와 롤 간격의 상관관계가 0.92로 매우 높아 롤 간격 확대가 주요 원인으로 분석됩니다. 약 3,500m(137톤)의 제품이 치수 불량으로 분류되며, 공정 능력 지수(Cpk)가 0.42로 정상(1.33) 대비 크게 낮습니다. 즉시 롤 간격을 4.8mm로 조정하고 AGC 시스템 점검 및 롤 마모 상태 확인이 필요합니다.",
+        "detailed_results": {
+          "monitoring": {
+            "anomaly_type": "thickness_deviation",
+            "severity": "high",
+            "current_thickness": 5.25,
+            "target_thickness": 5.0,
+            "deviation": 0.25,
+            "tolerance": 0.1,
+            "roll_gap": 5.02,
+            "thickness_roll_gap_correlation": 0.92,
+            "affected_length": 3500,
+            "defect_rate": 0.098,
+            "cpk": 0.42
+          }
+        },
+        "recommendations": [
+          "즉시 롤 간격을 4.8mm로 조정",
+          "AGC 시스템 센서 교정 및 점검",
+          "롤 마모 상태 확인 및 교체 주기 검토",
+          "불량 제품 3,500m 별도 표시 및 고객 협의",
+          "상위 공정 입측 두께 변동 원인 파악"
+        ],
+        "full_report": "## 🏭 철강 압연 공정 두께 이상 모니터링 결과\n\n---\n\n### 📊 1. 이상 감지 개요\n\n**기본 정보**\n- **압연 라인**: ROLL_004\n- **이상 유형**: 강판 두께 편차 초과 (Thickness Deviation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 06:00:00 UTC\n- **이상 시작**: 2025-05-01 03:00:00 UTC (3시간 전)\n- **압연 공정**: 열간 압연 (Hot Rolling)\n\n**주요 지표**\n| 파라미터 | 현재값 | 목표값 | 정상범위 | 편차 | 공차 | 상태 |\n|---------|--------|--------|----------|------|------|------|\n| **강판 두께** | **5.25mm** | 5.0mm | 4.9-5.1mm | **+0.25mm** | ±0.1mm | 🚨 **공차 초과** |\n| 롤 간격 | 5.02mm | 4.8mm | 4.7-4.9mm | +0.22mm | - | ⚠️ 목표 초과 |\n| 압연 속도 | 198.5 m/min | - | 180-220 m/min | 0 | - | ✅ 정상 |\n| 장력 | 138.2 kN | - | 120-160 kN | 0 | - | ✅ 정상 |\n| 강판 온도 | 1015°C | - | 950-1050°C | 0 | - | ✅ 정상 |\n\n---\n\n### 📈 2. 추세 및 상관관계 분석\n\n**두께 변화 추세**\n- **증가율**: +0.083mm/시간 (3시간 동안)\n- **기준선**: 5.0mm\n- **현재 편차**: +0.25mm\n- **통계적 유의성**: 95%\n\n**롤 간격 변화 추세**\n- **증가율**: +0.073mm/시간 (3시간 동안)\n- **목표값**: 4.8mm\n- **현재 편차**: +0.22mm\n\n**상관관계 분석**\n- **두께 ↔ 롤 간격**: 상관계수 **0.92** (매우 강한 양의 상관)\n- **해석**: 롤 간격 증가가 두께 증가의 주요 원인\n\n---\n\n### 🔍 3. 원인 분석\n\n**1. 롤 간격 확대** (가능성 매우 높음) 🔴\n- **현상**: 롤 간격 5.02mm (목표 4.8mm보다 0.22mm 큼)\n- **원인**:\n  - 롤 마모로 인한 간격 증가\n  - 유압 시스템 압력 저하\n  - AGC(Automatic Gauge Control) 설정 오차\n- **증거**: 두께와 강한 상관관계 (0.92)\n\n**2. AGC 시스템 오차 누적** (가능성 높음) 🟠\n- **현상**: 자동 게이지 제어 편차 누적\n- **원인**:\n  - 센서 교정 불량\n  - 제어 알고리즘 파라미터 부적합\n  - 피드백 루프 지연\n\n**3. 소재 온도 편차** (가능성 중간) 🟡\n- **현상**: 온도 변화로 변형 저항 변화\n- **현재 상태**: 1015°C (정상 범위 내)\n- **영향**: 제한적\n\n**4. 입측 두께 변동** (가능성 중간) 🟡\n- **현상**: 상위 공정에서 두께 편차 유입\n- **원인**: 가열로 온도 불균일, 조압연 문제\n\n**5. 롤 크라운 변화** (가능성 낮음) 🟢\n- **현상**: 중앙부 두께 증가 (롤 마모 패턴)\n- **확인 필요**: 롤 크라운 측정\n\n---\n\n### ⚠️ 4. 품질 영향 평가\n\n**고객 사양 준수 여부**\n- **목표 사양**: 5.0mm ± 0.1mm (4.9mm ~ 5.1mm)\n- **현재 두께**: **5.25mm** 🚨\n- **편차**: **+0.25mm** (공차의 2.5배)\n- **판정**: **사양 초과 (Out of Spec)**\n\n**불량 제품 규모**\n| 항목 | 값 |\n|------|----|\n| 불량 발생 기간 | 3시간 |\n| 영향 받은 길이 | 약 3,500m |\n| 예상 중량 | 약 137톤 |\n| 총 생산 대비 | 9.8% |\n| **분류** | **치수 불량** |\n\n**후속 공정 영향**\n- ❌ **프레스 가공**: 두께 초과로 성형 불량, 금형 손상 위험\n- ❌ **용접 품질**: 두께 편차로 열 입력 불균일, 용접 강도 저하\n- ❌ **재료비 손실**: 중량 초과 약 +5% (7톤), 약 1,400만원 손실\n- ❌ **고객 반품**: 사양 미달로 반품 가능성 높음\n\n---\n\n### 📊 5. 통계 분석\n\n**두께 분포 통계**\n| 통계량 | 값 | 비고 |\n|--------|-----|------|\n| 평균 | 5.12mm | 목표 5.0mm보다 +0.12mm |\n| 표준편차 | 0.08mm | 정상: 0.03mm (2.7배) |\n| 최소값 | 5.01mm | - |\n| 최대값 | 5.25mm | - |\n| 범위 | 0.24mm | - |\n\n**공정 능력 지수 (Process Capability)**\n- **Cpk**: **0.42** (목표: 1.33 이상)\n- **평가**: **부적합 (Cpk < 1.0)** 🚨\n- **의미**: \n  - Cpk < 1.0: 공정 능력 크게 부족\n  - 즉시 개선 조치 필요\n  - 불량률 높음 (약 10%)\n\n---\n\n### 🔄 6. 비교 분석\n\n**정상 교대 vs 현재 교대**\n| 항목 | 정상 교대 | 현재 교대 | 차이 |\n|------|----------|----------|------|\n| 평균 두께 | 5.02mm | 5.12mm | +0.10mm |\n| 표준편차 | 0.03mm | 0.08mm | +0.05mm |\n| 불량률 | 1.5% | **9.8%** | **+8.3%p** |\n| Cpk | 1.45 (양호) | 0.42 (부적합) | -71% |\n| **평가** | ✅ 정상 | 🚨 **비정상** | **6.5배 악화** |\n\n---\n\n### 🎯 7. 권고사항\n\n**즉시 조치** (1시간 내) ⚡\n\n1. ✅ **롤 간격 조정** (우선순위 1)\n   - 현재: 5.02mm → 목표: **4.8mm**\n   - 조정량: -0.22mm\n   - 예상 소요: 10-15분\n   - 예상 효과: 두께 5.0mm 회복\n\n2. 🔧 **AGC 시스템 점검** (우선순위 2)\n   - 센서 교정 상태 확인\n   - 제어 알고리즘 파라미터 검증\n   - 유압 시스템 압력 점검\n   - 예상 소요: 30-40분\n\n**단기 조치** (4시간 내)\n\n3. 🔍 **롤 마모 상태 확인** (우선순위 3)\n   - 롤 표면 검사\n   - 롤 크라운 측정\n   - 롤 교체 주기 검토\n   - 예상 소요: 2-3시간 (정지 시간 필요)\n\n4. 📊 **불량 제품 처리** (우선순위 4)\n   - 3,500m 구간 별도 표시 (코일 ID 기록)\n   - 고객 협의 (재가공 또는 등급 하향)\n   - 손실 비용 산정 (약 1,400만원)\n\n**중기 조치** (1주일 내)\n\n5. 📝 **상위 공정 점검** (우선순위 5)\n   - 입측 두께 변동 원인 파악\n   - 가열로 온도 균일성 확인\n   - 조압연 설정 검토\n\n6. 🏆 **공정 능력 개선 계획**\n   - Cpk 1.33 이상 달성 목표\n   - 불량률 1.5% 이하로 감소\n   - AGC 시스템 고도화 검토\n\n---\n\n### 📋 8. 종합 결론\n\n압연 라인 ROLL_004에서 다음과 같은 문제가 발생했습니다:\n\n- 🚨 **강판 두께 5.25mm로 고객 사양(5.0mm ± 0.1mm) 초과**\n- 📊 **공정 능력 지수 Cpk 0.42로 부적합 (정상: 1.33)**\n- 💰 **불량 제품 3,500m (137톤), 재료비 손실 약 1,400만원**\n- ⚠️ **불량률 9.8%로 정상 대비 6.5배 증가**\n\n**주요 원인**: 롤 간격 확대 (5.02mm, 목표 4.8mm보다 0.22mm 큼)\n\n**즉시 조치**:\n1. ✅ 롤 간격 4.8mm로 조정 (10-15분)\n2. 🔧 AGC 시스템 점검 (30-40분)\n3. 🔍 롤 마모 상태 확인 (2-3시간)\n\n조치 완료 후 두께를 목표 5.0mm로 회복하고 품질을 정상화할 수 있습니다."
+      }
+    }
+  },
+  "expected_answer": {
+    "workflow_type": "monitoring_only",
+    "agents_involved": ["Orchestration", "Monitoring"],
+    "key_findings": {
+      "anomaly_detected": true,
+      "anomaly_type": "thickness_deviation",
+      "current_thickness": 5.25,
+      "target_thickness": 5.0,
+      "deviation": 0.25,
+      "tolerance": 0.1,
+      "roll_gap": 5.02,
+      "thickness_roll_gap_correlation": 0.92,
+      "severity": "high",
+      "root_causes": ["roll_gap_increase", "agc_system_error", "roll_wear"],
+      "affected_length": 3500,
+      "affected_weight": 137,
+      "cpk": 0.42
+    },
+    "recommendations": [
+      "즉시 롤 간격을 4.8mm로 조정",
+      "AGC 시스템 점검 및 센서 교정",
+      "롤 마모 상태 확인",
+      "불량 제품 별도 표시 및 고객 협의",
+      "상위 공정 점검"
+    ],
+    "quality_impact": {
+      "out_of_spec": true,
+      "defect_rate": 0.098,
+      "material_loss": 14000000,
+      "process_capability": "부적합"
+    }
+  },
+  "test_validation": {
+    "validate_workflow": {
+      "expected_steps": 4,
+      "required_agents": ["Orchestration", "Monitoring"],
+      "workflow_sequence": [
+        "User → Orchestration",
+        "Orchestration → Monitoring",
+        "Monitoring → Orchestration",
+        "Orchestration → User"
+      ]
+    },
+    "validate_monitoring": {
+      "must_detect_anomaly": true,
+      "must_identify_thickness_deviation": true,
+      "must_analyze_trend": true,
+      "must_assess_quality_impact": true,
+      "must_calculate_process_capability": true,
+      "must_compare_with_normal": true,
+      "must_provide_root_cause": true,
+      "must_recommend_action": true
+    },
+    "validate_api_compliance": {
+      "all_requests_valid": true,
+      "all_responses_valid": true,
+      "endpoints_match_spec": true
+    },
+    "performance_criteria": {
+      "total_workflow_time_max_seconds": 60,
+      "anomaly_detection_accuracy_min": 0.90,
+      "root_cause_identification_required": true,
+      "quality_impact_assessment_required": true
+    }
+  }
+}

@@ -1,0 +1,536 @@
+{
+  "scenario_id": "SCENARIO_12",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "자동차 조립 토크 제어 및 규제 준수 검증",
+    "title_en": "Automotive Assembly Torque Control with Compliance Verification",
+    "industry": "automotive",
+    "process": "Assembly",
+    "workflow_type": "full_compliance",
+    "workflow_level": 4,
+    "complexity": "very_high",
+    "description": "조립 라인의 체결 토크 이상을 감지하고 예측하여 최적 제어를 수행한 후 안전 및 규제 준수 여부를 검증하는 시나리오"
+  },
+  "query": {
+    "text": "Assembly 라인의 TIGHTENING_TORQUE가 규격을 벗어나고 있습니다. 안전 기준을 만족하는 최적 제어 방안을 제시하고 규제 준수 여부를 확인해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:30:00Z"
+    },
+    "user_id": "assembly_supervisor_04",
+    "priority": "critical"
+  },
+  "timeseries_data": {
+    "file": "automotive_assembly_004.csv",
+    "file_path": "test_data/automotive/automotive_assembly_004.csv",
+    "columns": [
+      "TIMESTAMP",
+      "STATION_ID",
+      "TIGHTENING_TORQUE",
+      "ANGLE",
+      "SPINDLE_SPEED",
+      "MOTOR_CURRENT",
+      "BOLT_TYPE",
+      "THREAD_CONDITION",
+      "VIBRATION",
+      "ASSEMBLY_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "TIGHTENING_TORQUE",
+      "ANGLE",
+      "ASSEMBLY_QUALITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:30:00Z",
+      "total_points": 5220,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:30:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "Assembly 라인의 TIGHTENING_TORQUE가 규격을 벗어나고 있습니다. 안전 기준을 만족하는 최적 제어 방안을 제시하고 규제 준수 여부를 확인해주세요.",
+        "session_id": "assembly_session_20250501_004",
+        "user_id": "assembly_supervisor_04",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 10
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "full_workflow_with_compliance",
+          "target_process": "assembly_tightening",
+          "target_variable": "TIGHTENING_TORQUE",
+          "action_required": "control_with_safety_verification",
+          "urgency": "critical",
+          "compliance_required": true
+        },
+        "workflow_determination": {
+          "selected_workflow": "full_compliance",
+          "reason": "User explicitly requests safety compliance verification for control actions",
+          "required_agents": [
+            "Monitoring",
+            "Predictive",
+            "AutoControl",
+            "ComplianceCheck"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "ASSEMBLY_TASK_20250501_004",
+          "subtasks": [
+            {
+              "subtask_id": "ASSEMBLY_TASK_20250501_004_1",
+              "name": "조립 토크 이상 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "critical"
+            },
+            {
+              "subtask_id": "ASSEMBLY_TASK_20250501_004_2",
+              "name": "체결 품질 저하 예측",
+              "assigned_agent": "Predictive",
+              "priority": "critical",
+              "depends_on": "ASSEMBLY_TASK_20250501_004_1"
+            },
+            {
+              "subtask_id": "ASSEMBLY_TASK_20250501_004_3",
+              "name": "토크 최적 제어 실행",
+              "assigned_agent": "AutoControl",
+              "priority": "critical",
+              "depends_on": "ASSEMBLY_TASK_20250501_004_2"
+            },
+            {
+              "subtask_id": "ASSEMBLY_TASK_20250501_004_4",
+              "name": "안전 규제 준수 검증",
+              "assigned_agent": "ComplianceCheck",
+              "priority": "critical",
+              "depends_on": "ASSEMBLY_TASK_20250501_004_3"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T14:30:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "ASSEMBLY_TASK_20250501_004_1",
+        "query": "조립 스테이션 STATION_A1~A4의 TIGHTENING_TORQUE 이상 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T14:30:00Z. 주요 변수: TIGHTENING_TORQUE, ANGLE, ASSEMBLY_QUALITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:30:06Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### 조립 토크 이상 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: 조립 스테이션 STATION_A1~A4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 14:30:00 (14시간 30분)\n- **총 데이터 포인트**: 5,220건\n- **토크 이상 감지 시작**: 2025-05-01T13:30:00Z\n- **이상 지속 시간**: 1시간\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 TIGHTENING_TORQUE 규격 이탈\n- **현상**: 하향 편향(negative bias) 패턴\n- **현재 평균값**: 68.2 Nm (목표: 80-90 Nm)\n- **규격 하한 이탈**: -11.8 Nm (-14.8%)\n- **이탈 건수**: 234건 (13:30 이후)\n- **최저값**: 58.3 Nm (목표 하한 대비 -27.1%)\n- **표준편차**: 8.7 Nm (정상 대비 250% 증가)\n- **추세**: 하향(declining)\n- **위험 수준**: 🔴 **높음**\n\n##### 2.2 ANGLE 측정 불일치\n- **현재 평균값**: 287.3° (목표: 270-290°)\n- **초과 건수**: 156건\n- **TIGHTENING_TORQUE와 상관계수**: -0.73 (음의 상관관계)\n- **해석**: 토크 부족으로 회전각 증가 (체결 불량)\n\n##### 2.3 조립 품질 심각 저하\n- **ASSEMBLY_QUALITY_INDEX 현재 평균**: 72.8 (목표치: 85 이상)\n- **13:30 이전 평균**: 89.5\n- **저하율**: -18.7%\n- **추세**: 급락(plummeting)\n- **불량 체결 건수**: 234건 (안전 리스크)\n\n##### 2.4 SPINDLE_SPEED 변동\n- **현재 평균**: 178 RPM (목표: 150-180 RPM)\n- **변동계수(CV)**: 12.3% (정상: < 5%)\n- **해석**: 스핀들 제어 불안정\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **스핀들 모터 제어기 오작동** (가능성: 매우 높음)\n   - 토크와 각도의 음의 상관관계\n   - 스핀들 속도 불안정\n   - MOTOR_CURRENT 변동 증가 (23.5±4.8 A)\n   \n2. **나사산 조건 불량** (가능성: 높음)\n   - THREAD_CONDITION 센서값 저하 (평균 6.2/10)\n   - 윤활 부족 또는 나사산 손상 가능\n\n**부차적 원인**:\n3. **볼트 재질 편차** (가능성: 중간)\n   - BOLT_TYPE 혼용 가능성\n   - 재질 차이로 인한 토크 편차\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 13:30 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| TIGHTENING_TORQUE | 85.3 Nm | 68.2 Nm | -17.1 Nm | 80-90 Nm | 🔴 심각 미달 |\n| ANGLE | 278.5° | 287.3° | +8.8° | 270-290° | ⚠️ 초과 경향 |\n| ASSEMBLY_QUALITY_INDEX | 89.5 | 72.8 | -16.7 | ≥85 | 🔴 심각 미달 |\n| SPINDLE_SPEED | 165 RPM | 178 RPM | +13 RPM | 150-180 RPM | ⚠️ 상한 근접 |\n| MOTOR_CURRENT | 18.7 A | 23.5 A | +4.8 A | 15-22 A | 🔴 초과 |\n| VIBRATION | 0.8 m/s² | 1.4 m/s² | +0.6 m/s² | < 1.0 m/s² | 🔴 초과 |\n\n#### 🚨 5. 안전 리스크 분석\n\n**체결 불량으로 인한 안전 리스크**:\n- **리스크 유형**: 볼트 체결 강도 부족\n- **영향 범위**: 차체 구조 안전성 저하\n- **리스크 수준**: 🔴 **높음** (자동차 안전 규제 위반 가능)\n- **규제 기준**: ISO 5393, VDI 2862 (체결 토크 허용 오차 ±10%)\n- **현재 이탈률**: -14.8% (기준 초과)\n\n**불량 체결 건수**:\n- **심각 불량** (토크 < 70 Nm): 89건\n- **경미 불량** (토크 70-80 Nm): 145건\n- **총 불량**: 234건\n- **불량률**: 44.8% (13:30 이후)\n\n**예상 안전 영향**:\n- **차체 구조 결합력 저하**: 약 18%\n- **충돌 시 분리 위험**: 중간-높음\n- **리콜 가능성**: 높음 (불량 차량 수리 필요)\n\n#### 💡 6. 긴급 권장 조치\n\n**즉시 조치 (우선순위: 최고 긴급)**\n1. 스핀들 모터 제어기 점검 및 재설정\n   - PID 제어 파라미터 확인\n   - 모터 드라이버 진단\n   \n2. **자동 제어 필요**: TIGHTENING_TORQUE 목표치 회복\n   - SPINDLE_SPEED 조정\n   - MOTOR_CURRENT 최적화\n   \n3. **규제 준수 검증 필수**: 제어 조치가 안전 기준을 만족하는지 확인\n   - ISO 5393 준수 여부\n   - VDI 2862 토크 허용 오차 기준 충족 여부\n\n⚠️ **Predictive Agent를 통한 품질 저하 예측, AutoControl Agent를 통한 긴급 제어, ComplianceCheck Agent를 통한 규제 준수 검증 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T14:30:06Z  \n**분석 소요 시간**: 5.7초  \n**신뢰도**: 92%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T14:30:07Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "ASSEMBLY_TASK_20250501_004_2",
+        "timeRange": {
+          "start": "2025-05-01T13:30:00Z",
+          "end": "2025-05-01T14:30:00Z"
+        },
+        "sensor_name": "STATION_A1,STATION_A2,STATION_A3,STATION_A4",
+        "target_cols": [
+          "TIGHTENING_TORQUE",
+          "ASSEMBLY_QUALITY_INDEX"
+        ],
+        "feature_cols": [
+          "TIGHTENING_TORQUE",
+          "ANGLE",
+          "SPINDLE_SPEED",
+          "MOTOR_CURRENT",
+          "VIBRATION"
+        ],
+        "prediction_horizon_minutes": 30,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:30:13Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 체결 품질 저하 예측 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T14:30:00Z\n- **예측 종료 시각**: 2025-05-01T15:00:00Z\n- **예측 기간**: 30분\n- **예측 간격**: 5분\n- **사용 모델**: LSTM (Long Short-Term Memory)\n- **신뢰 구간**: 95%\n\n#### 📉 2. TIGHTENING_TORQUE 예측 결과 (조치 없을 경우)\n\n| 시각 | 예측값 (Nm) | 95% 신뢰구간 | 목표 범위 대비 | 위험도 |\n|------|------------|-------------|---------------|--------|\n| 14:30 (현재) | 68.2 | - | -11.8 Nm | 🔴 위험 |\n| 14:35 | 66.5 | [64.8, 68.2] | -13.5 Nm | 🔴 위험 |\n| 14:40 | 64.7 | [62.5, 66.9] | -15.3 Nm | 🔴 매우 위험 |\n| 14:45 | 62.8 | [60.1, 65.5] | -17.2 Nm | 🔴 매우 위험 |\n| 14:50 | 60.8 | [57.6, 64.0] | -19.2 Nm | 💥 임계 |\n| 14:55 | 58.7 | [55.0, 62.4] | -21.3 Nm | 💥 임계 |\n| 15:00 | 56.5 | [52.3, 60.7] | -23.5 Nm | 💥 임계 |\n\n**⚠️ 안전 임계치(60 Nm) 도달 예상 시각**: **2025-05-01T14:48:00Z** (약 18분 후)\n\n#### 📊 3. ASSEMBLY_QUALITY_INDEX 예측 결과\n\n| 시각 | 예측값 | 불량률 (%) | 안전 리스크 |\n|------|--------|-----------|------------|\n| 14:30 (현재) | 72.8 | 44.8% | 높음 |\n| 14:35 | 70.2 | 49.5% | 높음 |\n| 14:40 | 67.4 | 54.8% | 매우 높음 |\n| 14:45 | 64.5 | 60.5% | 매우 높음 |\n| 14:50 | 61.3 | 66.9% | 임계 |\n| 14:55 | 57.9 | 73.8% | 임계 |\n| 15:00 | 54.3 | 81.2% | 치명적 |\n\n#### 🚨 4. 안전 리스크 누적 예측\n\n**조치 없이 30분 경과 시**:\n- **총 불량 체결 예상**: 약 543건 (현재 234건 + 추가 309건)\n- **누적 불량률**: 81.2%\n- **구조 안전 저하율**: 약 35%\n- **리콜 대상 차량 수**: 약 127대 (30분간 생산분)\n- **예상 리콜 비용**: 약 **380,000,000원**\n\n#### 💡 5. 제어 필요성 분석\n\n**AutoControl 시뮬레이션 결과**:\n\n**시나리오 A: 즉시 제어 실행 (권장)**\n- **조치 시각**: 지금 즉시 (14:30)\n- **목표**: TIGHTENING_TORQUE를 85 Nm으로 회복\n- **제어 변수**: \n  - SPINDLE_SPEED: -8% (178 → 163 RPM)\n  - MOTOR_CURRENT: +12% (23.5 → 26.3 A)\n- **예상 효과**:\n  - 10분 내 토크 83 Nm 달성\n  - 품질 지수 82점 회복\n  - 불량률 < 10%\n  - 안전 기준 만족\n- **예상 손실**: 약 12,000,000원 (초기 불량품)\n\n**시나리오 B: 조치 없음 (매우 위험)**\n- **30분 후**: 토크 56.5 Nm (안전 임계치 이하)\n- **불량률**: 81.2%\n- **리콜 비용**: 약 **380,000,000원**\n- **규제 위반**: ISO 5393 위반 확실\n\n⚡ **긴급 AutoControl 실행 및 ComplianceCheck 검증 필수**\n\n---\n**예측 완료 시각**: 2025-05-01T14:30:13Z  \n**예측 소요 시간**: 6.4초  \n**모델 신뢰도**: 91%"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration",
+      "to": "AutoControl",
+      "timestamp": "2025-05-01T14:30:14Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "taskId": "ASSEMBLY_TASK_20250501_004_3",
+        "feature_names": [
+          "SPINDLE_SPEED",
+          "MOTOR_CURRENT"
+        ],
+        "target_col": "TIGHTENING_TORQUE",
+        "control_setpoint": 85,
+        "control_horizon_minutes": 10,
+        "constraints": {
+          "SPINDLE_SPEED": {
+            "min": 150,
+            "max": 180,
+            "unit": "RPM"
+          },
+          "MOTOR_CURRENT": {
+            "min": 15,
+            "max": 28,
+            "unit": "A"
+          }
+        },
+        "optimization_objective": "minimize_deviation_with_safety",
+        "safety_mode": true,
+        "simulation_before_apply": true
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:30:19Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct (response)",
+      "response": {
+        "result": "### 토크 최적 제어 실행 결과\n\n---\n\n#### ⚙️ 1. 제어 실행 개요\n- **제어 시작 시각**: 2025-05-01T14:30:14Z\n- **제어 목표**: TIGHTENING_TORQUE를 85 Nm으로 회복\n- **제어 방식**: Model Predictive Control (MPC)\n- **안전 모드**: 활성화 (시뮬레이션 검증 완료)\n- **제어 적용 상태**: ✅ **실행 완료**\n\n#### 🎯 2. 계산된 최적 제어값\n\n| 제어 변수 | 현재값 | 목표값 | 변화량 | 조정률 |\n|----------|--------|--------|--------|--------|\n| **SPINDLE_SPEED** | 178 RPM | 163 RPM | -15 RPM | -8.4% |\n| **MOTOR_CURRENT** | 23.5 A | 26.3 A | +2.8 A | +11.9% |\n\n#### 📊 3. 시뮬레이션 예측 결과 (제어 적용 시)\n\n**TIGHTENING_TORQUE 변화 예측**:\n| 시각 | 예측값 (Nm) | 목표 대비 | 상태 |\n|------|------------|----------|------|\n| 14:30 (현재) | 68.2 | -16.8 Nm | 🔴 미달 |\n| 14:35 (제어 5분) | 76.8 | -8.2 Nm | ⚠️ 회복 중 |\n| 14:40 (제어 10분) | 83.5 | -1.5 Nm | ✅ 거의 달성 |\n| 14:45 (제어 15분) | 85.2 | +0.2 Nm | ✅ 목표 달성 |\n| 14:50 (제어 20분) | 85.1 | +0.1 Nm | ✅ 안정 |\n\n**ASSEMBLY_QUALITY_INDEX 회복 예측**:\n| 시각 | 예측값 | 불량률 (%) | 상태 |\n|------|--------|-----------|------|\n| 14:30 (현재) | 72.8 | 44.8% | 🔴 미달 |\n| 14:35 | 78.3 | 28.5% | ⚠️ 회복 중 |\n| 14:40 | 82.1 | 15.2% | ⚠️ 회복 중 |\n| 14:45 | 85.6 | 8.3% | ✅ 목표 달성 |\n| 14:50 | 86.2 | 6.1% | ✅ 안정 |\n\n#### 💰 4. 경제적 효과 분석\n\n**제어 실행 효과**:\n- **리콜 비용 절감**: 약 **368,000,000원** (불량 차량 127대 방지)\n- **불량품 감소**: 약 **23,000,000원** (불량률 44.8% → 6.1%)\n- **생산 연속성 유지**: 품질 기준 만족으로 생산 중단 방지\n- **총 예상 효과**: 약 **391,000,000원**\n\n**제어 실행 비용**:\n- **초기 불량품 손실** (제어 안정화 기간): 약 12,000,000원\n- **제어 시스템 운영비**: 약 80,000원\n- **총 비용**: 약 12,080,000원\n\n**순 효과**: 약 **378,920,000원** 절감\n\n#### 🛡️ 5. 안전성 검증 (예비)\n\n**제어 안전성 체크리스트**:\n- ✅ 모든 제어값이 안전 제약조건 내\n- ✅ 급격한 파라미터 변화 없음 (변화율 < 15%)\n- ✅ 시뮬레이션 검증 완료 (100회 Monte Carlo)\n- ⚠️ **규제 준수 검증 필요** (ComplianceCheck Agent 실행 필요)\n\n#### 📋 6. 규제 준수 검증 요청 사항\n\n**검증 필요 항목**:\n1. **ISO 5393 (체결 토크 규격)**\n   - 목표 토크: 85 Nm\n   - 허용 오차: ±10% (76.5-93.5 Nm)\n   - 현재 제어 목표: 85 Nm\n   - **사전 판단**: 준수 예상\n\n2. **VDI 2862 (볼트 체결 품질 기준)**\n   - 최소 토크: 80 Nm\n   - 최대 토크: 90 Nm\n   - 각도 허용: 270-290°\n   - **사전 판단**: 준수 예상\n\n3. **자동차 안전 기준 (KS R 0003)**\n   - 체결 신뢰도: ≥ 95%\n   - 불량률: < 5%\n   - **사전 판단**: 제어 후 6.1% (기준 초과)\n   - ⚠️ **추가 개선 필요 가능**\n\n⚠️ **ComplianceCheck Agent를 통한 정식 규제 준수 검증 권장**\n\n---\n**제어 완료 시각**: 2025-05-01T14:30:19Z  \n**제어 소요 시간**: 5.3초  \n**제어 신뢰도**: 94%"
+      }
+    },
+    "step_8_orchestration_to_compliance": {
+      "from": "Orchestration",
+      "to": "ComplianceCheck",
+      "timestamp": "2025-05-01T14:30:20Z",
+      "api_endpoint": "POST /api/v1/compliance/check",
+      "request": {
+        "taskId": "ASSEMBLY_TASK_20250501_004_4",
+        "control_actions": {
+          "SPINDLE_SPEED": {
+            "current_value": 178,
+            "target_value": 163,
+            "change_percent": -8.4,
+            "unit": "RPM"
+          },
+          "MOTOR_CURRENT": {
+            "current_value": 23.5,
+            "target_value": 26.3,
+            "change_percent": 11.9,
+            "unit": "A"
+          }
+        },
+        "expected_outcomes": {
+          "TIGHTENING_TORQUE": {
+            "target_value": 85,
+            "expected_value_10min": 83.5,
+            "expected_value_15min": 85.2,
+            "unit": "Nm"
+          },
+          "ASSEMBLY_QUALITY_INDEX": {
+            "current_value": 72.8,
+            "expected_value_15min": 85.6,
+            "defect_rate_current": 44.8,
+            "defect_rate_expected": 6.1,
+            "unit": "%"
+          }
+        },
+        "regulations_to_check": [
+          "ISO_5393",
+          "VDI_2862",
+          "KS_R_0003"
+        ],
+        "industry": "automotive",
+        "process": "assembly_tightening",
+        "safety_critical": true
+      }
+    },
+    "step_9_compliance_to_orchestration": {
+      "from": "ComplianceCheck",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:30:25Z",
+      "api_endpoint": "POST /api/v1/compliance/check (response)",
+      "response": {
+        "result": "### 안전 규제 준수 검증 결과\n\n---\n\n#### ✅ 1. 검증 개요\n- **검증 시작 시각**: 2025-05-01T14:30:20Z\n- **검증 대상**: 조립 토크 최적 제어 조치\n- **검증 규제**: ISO 5393, VDI 2862, KS R 0003\n- **안전 중요도**: 🔴 **높음** (Safety-Critical Process)\n- **검증 완료 상태**: ✅ **완료**\n\n#### 📋 2. 규제별 검증 결과\n\n##### 2.1 ISO 5393: 체결 토크 규격\n\n**규제 요구사항**:\n- 표준 토크 범위: 80-90 Nm\n- 허용 오차: ±10%\n- 절대 허용 범위: 72-99 Nm\n\n**제어 후 예상값**:\n- 10분 후: 83.5 Nm\n- 15분 후: 85.2 Nm\n- 20분 후: 85.1 Nm\n\n**검증 결과**: ✅ **준수**\n- 모든 예상값이 표준 범위(80-90 Nm) 내\n- 허용 오차 기준 만족\n- **적합성**: 100%\n\n##### 2.2 VDI 2862: 볼트 체결 품질 기준\n\n**규제 요구사항**:\n- 최소 체결 토크: 80 Nm\n- 최대 체결 토크: 90 Nm\n- 회전각 범위: 270-290°\n- 체결 재현성: CV < 10%\n\n**제어 후 예상값**:\n- 토크: 85.2 Nm (15분 후)\n- 회전각: 278.5° (목표 범위 내 회복 예상)\n- 재현성: CV 4.2% (시뮬레이션 결과)\n\n**검증 결과**: ✅ **준수**\n- 토크 및 각도 기준 만족\n- 재현성 기준 만족 (CV 4.2% < 10%)\n- **적합성**: 100%\n\n##### 2.3 KS R 0003: 자동차 안전 기준\n\n**규제 요구사항**:\n- 체결 신뢰도: ≥ 95%\n- 불량률: < 5%\n- 구조 안전 계수: ≥ 2.5\n- 품질 지수: ≥ 85\n\n**제어 후 예상값**:\n- 체결 신뢰도: 93.9% (15분 후)\n- 불량률: 6.1% (15분 후)\n- 품질 지수: 85.6 (15분 후)\n\n**검증 결과**: ⚠️ **조건부 준수**\n- ⚠️ 체결 신뢰도 93.9% < 95% (기준 미달 1.1%p)\n- ⚠️ 불량률 6.1% > 5% (기준 초과 1.1%p)\n- ✅ 품질 지수 85.6 ≥ 85 (기준 만족)\n- **적합성**: 66.7% (3개 항목 중 2개 미달)\n\n**미달 원인 분석**:\n- 제어 초기 단계(15분)에서 아직 완전 안정화 미도달\n- 20-30분 후 완전 안정화 시 기준 만족 예상\n\n**권장 조치**:\n- 제어 지속 및 20분 후 재검증\n- 또는 제어 강도 5% 추가 증가\n\n#### 🎯 3. 종합 규제 준수 판정\n\n| 규제 | 준수 여부 | 적합성 | 비고 |\n|------|----------|--------|------|\n| **ISO 5393** | ✅ 준수 | 100% | 토크 규격 만족 |\n| **VDI 2862** | ✅ 준수 | 100% | 품질 기준 만족 |\n| **KS R 0003** | ⚠️ 조건부 | 66.7% | 시간 경과 후 개선 예상 |\n\n**전체 준수율**: 88.9% (3개 규제 중 2개 완전 준수, 1개 조건부)\n\n#### 💡 4. 권장 조치 방안\n\n**옵션 A: 제어 지속 + 재검증 (권장)**\n- **내용**: 현재 제어를 20분간 지속 후 재검증\n- **예상 결과**: KS R 0003 기준 만족 (신뢰도 96.2%, 불량률 4.1%)\n- **장점**: 추가 조치 불필요, 안정적 개선\n- **단점**: 20분 대기 필요\n\n**옵션 B: 제어 강도 증가 (빠른 개선)**\n- **내용**: MOTOR_CURRENT를 추가 5% 증가 (26.3 A → 27.6 A)\n- **예상 결과**: 10분 내 KS R 0003 기준 만족\n- **장점**: 빠른 기준 달성\n- **단점**: 모터 부하 증가, 에너지 소비 증가\n\n**추천**: ✅ **옵션 A (제어 지속 + 재검증)**\n- 안정적이고 안전한 방법\n- 규제 완전 준수 가능성 높음\n\n#### 🛡️ 5. 안전성 최종 평가\n\n**안전 리스크 평가**:\n- **제어 전**: 🔴 **높음** (토크 미달, 불량률 44.8%)\n- **제어 후 (15분)**: ⚠️ **중간** (불량률 6.1%, 기준 약간 초과)\n- **제어 후 (20분)**: ✅ **낮음** (불량률 < 5%, 기준 만족 예상)\n\n**최종 판정**: ✅ **제어 조치 승인 권장**\n- 현재 제어 조치는 주요 규제(ISO 5393, VDI 2862)를 만족\n- 시간 경과에 따라 KS R 0003도 만족 예상\n- 제어 미실행 시 리스크가 제어 실행 시보다 현저히 높음\n\n#### 📊 6. 규제 준수 모니터링 계획\n\n**1차 검증 (현재)**: 88.9% 준수\n**2차 검증 (20분 후, 14:50)**: 예상 100% 준수\n**3차 검증 (1시간 후, 15:30)**: 안정성 확인\n\n**지속 모니터링 항목**:\n- TIGHTENING_TORQUE (목표: 80-90 Nm)\n- ASSEMBLY_QUALITY_INDEX (목표: ≥ 85)\n- 불량률 (목표: < 5%)\n\n---\n**검증 완료 시각**: 2025-05-01T14:30:25Z  \n**검증 소요 시간**: 5.2초  \n**검증 신뢰도**: 96%"
+      }
+    },
+    "step_10_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T14:30:26Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "assembly_session_20250501_004",
+        "final_answer": "조립 라인의 체결 토크가 68.2 Nm으로 목표 범위(80-90 Nm)를 14.8% 이탈하여 불량률이 44.8%에 달하고 있습니다. 스핀들 모터 제어기 오작동이 주요 원인이며, 조치 없이 18분 후 안전 임계치(60 Nm) 도달이 예상됩니다. 최적 제어를 실행하여 스핀들 속도를 8.4% 감속하고 모터 전류를 11.9% 증가시킨 결과, 15분 내 목표 토크(85 Nm) 달성이 예상됩니다. 규제 준수 검증 결과, ISO 5393 및 VDI 2862 기준을 완전히 만족하며, KS R 0003 기준은 20분 후 만족 예상으로 전체 준수율 88.9%를 기록했습니다. 제어 조치 승인을 권장하며, 약 3억 7천만원의 리콜 비용을 방지할 수 있습니다.",
+        "final_markdown": "### 조립 토크 제어 및 규제 준수 검증 결과\n\n(상세 내용은 monitoring, prediction, autocontrol, compliance response 참조)",
+        "task_history": [
+          {
+            "id": "ASSEMBLY_TASK_20250501_004_1",
+            "name": "조립 토크 이상 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:30:06Z"
+          },
+          {
+            "id": "ASSEMBLY_TASK_20250501_004_2",
+            "name": "체결 품질 저하 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:30:13Z"
+          },
+          {
+            "id": "ASSEMBLY_TASK_20250501_004_3",
+            "name": "토크 최적 제어 실행",
+            "assigned_agent_id": "AutoControl",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:30:19Z"
+          },
+          {
+            "id": "ASSEMBLY_TASK_20250501_004_4",
+            "name": "안전 규제 준수 검증",
+            "assigned_agent_id": "ComplianceCheck",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:30:25Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive",
+          "AutoControl",
+          "ComplianceCheck"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "current_torque": 68.2,
+            "target_range": "80-90 Nm",
+            "deviation_percent": -14.8,
+            "defect_rate": 44.8,
+            "root_cause": "spindle_motor_controller_malfunction"
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 30,
+            "critical_threshold_time": "2025-05-01T14:48:00Z",
+            "expected_defect_rate_no_control": 81.2,
+            "expected_recall_cost_krw": 380000000,
+            "confidence": 0.91
+          },
+          {
+            "tool": "AutoControl",
+            "status": "success",
+            "control_applied": true,
+            "target_achievement_time_minutes": 15,
+            "expected_torque_15min": 85.2,
+            "expected_defect_rate_15min": 6.1,
+            "expected_loss_prevention_krw": 378920000,
+            "confidence": 0.94
+          },
+          {
+            "tool": "ComplianceCheck",
+            "status": "success",
+            "regulations_checked": [
+              "ISO_5393",
+              "VDI_2862",
+              "KS_R_0003"
+            ],
+            "compliance_rate": 88.9,
+            "fully_compliant": [
+              "ISO_5393",
+              "VDI_2862"
+            ],
+            "conditionally_compliant": [
+              "KS_R_0003"
+            ],
+            "recommendation": "approve_control_with_monitoring",
+            "confidence": 0.96
+          }
+        ],
+        "compliance_checked": true,
+        "compliance_summary": {
+          "overall_compliance_rate": 88.9,
+          "regulations_passed": 2,
+          "regulations_conditional": 1,
+          "regulations_failed": 0,
+          "safety_approved": true,
+          "action_recommendation": "제어 지속 및 20분 후 재검증"
+        }
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "조립 라인의 체결 토크가 68.2 Nm으로 목표 범위를 14.8% 이탈하여 불량률 44.8%에 달하고 있습니다. 최적 제어 실행 후 15분 내 목표 토크 85 Nm 달성이 예상되며, 규제 준수 검증 결과 ISO 5393 및 VDI 2862 기준을 완전히 만족하고 KS R 0003 기준은 20분 후 만족 예상으로 전체 준수율 88.9%를 기록했습니다. 약 3억 7천만원의 리콜 비용을 방지할 수 있습니다.",
+    "detected_issues": [
+      {
+        "issue": "TIGHTENING_TORQUE 규격 이탈",
+        "severity": "critical",
+        "description": "68.2 Nm으로 목표 범위(80-90 Nm)를 14.8% 이탈",
+        "affected_timeframe": "2025-05-01T13:30:00Z ~ 2025-05-01T14:30:00Z",
+        "current_value": 68.2,
+        "target_range": "80-90 Nm",
+        "defect_count": 234,
+        "defect_rate": 44.8
+      },
+      {
+        "issue": "스핀들 모터 제어기 오작동",
+        "severity": "critical",
+        "description": "토크와 각도의 음의 상관관계, 스핀들 속도 불안정",
+        "root_cause": true
+      }
+    ],
+    "predictions": [
+      {
+        "target": "TIGHTENING_TORQUE",
+        "scenario": "no_control",
+        "prediction_horizon_minutes": 30,
+        "critical_event": {
+          "description": "안전 임계치(60 Nm) 도달",
+          "expected_time": "2025-05-01T14:48:00Z",
+          "time_until_event_minutes": 18
+        },
+        "final_predicted_value": 56.5,
+        "expected_defect_rate": 81.2,
+        "expected_recall_cost_krw": 380000000
+      },
+      {
+        "target": "TIGHTENING_TORQUE",
+        "scenario": "with_control",
+        "prediction_horizon_minutes": 20,
+        "expected_value_at_10min": 83.5,
+        "expected_value_at_15min": 85.2,
+        "target_achievement": true,
+        "expected_defect_rate": 6.1
+      }
+    ],
+    "control_actions": [
+      {
+        "priority": "critical",
+        "action": "최적 제어 실행 (AutoControl)",
+        "control_variables": {
+          "SPINDLE_SPEED": {
+            "from": 178,
+            "to": 163,
+            "unit": "RPM",
+            "change_percent": -8.4
+          },
+          "MOTOR_CURRENT": {
+            "from": 23.5,
+            "to": 26.3,
+            "unit": "A",
+            "change_percent": 11.9
+          }
+        },
+        "expected_effect": "15분 내 목표 토크 85 Nm 달성, 불량률 6.1%로 감소",
+        "economic_impact": "약 378,920,000원 손실 방지",
+        "status": "executed",
+        "safety_verified": true
+      }
+    ],
+    "compliance_verification": {
+      "regulations_checked": [
+        {
+          "regulation": "ISO 5393",
+          "description": "체결 토크 규격",
+          "status": "compliant",
+          "compliance_rate": 100,
+          "details": "토크 83.5-85.2 Nm, 기준 80-90 Nm 만족"
+        },
+        {
+          "regulation": "VDI 2862",
+          "description": "볼트 체결 품질 기준",
+          "status": "compliant",
+          "compliance_rate": 100,
+          "details": "토크, 각도, 재현성 기준 모두 만족"
+        },
+        {
+          "regulation": "KS R 0003",
+          "description": "자동차 안전 기준",
+          "status": "conditionally_compliant",
+          "compliance_rate": 66.7,
+          "details": "신뢰도 93.9% (기준 95%), 불량률 6.1% (기준 5%), 20분 후 개선 예상"
+        }
+      ],
+      "overall_compliance_rate": 88.9,
+      "safety_approved": true,
+      "recommendation": "제어 승인 및 지속, 20분 후 재검증"
+    },
+    "recommendations": [
+      {
+        "priority": "critical",
+        "action": "제어 지속 및 20분 후 재검증",
+        "details": "현재 제어 유지, KS R 0003 기준 만족 확인",
+        "expected_effect": "전체 규제 100% 준수 달성",
+        "implementation_time": "현재 진행 중"
+      },
+      {
+        "priority": "urgent",
+        "action": "스핀들 모터 제어기 점검",
+        "details": "PID 제어 파라미터 확인, 모터 드라이버 진단",
+        "implementation_time": "1시간 이내"
+      },
+      {
+        "priority": "high",
+        "action": "규제 준수 모니터링 지속",
+        "details": "토크, 품질 지수, 불량률 실시간 추적",
+        "implementation_time": "지속"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 5700,
+      "prediction_time_ms": 6400,
+      "autocontrol_time_ms": 5300,
+      "compliance_check_time_ms": 5200,
+      "total_analysis_time_ms": 22600,
+      "data_points_analyzed": 5220,
+      "prediction_horizon_minutes": 30,
+      "control_horizon_minutes": 10,
+      "compliance_rate_percent": 88.9,
+      "expected_loss_prevention_krw": 378920000
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration",
+      "AutoControl",
+      "Orchestration",
+      "ComplianceCheck",
+      "Orchestration"
+    ],
+    "expected_agents_count": 5,
+    "should_predict": true,
+    "should_control": true,
+    "should_check_compliance": true,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct",
+      "POST /api/v1/autocontrol/run-direct",
+      "POST /api/v1/compliance/check"
+    ]
+  }
+}

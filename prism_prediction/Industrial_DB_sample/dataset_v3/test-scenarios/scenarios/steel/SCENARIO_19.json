@@ -1,0 +1,784 @@
+{
+  "scenario_id": "SCENARIO_19",
+  "metadata": {
+    "title": "철강 연속주조 슬라브 두께 최적 제어",
+    "industry": "steel",
+    "process": "casting",
+    "workflow_type": "monitoring_prediction_control",
+    "workflow_level": 3,
+    "description": "연속주조 공정에서 슬라브 두께 편차와 표면 결함 증가를 조기 탐지하고, 품질 저하를 예측하며, 주조 속도와 냉각 조건을 자동 최적화하는 시나리오",
+    "complexity": "high",
+    "data_source": "test_data/steel/steel_casting_003.csv",
+    "total_data_points": 5000
+  },
+  "query": {
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:53:20Z"
+    },
+    "caster_ids": [
+      "CAST_1",
+      "CAST_2",
+      "CAST_3"
+    ],
+    "target_thickness": 230.0,
+    "tolerance": 0.5,
+    "user_question": "2025년 5월 1일 연속주조 공정에서 슬라브 두께 편차와 표면 결함이 증가하고 있습니다. 현재 상태를 분석하고, 향후 품질 저하를 예측한 뒤, 최적 제어 파라미터를 제시해 주세요."
+  },
+  "timeseries_data": {
+    "format": "csv",
+    "columns": [
+      "TIMESTAMP",
+      "CASTER_ID",
+      "SLAB_THICKNESS",
+      "CASTING_SPEED",
+      "MOLD_WIDTH",
+      "TEMPERATURE",
+      "COOLING_WATER_FLOW",
+      "MOLD_LEVEL",
+      "STRAND_TEMPERATURE",
+      "WITHDRAWAL_FORCE",
+      "SURFACE_DEFECTS"
+    ],
+    "sample_interval_seconds": 10,
+    "total_duration_hours": 13.9,
+    "quality_parameters": {
+      "SLAB_THICKNESS": {
+        "unit": "mm",
+        "target": 230.0,
+        "tolerance": 0.5,
+        "current_range": [
+          228.91,
+          231.27
+        ]
+      },
+      "CASTING_SPEED": {
+        "unit": "m/min",
+        "target": 1.0,
+        "current_range": [
+          0.97,
+          1.02
+        ]
+      },
+      "TEMPERATURE": {
+        "unit": "°C",
+        "target": 1560.0,
+        "current_range": [
+          1558.14,
+          1562.54
+        ]
+      },
+      "SURFACE_DEFECTS": {
+        "unit": "count",
+        "acceptable": 0,
+        "current_range": [
+          0,
+          2
+        ]
+      }
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "2025년 5월 1일 연속주조 공정에서 슬라브 두께 편차와 표면 결함이 증가하고 있습니다. 현재 상태를 분석하고, 향후 품질 저하를 예측한 뒤, 최적 제어 파라미터를 제시해 주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T13:53:20Z"
+        },
+        "metadata": {
+          "industry": "steel",
+          "process": "casting"
+        }
+      },
+      "response": {
+        "workflow_plan": {
+          "workflow_type": "monitoring_prediction_control",
+          "steps": [
+            "monitoring",
+            "predictive",
+            "autocontrol"
+          ],
+          "estimated_time": "18초"
+        },
+        "workflow_id": "wf_steel_casting_20250501_001"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "step": "monitoring",
+        "parameters": {
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T13:53:20Z"
+          },
+          "sensors": [
+            "SLAB_THICKNESS",
+            "CASTING_SPEED",
+            "MOLD_WIDTH",
+            "TEMPERATURE",
+            "COOLING_WATER_FLOW",
+            "MOLD_LEVEL",
+            "STRAND_TEMPERATURE",
+            "WITHDRAWAL_FORCE",
+            "SURFACE_DEFECTS"
+          ],
+          "caster_ids": [
+            "CAST_1",
+            "CAST_2",
+            "CAST_3"
+          ]
+        }
+      },
+      "response": {
+        "status": "success",
+        "detection_summary": {
+          "anomaly_detected": true,
+          "anomaly_type": "slab_thickness_deviation_and_surface_defects",
+          "severity": "high",
+          "affected_casters": [
+            "CAST_1",
+            "CAST_2",
+            "CAST_3"
+          ],
+          "total_anomaly_points": 3842,
+          "anomaly_rate": "76.8%"
+        },
+        "analysis_result": {
+          "thickness_deviation": {
+            "mean": 230.02,
+            "std_dev": 0.54,
+            "out_of_spec_rate": "42.3%",
+            "max_deviation": 1.27,
+            "trend": "increasing_variance"
+          },
+          "surface_defects": {
+            "defect_0_rate": "33.2%",
+            "defect_1_rate": "33.5%",
+            "defect_2_rate": "33.3%",
+            "defect_increasing_trend": true,
+            "defect_correlation_with_thickness": 0.68
+          },
+          "casting_speed_instability": {
+            "mean": 1.0,
+            "std_dev": 0.014,
+            "fluctuation_amplitude": 0.05,
+            "speed_correlation_with_defects": 0.54
+          },
+          "cooling_water_flow_issue": {
+            "mean": 199.8,
+            "std_dev": 11.2,
+            "target": 200.0,
+            "insufficient_cooling_periods": "38.4%"
+          },
+          "mold_level_instability": {
+            "mean": 100.1,
+            "std_dev": 6.1,
+            "target": 100.0,
+            "fluctuation_impact": "high"
+          }
+        },
+        "root_cause_analysis": {
+          "primary_causes": [
+            {
+              "cause": "casting_speed_fluctuation",
+              "description": "주조 속도의 ±5% 변동으로 인한 슬라브 두께 불균일",
+              "contribution": "45%"
+            },
+            {
+              "cause": "cooling_water_flow_instability",
+              "description": "냉각수 유량 변동 (±11 L/min)으로 인한 응고 속도 불균일",
+              "contribution": "30%"
+            },
+            {
+              "cause": "mold_level_control_issue",
+              "description": "몰드 레벨 제어 불안정 (±6mm)으로 인한 표면 품질 저하",
+              "contribution": "25%"
+            }
+          ],
+          "secondary_factors": [
+            "temperature_variation",
+            "withdrawal_force_fluctuation"
+          ]
+        },
+        "quality_impact": {
+          "current_state": {
+            "thickness_cpk": 0.31,
+            "surface_quality_grade": "C급",
+            "defect_rate": "66.8%",
+            "scrap_rate_forecast": "약 18%"
+          },
+          "affected_production": {
+            "duration": "13.9시간",
+            "slab_count": "약 835개",
+            "total_tonnage": "약 4,821톤",
+            "scrap_tonnage": "약 868톤"
+          }
+        },
+        "recommended_actions": [
+          "주조 속도 안정화 필요",
+          "냉각수 유량 제어 최적화 필요",
+          "몰드 레벨 제어 강화 필요",
+          "예측 모델을 통한 향후 품질 저하 예측 권장",
+          "자동 제어를 통한 파라미터 최적화 권장"
+        ]
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "predictions": [
+            {
+              "time_point": "12시간 후",
+              "thickness_cpk": {
+                "predicted_value": 0.22,
+                "confidence_interval": [
+                  0.18,
+                  0.26
+                ],
+                "degradation_rate": "-29%"
+              },
+              "surface_defects_rate": {
+                "predicted_value": 0.78,
+                "confidence_interval": [
+                  0.74,
+                  0.82
+                ],
+                "increase_rate": "+17%"
+              },
+              "scrap_rate": {
+                "predicted_value": 0.26,
+                "confidence_interval": [
+                  0.23,
+                  0.29
+                ]
+              }
+            },
+            {
+              "time_point": "24시간 후",
+              "thickness_cpk": {
+                "predicted_value": 0.15,
+                "confidence_interval": [
+                  0.11,
+                  0.19
+                ],
+                "degradation_rate": "-52%"
+              },
+              "surface_defects_rate": {
+                "predicted_value": 0.85,
+                "confidence_interval": [
+                  0.81,
+                  0.89
+                ],
+                "increase_rate": "+27%"
+              },
+              "scrap_rate": {
+                "predicted_value": 0.34,
+                "confidence_interval": [
+                  0.3,
+                  0.38
+                ]
+              }
+            }
+          ],
+          "quality_forecast": {
+            "12h_forecast": {
+              "thickness_spec_compliance": "58% (현재 대비 -15%p)",
+              "surface_quality_grade": "D급 (현재: C급)",
+              "estimated_scrap_tonnage": "약 2,246톤",
+              "economic_loss": "약 6억 7천만원"
+            },
+            "24h_forecast": {
+              "thickness_spec_compliance": "51% (현재 대비 -22%p)",
+              "surface_quality_grade": "E급 (현재: C급)",
+              "estimated_scrap_tonnage": "약 5,882톤",
+              "economic_loss": "약 17억 6천만원"
+            }
+          },
+          "prediction_model": {
+            "model_type": "LSTM + Random Forest Ensemble",
+            "features": [
+              "thickness_rolling_statistics",
+              "casting_speed_trend",
+              "cooling_flow_autocorrelation",
+              "mold_level_variance",
+              "temperature_gradient"
+            ],
+            "accuracy_metrics": {
+              "mae": 0.023,
+              "rmse": 0.031,
+              "r2_score": 0.89
+            }
+          },
+          "recommended_control": true
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "message": "Monitoring 완료. Predictive Agent로 전달.",
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration Agent",
+      "to": "Predictive Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "prediction_task": "forecast_quality_degradation",
+        "input_data": {
+          "current_state": {
+            "thickness_std_dev": 0.54,
+            "casting_speed_std_dev": 0.014,
+            "cooling_water_flow_std_dev": 11.2,
+            "mold_level_std_dev": 6.1,
+            "surface_defects_rate": 0.668
+          },
+          "forecast_horizon": "24시간"
+        }
+      },
+      "response": {
+        "status": "success",
+        "predictions": [
+          {
+            "time_point": "12시간 후",
+            "thickness_cpk": {
+              "predicted_value": 0.22,
+              "confidence_interval": [
+                0.18,
+                0.26
+              ],
+              "degradation_rate": "-29%"
+            },
+            "surface_defects_rate": {
+              "predicted_value": 0.78,
+              "confidence_interval": [
+                0.74,
+                0.82
+              ],
+              "increase_rate": "+17%"
+            },
+            "scrap_rate": {
+              "predicted_value": 0.26,
+              "confidence_interval": [
+                0.23,
+                0.29
+              ]
+            }
+          },
+          {
+            "time_point": "24시간 후",
+            "thickness_cpk": {
+              "predicted_value": 0.15,
+              "confidence_interval": [
+                0.11,
+                0.19
+              ],
+              "degradation_rate": "-52%"
+            },
+            "surface_defects_rate": {
+              "predicted_value": 0.85,
+              "confidence_interval": [
+                0.81,
+                0.89
+              ],
+              "increase_rate": "+27%"
+            },
+            "scrap_rate": {
+              "predicted_value": 0.34,
+              "confidence_interval": [
+                0.3,
+                0.38
+              ]
+            }
+          }
+        ],
+        "quality_forecast": {
+          "12h_forecast": {
+            "thickness_spec_compliance": "58% (현재 대비 -15%p)",
+            "surface_quality_grade": "D급 (현재: C급)",
+            "estimated_scrap_tonnage": "약 2,246톤",
+            "economic_loss": "약 6억 7천만원"
+          },
+          "24h_forecast": {
+            "thickness_spec_compliance": "51% (현재 대비 -22%p)",
+            "surface_quality_grade": "E급 (현재: C급)",
+            "estimated_scrap_tonnage": "약 5,882톤",
+            "economic_loss": "약 17억 6천만원"
+          }
+        },
+        "prediction_model": {
+          "model_type": "LSTM + Random Forest Ensemble",
+          "features": [
+            "thickness_rolling_statistics",
+            "casting_speed_trend",
+            "cooling_flow_autocorrelation",
+            "mold_level_variance",
+            "temperature_gradient"
+          ],
+          "accuracy_metrics": {
+            "mae": 0.023,
+            "rmse": 0.031,
+            "r2_score": 0.89
+          }
+        },
+        "recommended_control": true
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "optimal_parameters": {
+            "CASTING_SPEED": {
+              "current": 1.0,
+              "optimal": 0.98,
+              "change": -0.02,
+              "unit": "m/min",
+              "rationale": "주조 속도를 2% 감속하여 응고 시간 확보 및 두께 균일성 향상"
+            },
+            "COOLING_WATER_FLOW": {
+              "current": 199.8,
+              "optimal": 205.0,
+              "change": 5.2,
+              "unit": "L/min",
+              "rationale": "냉각수 유량을 2.6% 증가시켜 응고 속도 안정화 및 표면 품질 개선"
+            },
+            "MOLD_LEVEL": {
+              "current": 100.1,
+              "optimal": 98.5,
+              "change": -1.6,
+              "unit": "mm",
+              "rationale": "몰드 레벨을 1.6mm 하향 조정하여 meniscus 안정화 및 표면 결함 감소"
+            },
+            "TEMPERATURE": {
+              "current": 1560.0,
+              "optimal": 1558.0,
+              "change": -2.0,
+              "unit": "°C",
+              "rationale": "과열도를 2°C 낮춰 응고 개시점 안정화"
+            }
+          },
+          "predicted_improvement": {
+            "thickness_variance_reduction": {
+              "current_std_dev": 0.54,
+              "predicted_std_dev": 0.28,
+              "improvement": "-48%"
+            },
+            "thickness_cpk_improvement": {
+              "current": 0.31,
+              "predicted": 0.6,
+              "improvement": "+94%"
+            },
+            "surface_defects_reduction": {
+              "current_rate": 0.668,
+              "predicted_rate": 0.32,
+              "improvement": "-52%"
+            },
+            "scrap_rate_reduction": {
+              "current": 0.18,
+              "predicted": 0.06,
+              "improvement": "-67%"
+            }
+          },
+          "implementation_plan": {
+            "step_1": {
+              "action": "CASTING_SPEED 조정",
+              "target": "0.98 m/min",
+              "ramp_rate": "0.005 m/min per minute",
+              "duration": "4분"
+            },
+            "step_2": {
+              "action": "COOLING_WATER_FLOW 증가",
+              "target": "205.0 L/min",
+              "ramp_rate": "1.0 L/min per minute",
+              "duration": "6분"
+            },
+            "step_3": {
+              "action": "MOLD_LEVEL 하향 조정",
+              "target": "98.5 mm",
+              "ramp_rate": "0.5 mm per minute",
+              "duration": "4분"
+            },
+            "step_4": {
+              "action": "TEMPERATURE 미세 조정",
+              "target": "1558.0°C",
+              "ramp_rate": "0.5°C per minute",
+              "duration": "4분"
+            },
+            "total_transition_time": "약 10분",
+            "stabilization_time": "약 20분"
+          },
+          "control_algorithm": {
+            "type": "Model Predictive Control (MPC)",
+            "optimization_method": "Sequential Quadratic Programming (SQP)",
+            "objective_function": "weighted_sum_of_thickness_variance_and_defect_rate",
+            "weights": {
+              "thickness_variance": 0.6,
+              "surface_defects": 0.4
+            }
+          },
+          "monitoring_requirements": {
+            "metrics_to_monitor": [
+              "SLAB_THICKNESS",
+              "SURFACE_DEFECTS",
+              "MOLD_LEVEL",
+              "STRAND_TEMPERATURE"
+            ],
+            "monitoring_interval": "5초",
+            "alert_threshold": {
+              "thickness_deviation": "> 0.3mm",
+              "surface_defects": "> 1"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "message": "Prediction 완료. AutoControl Agent로 전달.",
+        "next_step": "control_optimization"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration Agent",
+      "to": "AutoControl Agent",
+      "timestamp": "",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "workflow_id": "wf_steel_casting_20250501_001",
+        "control_task": "optimize_casting_parameters",
+        "optimization_objective": "minimize_thickness_variance_and_surface_defects",
+        "current_parameters": {
+          "CASTING_SPEED": 1.0,
+          "COOLING_WATER_FLOW": 199.8,
+          "MOLD_LEVEL": 100.1,
+          "TEMPERATURE": 1560.0
+        },
+        "constraints": {
+          "CASTING_SPEED_range": [
+            0.95,
+            1.05
+          ],
+          "COOLING_WATER_FLOW_range": [
+            180,
+            220
+          ],
+          "MOLD_LEVEL_range": [
+            95,
+            105
+          ],
+          "TEMPERATURE_range": [
+            1555,
+            1565
+          ]
+        }
+      },
+      "response": {
+        "status": "success",
+        "optimal_parameters": {
+          "CASTING_SPEED": {
+            "current": 1.0,
+            "optimal": 0.98,
+            "change": -0.02,
+            "unit": "m/min",
+            "rationale": "주조 속도를 2% 감속하여 응고 시간 확보 및 두께 균일성 향상"
+          },
+          "COOLING_WATER_FLOW": {
+            "current": 199.8,
+            "optimal": 205.0,
+            "change": 5.2,
+            "unit": "L/min",
+            "rationale": "냉각수 유량을 2.6% 증가시켜 응고 속도 안정화 및 표면 품질 개선"
+          },
+          "MOLD_LEVEL": {
+            "current": 100.1,
+            "optimal": 98.5,
+            "change": -1.6,
+            "unit": "mm",
+            "rationale": "몰드 레벨을 1.6mm 하향 조정하여 meniscus 안정화 및 표면 결함 감소"
+          },
+          "TEMPERATURE": {
+            "current": 1560.0,
+            "optimal": 1558.0,
+            "change": -2.0,
+            "unit": "°C",
+            "rationale": "과열도를 2°C 낮춰 응고 개시점 안정화"
+          }
+        },
+        "predicted_improvement": {
+          "thickness_variance_reduction": {
+            "current_std_dev": 0.54,
+            "predicted_std_dev": 0.28,
+            "improvement": "-48%"
+          },
+          "thickness_cpk_improvement": {
+            "current": 0.31,
+            "predicted": 0.6,
+            "improvement": "+94%"
+          },
+          "surface_defects_reduction": {
+            "current_rate": 0.668,
+            "predicted_rate": 0.32,
+            "improvement": "-52%"
+          },
+          "scrap_rate_reduction": {
+            "current": 0.18,
+            "predicted": 0.06,
+            "improvement": "-67%"
+          }
+        },
+        "implementation_plan": {
+          "step_1": {
+            "action": "CASTING_SPEED 조정",
+            "target": "0.98 m/min",
+            "ramp_rate": "0.005 m/min per minute",
+            "duration": "4분"
+          },
+          "step_2": {
+            "action": "COOLING_WATER_FLOW 증가",
+            "target": "205.0 L/min",
+            "ramp_rate": "1.0 L/min per minute",
+            "duration": "6분"
+          },
+          "step_3": {
+            "action": "MOLD_LEVEL 하향 조정",
+            "target": "98.5 mm",
+            "ramp_rate": "0.5 mm per minute",
+            "duration": "4분"
+          },
+          "step_4": {
+            "action": "TEMPERATURE 미세 조정",
+            "target": "1558.0°C",
+            "ramp_rate": "0.5°C per minute",
+            "duration": "4분"
+          },
+          "total_transition_time": "약 10분",
+          "stabilization_time": "약 20분"
+        },
+        "control_algorithm": {
+          "type": "Model Predictive Control (MPC)",
+          "optimization_method": "Sequential Quadratic Programming (SQP)",
+          "objective_function": "weighted_sum_of_thickness_variance_and_defect_rate",
+          "weights": {
+            "thickness_variance": 0.6,
+            "surface_defects": 0.4
+          }
+        },
+        "monitoring_requirements": {
+          "metrics_to_monitor": [
+            "SLAB_THICKNESS",
+            "SURFACE_DEFECTS",
+            "MOLD_LEVEL",
+            "STRAND_TEMPERATURE"
+          ],
+          "monitoring_interval": "5초",
+          "alert_threshold": {
+            "thickness_deviation": "> 0.3mm",
+            "surface_defects": "> 1"
+          }
+        }
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "api_endpoint": "Internal communication",
+      "response": {
+        "status": "success",
+        "message": "AutoControl 에이전트가 최적 제어 파라미터를 계산했습니다.",
+        "next_step": "결과를 사용자에게 반환"
+      }
+    },
+    "step_8_orchestration_to_user": {
+      "api_endpoint": "Return to user",
+      "response": {
+        "status": "success",
+        "summary": "슬라브 두께 편차 및 표면 결함 분석 완료 + 품질 저하 예측 + 최적 제어 제시",
+        "workflow_execution_time": "17.8초"
+      }
+    }
+  },
+  "expected_answer": {
+    "response_type": "monitoring_prediction_control_report",
+    "format": "markdown",
+    "content": "# 연속주조 공정 슬라브 두께 최적 제어 분석 보고서\n\n## 1. 이상 탐지 결과 (Monitoring)\n\n### 1.1 이상 개요\n- **이상 유형**: 슬라브 두께 편차 및 표면 결함 증가\n- **심각도**: High\n- **영향 범위**: CAST_1, CAST_2, CAST_3 전체 캐스터\n- **이상 비율**: 76.8% (3,842 / 5,000 포인트)\n\n### 1.2 슬라브 두께 분석\n- **평균 두께**: 230.02 mm (목표: 230.0 mm)\n- **표준편차**: 0.54 mm\n- **규격 이탈율**: 42.3% (허용오차: ±0.5mm)\n- **최대 편차**: ±1.27 mm\n- **공정능력지수 (Cpk)**: 0.31 (목표: 1.33 이상)\n- **추세**: 분산 증가 경향\n\n### 1.3 표면 결함 분석\n- **결함 없음 (0)**: 33.2%\n- **경미한 결함 (1)**: 33.5%\n- **중대한 결함 (2)**: 33.3%\n- **결함 증가 추세**: 확인됨\n- **두께 편차와의 상관계수**: 0.68 (강한 양의 상관)\n\n### 1.4 공정 파라미터 분석\n\n**주조 속도 (CASTING_SPEED)**\n- 평균: 1.0 m/min (목표 범위 내)\n- 표준편차: 0.014 m/min\n- 변동 폭: ±0.05 m/min (±5%)\n- 결함과의 상관계수: 0.54\n\n**냉각수 유량 (COOLING_WATER_FLOW)**\n- 평균: 199.8 L/min (목표: 200 L/min)\n- 표준편차: 11.2 L/min\n- 불충분한 냉각 기간: 38.4%\n\n**몰드 레벨 (MOLD_LEVEL)**\n- 평균: 100.1 mm (목표: 100 mm)\n- 표준편차: 6.1 mm\n- 변동 폭: ±6 mm\n- 영향도: High\n\n### 1.5 근본 원인 분석\n\n**주요 원인**\n1. **주조 속도 변동** (기여도 45%)\n   - ±5% 변동으로 인한 슬라브 두께 불균일\n   - 응고 시간 불안정 초래\n\n2. **냉각수 유량 불안정** (기여도 30%)\n   - ±11 L/min 변동으로 인한 응고 속도 불균일\n   - 표면 온도 구배 불균형\n\n3. **몰드 레벨 제어 불안정** (기여도 25%)\n   - ±6mm 변동으로 인한 meniscus 불안정\n   - 표면 품질 저하 직접 영향\n\n**부차적 요인**\n- 온도 변동\n- 인발력 변동\n\n### 1.6 품질 영향 평가\n\n**현재 상태**\n- 두께 Cpk: 0.31 (부적합)\n- 표면 품질 등급: C급\n- 결함률: 66.8%\n- 예상 스크랩율: 약 18%\n\n**영향 받은 생산량**\n- 분석 기간: 13.9시간\n- 슬라브 개수: 약 835개\n- 총 톤수: 약 4,821톤\n- 스크랩 톤수: 약 868톤\n\n---\n\n## 2. 품질 저하 예측 결과 (Predictive)\n\n### 2.1 예측 모델 정보\n- **모델 유형**: LSTM + Random Forest Ensemble\n- **입력 특성**: 두께 통계량, 주조속도 추세, 냉각수 자기상관, 몰드레벨 분산, 온도 구배\n- **정확도**:\n  - MAE: 0.023\n  - RMSE: 0.031\n  - R² Score: 0.89\n\n### 2.2 12시간 후 예측\n\n**두께 공정능력 (Cpk)**\n- 예측값: 0.22 (신뢰구간: 0.18 ~ 0.26)\n- 저하율: -29%\n\n**표면 결함률**\n- 예측값: 78% (신뢰구간: 74% ~ 82%)\n- 증가율: +17%\n\n**스크랩율**\n- 예측값: 26% (신뢰구간: 23% ~ 29%)\n\n**품질 등급**\n- 두께 규격 준수율: 58% (현재 대비 -15%p)\n- 표면 품질 등급: D급 (현재: C급)\n- 예상 스크랩 톤수: 약 2,246톤\n- **예상 경제적 손실**: **약 6억 7천만원**\n\n### 2.3 24시간 후 예측\n\n**두께 공정능력 (Cpk)**\n- 예측값: 0.15 (신뢰구간: 0.11 ~ 0.19)\n- 저하율: -52%\n\n**표면 결함률**\n- 예측값: 85% (신뢰구간: 81% ~ 89%)\n- 증가율: +27%\n\n**스크랩율**\n- 예측값: 34% (신뢰구간: 30% ~ 38%)\n\n**품질 등급**\n- 두께 규격 준수율: 51% (현재 대비 -22%p)\n- 표면 품질 등급: E급 (현재: C급)\n- 예상 스크랩 톤수: 약 5,882톤\n- **예상 경제적 손실**: **약 17억 6천만원**\n\n---\n\n## 3. 최적 제어 파라미터 (AutoControl)\n\n### 3.1 제어 알고리즘\n- **유형**: Model Predictive Control (MPC)\n- **최적화 방법**: Sequential Quadratic Programming (SQP)\n- **목적 함수**: 두께 분산 + 표면 결함률 가중합\n- **가중치**: 두께 분산 60%, 표면 결함 40%\n\n### 3.2 최적 파라미터\n\n| 파라미터 | 현재값 | 최적값 | 변경량 | 단위 |\n|---------|--------|--------|--------|------|\n| **주조 속도** | 1.0 | 0.98 | -0.02 | m/min |\n| **냉각수 유량** | 199.8 | 205.0 | +5.2 | L/min |\n| **몰드 레벨** | 100.1 | 98.5 | -1.6 | mm |\n| **온도** | 1560.0 | 1558.0 | -2.0 | °C |\n\n### 3.3 파라미터 변경 근거\n\n**주조 속도 (-2%)**\n- 1.0 → 0.98 m/min\n- 근거: 주조 속도를 2% 감속하여 응고 시간 확보 및 두께 균일성 향상\n- 효과: 응고 쉘 두께 증가, 내부 응력 감소\n\n**냉각수 유량 (+2.6%)**\n- 199.8 → 205.0 L/min\n- 근거: 냉각수 유량을 2.6% 증가시켜 응고 속도 안정화 및 표면 품질 개선\n- 효과: 응고 속도 균일화, 표면 온도 구배 최적화\n\n**몰드 레벨 (-1.6mm)**\n- 100.1 → 98.5 mm\n- 근거: 몰드 레벨을 1.6mm 하향 조정하여 meniscus 안정화 및 표면 결함 감소\n- 효과: 표면 파동 감소, 개재물 포획 감소\n\n**온도 (-2°C)**\n- 1560 → 1558°C\n- 근거: 과열도를 2°C 낮춰 응고 개시점 안정화\n- 효과: 응고 개시 시점 예측성 향상\n\n### 3.4 예상 개선 효과\n\n**두께 분산 감소**\n- 현재 표준편차: 0.54 mm\n- 예상 표준편차: 0.28 mm\n- **개선율: -48%**\n\n**공정능력지수 향상**\n- 현재 Cpk: 0.31\n- 예상 Cpk: 0.60\n- **개선율: +94%**\n\n**표면 결함률 감소**\n- 현재 결함률: 66.8%\n- 예상 결함률: 32%\n- **개선율: -52%**\n\n**스크랩율 감소**\n- 현재 스크랩율: 18%\n- 예상 스크랩율: 6%\n- **개선율: -67%**\n\n### 3.5 구현 계획\n\n**Step 1: 주조 속도 조정**\n- 목표: 0.98 m/min\n- 램프 속도: 0.005 m/min/분\n- 소요 시간: 4분\n\n**Step 2: 냉각수 유량 증가**\n- 목표: 205.0 L/min\n- 램프 속도: 1.0 L/min/분\n- 소요 시간: 6분\n\n**Step 3: 몰드 레벨 조정**\n- 목표: 98.5 mm\n- 램프 속도: 0.5 mm/분\n- 소요 시간: 4분\n\n**Step 4: 온도 미세 조정**\n- 목표: 1558.0°C\n- 램프 속도: 0.5°C/분\n- 소요 시간: 4분\n\n**총 전환 시간**: 약 10분  \n**안정화 시간**: 약 20분\n\n### 3.6 모니터링 요구사항\n\n**모니터링 대상**\n- SLAB_THICKNESS (슬라브 두께)\n- SURFACE_DEFECTS (표면 결함)\n- MOLD_LEVEL (몰드 레벨)\n- STRAND_TEMPERATURE (스트랜드 온도)\n\n**모니터링 주기**: 5초\n\n**경보 임계값**\n- 두께 편차: > 0.3mm\n- 표면 결함: > 1\n\n---\n\n## 4. 경제적 영향 분석\n\n### 4.1 제어 미적용 시 손실 (24시간 기준)\n- 예상 스크랩율: 34%\n- 스크랩 톤수: 약 5,882톤\n- 톤당 가격: 30만원\n- **총 손실**: **약 17억 6천만원**\n\n### 4.2 제어 적용 시 개선\n- 예상 스크랩율: 6%\n- 스크랩 톤수: 약 1,038톤\n- 톤당 가격: 30만원\n- 총 손실: 약 3억 1천만원\n- **손실 감소**: **약 14억 5천만원**\n\n### 4.3 ROI 분석\n- 제어 시스템 운영 비용: 약 500만원/일\n- 순 이익: 14억 4천 5백만원/일\n- **ROI**: **약 289배**\n- **회수 기간**: 즉시 (첫날부터 이익 발생)\n\n---\n\n## 5. 권장 조치사항\n\n### 5.1 즉시 조치 (0-1시간)\n1. **최적 제어 파라미터 적용**\n   - 주조 속도: 0.98 m/min\n   - 냉각수 유량: 205.0 L/min\n   - 몰드 레벨: 98.5 mm\n   - 온도: 1558°C\n\n2. **집중 모니터링 체계 구축**\n   - 5초 간격 실시간 모니터링\n   - 두께 편차 > 0.3mm 시 즉시 경보\n\n### 5.2 단기 조치 (1-24시간)\n1. **제어 효과 검증**\n   - 2시간 간격으로 Cpk 재계산\n   - 표면 결함률 추이 분석\n\n2. **미세 조정**\n   - 실시간 피드백 기반 파라미터 미세 조정\n   - MPC 모델 가중치 최적화\n\n### 5.3 중장기 조치 (1주일 이상)\n1. **예측 모델 고도화**\n   - 더 많은 학습 데이터 확보\n   - 앙상블 모델 가중치 재조정\n\n2. **자동 제어 시스템 고도화**\n   - 다목적 최적화 알고리즘 적용\n   - 강건성(robustness) 향상\n\n3. **운전원 교육**\n   - MPC 시스템 운영 교육\n   - 비상 상황 대응 매뉴얼 숙지\n\n---\n\n## 6. 결론\n\n### 6.1 핵심 발견사항\n- 슬라브 두께 편차와 표면 결함이 심각한 수준 (결함률 66.8%, Cpk 0.31)\n- 주요 원인: 주조 속도 변동, 냉각수 유량 불안정, 몰드 레벨 제어 불안정\n- 제어 미적용 시 24시간 내 17억 6천만원 손실 예상\n\n### 6.2 제어 효과\n- 최적 제어 파라미터 적용 시:\n  - 두께 분산 48% 감소\n  - Cpk 94% 향상 (0.31 → 0.60)\n  - 표면 결함률 52% 감소\n  - 스크랩율 67% 감소 (18% → 6%)\n- **경제적 효과**: 일일 14억 4천 5백만원 손실 방지, ROI 289배\n\n### 6.3 즉시 실행 권장\n- 최적 제어 파라미터를 즉시 적용하여 품질 저하 방지\n- 실시간 모니터링 체계를 통해 제어 효과 검증\n- MPC 기반 자동 제어 시스템의 지속적 개선 필요\n\n**보고서 생성 시각**: 2025-05-01  \n**분석 소요 시간**: 17.8초  \n**담당 에이전트**: PRISM Multi-Agent System (Monitoring + Predictive + AutoControl)"
+  },
+  "test_validation": {
+    "validation_points": [
+      {
+        "point": "Monitoring 에이전트가 슬라브 두께 편차를 정확히 탐지했는가?",
+        "expected": "두께 편차 76.8%, Cpk 0.31, 표준편차 0.54mm 탐지",
+        "validation_method": "agent_workflow.step_2의 detection_summary 확인"
+      },
+      {
+        "point": "근본 원인 분석이 수행되었는가?",
+        "expected": "주조 속도, 냉각수 유량, 몰드 레벨의 3대 원인 식별",
+        "validation_method": "agent_workflow.step_2의 root_cause_analysis 확인"
+      },
+      {
+        "point": "Predictive 에이전트가 품질 저하를 예측했는가?",
+        "expected": "12시간 후 Cpk 0.22, 24시간 후 Cpk 0.15 예측",
+        "validation_method": "agent_workflow.step_3의 predictions 확인"
+      },
+      {
+        "point": "예측 모델의 정확도가 제시되었는가?",
+        "expected": "MAE 0.023, RMSE 0.031, R² 0.89",
+        "validation_method": "agent_workflow.step_3의 prediction_model 확인"
+      },
+      {
+        "point": "AutoControl 에이전트가 최적 파라미터를 계산했는가?",
+        "expected": "주조속도 0.98, 냉각수 205.0, 몰드레벨 98.5, 온도 1558",
+        "validation_method": "agent_workflow.step_4의 optimal_parameters 확인"
+      },
+      {
+        "point": "제어 효과가 정량적으로 제시되었는가?",
+        "expected": "두께 분산 -48%, Cpk +94%, 결함률 -52%, 스크랩율 -67%",
+        "validation_method": "agent_workflow.step_4의 predicted_improvement 확인"
+      },
+      {
+        "point": "구현 계획이 구체적으로 제시되었는가?",
+        "expected": "4단계 구현 계획, 각 단계별 소요 시간, 총 10분 전환 시간",
+        "validation_method": "agent_workflow.step_4의 implementation_plan 확인"
+      },
+      {
+        "point": "경제적 영향이 분석되었는가?",
+        "expected": "제어 미적용 시 17.6억원 손실, 적용 시 14.5억원 절감, ROI 289배",
+        "validation_method": "expected_answer의 경제적 영향 분석 섹션 확인"
+      },
+      {
+        "point": "응답이 마크다운 형식으로 제공되는가?",
+        "expected": "6개 섹션 구조화된 마크다운 보고서",
+        "validation_method": "expected_answer.content의 마크다운 포맷 확인"
+      },
+      {
+        "point": "workflow_type이 monitoring_prediction_control인가?",
+        "expected": "monitoring_prediction_control, level 3",
+        "validation_method": "metadata.workflow_type 확인"
+      }
+    ],
+    "success_criteria": {
+      "anomaly_detection_accuracy": "> 95%",
+      "prediction_r2_score": "> 0.85",
+      "control_improvement_rate": "> 40%",
+      "response_time": "< 20초",
+      "report_completeness": "모든 섹션 포함"
+    }
+  }
+}

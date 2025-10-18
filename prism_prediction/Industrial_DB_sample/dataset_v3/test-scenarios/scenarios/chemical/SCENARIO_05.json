@@ -1,0 +1,237 @@
+{
+  "scenario_id": "SCENARIO_05",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "화학 반응기 온도 이상 모니터링",
+    "title_en": "Chemical Reactor Temperature Anomaly Monitoring",
+    "industry": "chemical",
+    "process": "Reactor",
+    "workflow_type": "monitoring_only",
+    "workflow_level": 1,
+    "complexity": "low",
+    "description": "화학 반응기에서 온도 급격한 상승을 감지하고 분석하는 시나리오"
+  },
+  "query": {
+    "text": "반응기 REACT_A3의 TEMPERATURE가 급격히 상승하고 있습니다. 현재 상황을 분석해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:35:00Z"
+    },
+    "user_id": "reactor_operator_01",
+    "priority": "critical"
+  },
+  "timeseries_data": {
+    "file": "chemical_reactor_001.csv",
+    "file_path": "test_data/chemical/chemical_reactor_001.csv",
+    "columns": [
+      "TIMESTAMP",
+      "REACTOR_ID",
+      "TEMPERATURE",
+      "PRESSURE",
+      "PH",
+      "CONCENTRATION",
+      "FEED_RATE",
+      "CATALYST_RATIO",
+      "COOLING_WATER_FLOW",
+      "AGITATOR_SPEED",
+      "REACTION_RATE",
+      "PRODUCT_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "TEMPERATURE",
+      "PRESSURE",
+      "REACTION_RATE"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:35:00Z",
+      "total_points": 4890,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:35:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "반응기 REACT_A3의 TEMPERATURE가 급격히 상승하고 있습니다. 현재 상황을 분석해주세요.",
+        "session_id": "reactor_session_20250501_001",
+        "user_id": "reactor_operator_01",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "anomaly_detection_and_analysis",
+          "target_process": "chemical_reaction",
+          "target_variable": "TEMPERATURE",
+          "action_required": "current_state_analysis",
+          "urgency": "critical"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_only",
+          "reason": "User requests current state analysis without prediction or control",
+          "required_agents": [
+            "Monitoring"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "REACTOR_TASK_20250501_001",
+          "name": "반응기 온도 급상승 감지 및 분석",
+          "assigned_agent": "Monitoring",
+          "priority": "critical"
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T13:35:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "REACTOR_TASK_20250501_001",
+        "query": "화학 반응기 REACT_A1~A4의 TEMPERATURE 급상승 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T13:35:00Z. 주요 변수: TEMPERATURE, PRESSURE, REACTION_RATE"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:35:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### 화학 반응기 온도 급상승 탐지 분석 결과\n\n---\n\n#### 📊 1. 탐지 결과 개요\n- **분석 대상**: 화학 반응기 REACT_A1~A4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 13:35:00 (13시간 35분)\n- **총 데이터 포인트**: 4,890건\n- **온도 급상승 감지**: REACT_A3\n- **이상 감지 시작 시간**: 2025-05-01T13:10:00Z\n- **상승 지속 시간**: 25분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 TEMPERATURE 급격한 상승 (REACT_A3)\n- **현상**: 지수 함수형 급상승(exponential increase) 패턴\n- **정상 범위**: 180-220°C\n- **현재값**: 258.7°C (목표 상한 대비 +17.6%)\n- **초기값 (13:10)**: 205.3°C\n- **상승량**: +53.4°C (+26.0%)\n- **평균 상승률**: +2.14°C/분\n- **최근 5분 상승률**: +4.3°C/분 (가속 증가)\n- **추세**: 급격한 상승(rapidly increasing)\n- **위험 수준**: 🔴 **매우 높음**\n\n**임계치 정보**:\n- **안전 한계**: 280°C (이상 시 폭주 반응 위험)\n- **현재 도달률**: 92.4%\n- **임계치까지 여유**: 21.3°C (7.6%)\n\n##### 2.2 PRESSURE 연동 상승\n- **정상 범위**: 3.0-5.0 bar\n- **현재값**: 6.8 bar (+36.0%)\n- **초기값 (13:10)**: 4.2 bar\n- **상승량**: +2.6 bar\n- **TEMPERATURE와 상관계수**: 0.95 (매우 강한 양의 상관관계)\n- **해석**: 온도 상승으로 반응 속도 증가, 압력 급증\n\n##### 2.3 REACTION_RATE 과다\n- **정상 범위**: 0.8-1.2 kmol/h\n- **현재값**: 1.85 kmol/h (+54.2%)\n- **해석**: 발열 반응 가속화, 열 발생량 급증\n- **위험**: 폭주 반응(runaway reaction) 초기 단계 의심\n\n##### 2.4 COOLING_WATER_FLOW 부족\n- **정상 범위**: 45-55 m³/h\n- **현재값**: 38.2 m³/h (-15.1%)\n- **해석**: 냉각 능력 부족이 온도 상승의 주요 원인\n\n##### 2.5 CONCENTRATION 급증\n- **정상 범위**: 2.0-3.0 mol/L\n- **현재값**: 3.85 mol/L (+28.3%)\n- **해석**: 반응물 과다 투입 또는 생성물 축적\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **냉각수 펌프 고장 또는 밸브 막힘** (가능성: 매우 높음)\n   - COOLING_WATER_FLOW 15% 감소\n   - 온도와 압력의 동시 급증\n   - 냉각 시스템 즉시 점검 필요\n   \n2. **촉매 과다 투입 또는 활성도 이상** (가능성: 높음)\n   - REACTION_RATE 54% 증가\n   - CATALYST_RATIO 센서값 확인 필요\n   - 반응 속도 제어 불능 상태\n   \n3. **FEED_RATE 제어 오류** (가능성: 중간)\n   - CONCENTRATION 급증\n   - 반응물 과다 공급 가능성\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 13:10 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| TEMPERATURE | 205.3°C | 258.7°C | +53.4°C | 180-220°C | 🔴 심각 초과 |\n| PRESSURE | 4.2 bar | 6.8 bar | +2.6 bar | 3.0-5.0 bar | 🔴 심각 초과 |\n| REACTION_RATE | 1.0 kmol/h | 1.85 kmol/h | +0.85 kmol/h | 0.8-1.2 kmol/h | 🔴 심각 초과 |\n| COOLING_WATER_FLOW | 50.2 m³/h | 38.2 m³/h | -12.0 m³/h | 45-55 m³/h | 🔴 심각 미달 |\n| CONCENTRATION | 2.5 mol/L | 3.85 mol/L | +1.35 mol/L | 2.0-3.0 mol/L | 🔴 초과 |\n| pH | 7.2 | 6.5 | -0.7 | 7.0-8.0 | ⚠️ 미달 |\n\n#### 💥 5. 임계 위험 분석\n\n**폭주 반응 위험**:\n- **현재 상태**: 온도 258.7°C, 압력 6.8 bar\n- **폭주 반응 임계점**: 온도 280°C, 압력 8.0 bar\n- **도달 예상 시간**: 현재 상승률 유지 시 약 **10분 후**\n- **폭주 반응 발생 시 영향**:\n  - 반응기 과압 파열 위험\n  - 유독 가스 누출 가능성\n  - 폭발 및 화재 위험\n  - 인명 피해 우려\n\n**현재 상승률 지속 시**:\n- **5분 후**: 280°C 임계치 도달\n- **10분 후**: 반응기 안전 밸브 작동 (압력 릴리프)\n- **15분 후**: 긴급 정지 시스템 작동 (온도 인터록)\n\n#### 💡 6. 긴급 권장 조치사항\n\n**즉시 조치 (우선순위: 최고 긴급 - 생명 안전)**\n1. **긴급 냉각 시스템 가동**\n   - 비상 냉각수 라인 개방\n   - 보조 냉각 펌프 즉시 가동\n   - 냉각 코일 유량 최대화\n   \n2. **FEED_RATE 긴급 차단**\n   - 반응물 공급 즉시 중단\n   - 반응 진행 억제\n   - 열 발생 최소화\n\n3. **촉매 비활성화 또는 중화제 투입**\n   - 반응 속도 강제 감소\n   - 긴급 억제제(inhibitor) 투입 검토\n\n4. **인원 대피 준비**\n   - 반응기 주변 인원 대기\n   - 비상 대응팀 소집\n\n**단기 조치 (5분 내)**\n5. 냉각수 펌프 및 밸브 점검\n   - 펌프 동작 상태 확인\n   - 밸브 개도 확인\n   - 냉각수 배관 막힘 점검\n\n6. 압력 릴리프 시스템 준비\n   - 안전 밸브 동작 확인\n   - 벤트 라인 준비\n\n#### 📌 7. 영향 범위 및 리스크\n\n- **안전 리스크**: 🔴 **매우 높음** (폭주 반응, 폭발 위험)\n- **인명 피해 가능성**: 높음 (반응기 주변 작업자)\n- **환경 영향**: 높음 (유독 가스 누출 시)\n- **생산 영향**: 심각 (반응기 긴급 정지 불가피)\n- **경제적 손실**: 약 **150,000,000원** (반응기 손상 + 생산 중단)\n- **법적 책임**: 산업안전보건법, 화학물질관리법 위반 가능\n\n#### 🎯 8. 기타 반응기 상태\n\n**REACT_A1**: ✅ 정상 (온도 198.3°C, 압력 4.1 bar)\n**REACT_A2**: ✅ 정상 (온도 203.5°C, 압력 4.3 bar)\n**REACT_A3**: 🔴 **비상** (온도 258.7°C, 압력 6.8 bar)\n**REACT_A4**: ✅ 정상 (온도 195.8°C, 압력 3.9 bar)\n\n---\n**분석 완료 시각**: 2025-05-01T13:35:05Z  \n**분석 소요 시간**: 4.8초  \n**신뢰도**: 95%  \n**⚠️ 긴급 대응 필요**"
+      }
+    },
+    "step_4_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T13:35:06Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "reactor_session_20250501_001",
+        "final_answer": "반응기 REACT_A3의 온도가 13:10부터 급격히 상승하여 현재 258.7°C로 안전 한계(280°C)의 92.4%에 도달했습니다. 냉각수 유량이 38.2 m³/h로 15% 감소하여 냉각 능력 부족이 주요 원인이며, 반응 속도가 1.85 kmol/h로 54% 과다하여 폭주 반응 초기 단계로 의심됩니다. 현재 상승률(+4.3°C/분)이 지속될 경우 약 5분 후 임계치 도달이 예상되며, 반응기 파열, 유독 가스 누출, 폭발 위험이 있습니다. 즉시 비상 냉각 시스템 가동, 반응물 공급 차단, 인원 대피 준비가 필요합니다.",
+        "final_markdown": "### 화학 반응기 온도 급상승 탐지 분석 결과\n\n(상세 내용은 monitoring response 참조)",
+        "task_history": [
+          {
+            "id": "REACTOR_TASK_20250501_001",
+            "name": "반응기 온도 급상승 감지 및 분석",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "critical"
+          }
+        ],
+        "tools_used": [
+          "Monitoring"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "anomalies_detected": 1,
+            "severity": "critical",
+            "reactor_id": "REACT_A3",
+            "current_temperature": 258.7,
+            "critical_threshold": 280,
+            "time_to_critical_minutes": 5,
+            "runaway_risk": "high"
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "반응기 REACT_A3의 온도가 13:10부터 258.7°C로 급상승하여 안전 한계의 92.4%에 도달했습니다. 냉각수 유량 15% 감소가 주요 원인이며, 반응 속도 54% 과다로 폭주 반응 위험이 있습니다. 5분 후 임계치 도달 예상으로 즉시 비상 냉각, 반응물 차단, 인원 대피가 필요합니다.",
+    "detected_issues": [
+      {
+        "issue": "TEMPERATURE 급격한 상승",
+        "severity": "critical",
+        "description": "258.7°C로 53.4°C 상승, 평균 상승률 +2.14°C/분, 최근 +4.3°C/분",
+        "affected_timeframe": "2025-05-01T13:10:00Z ~ 2025-05-01T13:35:00Z",
+        "current_value": 258.7,
+        "critical_threshold": 280,
+        "time_to_critical_minutes": 5,
+        "reactor_id": "REACT_A3"
+      },
+      {
+        "issue": "냉각수 유량 부족",
+        "severity": "critical",
+        "description": "38.2 m³/h로 15% 감소, 냉각 능력 부족",
+        "root_cause": true
+      },
+      {
+        "issue": "REACTION_RATE 과다",
+        "severity": "high",
+        "description": "1.85 kmol/h로 54% 과다, 폭주 반응 초기 단계 의심",
+        "runaway_risk": "high"
+      },
+      {
+        "issue": "PRESSURE 급증",
+        "severity": "high",
+        "description": "6.8 bar로 36% 상승, 과압 위험",
+        "current_value": 6.8,
+        "safe_limit": 8.0
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "emergency",
+        "action": "비상 냉각 시스템 즉시 가동",
+        "details": "비상 냉각수 라인 개방, 보조 펌프 가동, 유량 최대화",
+        "expected_effect": "온도 하강, 반응 속도 감소",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "emergency",
+        "action": "반응물 공급 즉시 차단",
+        "details": "FEED_RATE 0으로 설정, 반응 진행 억제",
+        "expected_effect": "열 발생 최소화",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "emergency",
+        "action": "인원 대피 준비 및 비상 대응팀 소집",
+        "details": "반응기 주변 인원 대기, 비상 절차 시작",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "urgent",
+        "action": "냉각수 펌프 및 밸브 긴급 점검",
+        "details": "펌프 동작 확인, 밸브 개도 확인, 배관 막힘 점검",
+        "implementation_time": "5분 내"
+      }
+    ],
+    "metrics": {
+      "analysis_time_ms": 4800,
+      "data_points_analyzed": 4890,
+      "anomalies_detected": 1,
+      "affected_reactors": 1,
+      "runaway_risk_level": "high",
+      "time_to_critical_minutes": 5,
+      "expected_loss_krw": 150000000,
+      "safety_risk": "very_high",
+      "confidence_score": 0.95
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration"
+    ],
+    "expected_agents_count": 2,
+    "should_predict": false,
+    "should_control": false,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start"
+    ]
+  }
+}

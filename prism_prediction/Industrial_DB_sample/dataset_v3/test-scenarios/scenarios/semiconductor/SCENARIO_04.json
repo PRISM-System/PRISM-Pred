@@ -1,0 +1,565 @@
+{
+  "scenario_id": "SCENARIO_04",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "반도체 전체 공정 규제 준수 검증",
+    "title_en": "Semiconductor Full Process Compliance Verification",
+    "industry": "semiconductor",
+    "process": "Full Process",
+    "workflow_type": "full_compliance",
+    "workflow_level": 4,
+    "complexity": "very_high",
+    "description": "반도체 제조 공정에서 RF 파워 이상을 감지하고 예측하여 제어한 후 환경 및 안전 규제 준수 여부를 검증하는 시나리오"
+  },
+  "query": {
+    "text": "반도체 공정에서 RF_POWER가 증가 추세입니다. 예측 및 제어를 수행하고 규제 준수 여부를 확인해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T15:00:00Z"
+    },
+    "user_id": "fab_manager_04",
+    "priority": "critical"
+  },
+  "timeseries_data": {
+    "file": "semiconductor_full_004.csv",
+    "file_path": "test_data/semiconductor/semiconductor_full_004.csv",
+    "columns": [
+      "TIMESTAMP",
+      "TOOL_ID",
+      "RF_POWER",
+      "PRESSURE",
+      "TEMPERATURE",
+      "GAS_FLOW_RATE",
+      "VACUUM_PUMP",
+      "PROCESS_TIME",
+      "WAFER_QUALITY",
+      "ENERGY_CONSUMPTION",
+      "PROCESS_STABILITY_INDEX"
+    ],
+    "key_variables": [
+      "RF_POWER",
+      "PRESSURE",
+      "PROCESS_STABILITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T15:00:00Z",
+      "total_points": 5400,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T15:00:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "반도체 공정에서 RF_POWER가 증가 추세입니다. 예측 및 제어를 수행하고 규제 준수 여부를 확인해주세요.",
+        "session_id": "fab_session_20250501_004",
+        "user_id": "fab_manager_04",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 10
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "full_workflow_with_compliance",
+          "target_process": "semiconductor_manufacturing",
+          "target_variable": "RF_POWER",
+          "action_required": "control_with_regulatory_verification",
+          "urgency": "critical",
+          "compliance_required": true
+        },
+        "workflow_determination": {
+          "selected_workflow": "full_compliance",
+          "reason": "User explicitly requests regulatory compliance verification for control actions",
+          "required_agents": [
+            "Monitoring",
+            "Predictive",
+            "AutoControl",
+            "ComplianceCheck"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "FAB_TASK_20250501_004",
+          "subtasks": [
+            {
+              "subtask_id": "FAB_TASK_20250501_004_1",
+              "name": "RF 파워 증가 추이 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "critical"
+            },
+            {
+              "subtask_id": "FAB_TASK_20250501_004_2",
+              "name": "공정 안정성 저하 예측",
+              "assigned_agent": "Predictive",
+              "priority": "critical",
+              "depends_on": "FAB_TASK_20250501_004_1"
+            },
+            {
+              "subtask_id": "FAB_TASK_20250501_004_3",
+              "name": "RF 파워 최적 제어 실행",
+              "assigned_agent": "AutoControl",
+              "priority": "critical",
+              "depends_on": "FAB_TASK_20250501_004_2"
+            },
+            {
+              "subtask_id": "FAB_TASK_20250501_004_4",
+              "name": "환경 및 안전 규제 준수 검증",
+              "assigned_agent": "ComplianceCheck",
+              "priority": "critical",
+              "depends_on": "FAB_TASK_20250501_004_3"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T15:00:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "FAB_TASK_20250501_004_1",
+        "query": "반도체 제조 툴 TOOL_01~TOOL_06의 RF_POWER 증가 추이 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T15:00:00Z. 주요 변수: RF_POWER, PRESSURE, PROCESS_STABILITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T15:00:06Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### RF 파워 증가 추이 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: 반도체 제조 툴 TOOL_01~TOOL_06\n- **분석 시간**: 2025-05-01 00:00:00 ~ 15:00:00 (15시간)\n- **총 데이터 포인트**: 5,400건\n- **RF 파워 상승 감지 시작**: 2025-05-01T13:30:00Z\n- **상승 지속 시간**: 1시간 30분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 RF_POWER 지속 상승\n- **현상**: 선형 증가(linear increase) 패턴\n- **정상 범위**: 1,400-1,600 W\n- **현재값**: 1,742 W (목표 상한 대비 +8.9%)\n- **초기값 (13:30)**: 1,550 W\n- **상승량**: +192 W (+12.4%)\n- **평균 상승률**: +2.13 W/분\n- **추세**: 지속 상승(continuously increasing)\n- **위험 수준**: 🔴 **높음**\n\n**임계치 정보**:\n- **공정 한계**: 1,800 W (이상 시 플라즈마 손상 위험)\n- **현재 도달률**: 96.8%\n- **임계치까지 여유**: 58 W (3.2%)\n\n##### 2.2 ENERGY_CONSUMPTION 급증\n- **정상 범위**: 45-55 kWh/웨이퍼\n- **현재값**: 67.8 kWh/웨이퍼 (+23.3%)\n- **초기값 (13:30)**: 50.2 kWh/웨이퍼\n- **증가율**: +35.1%\n- **RF_POWER와 상관계수**: 0.96 (매우 강한 양의 상관관계)\n- **해석**: RF 파워 증가가 에너지 소비 급증으로 직결\n\n##### 2.3 PROCESS_STABILITY_INDEX 저하\n- **정상 범위**: ≥ 88\n- **현재 평균**: 79.5 (목표 대비 -9.7%)\n- **13:30 이전 평균**: 91.3\n- **저하율**: -12.9%\n- **추세**: 급락(declining)\n\n##### 2.4 PRESSURE 연동 상승\n- **정상 범위**: 8.0-12.0 mTorr\n- **현재값**: 13.8 mTorr (+15.0%)\n- **RF_POWER와 상관계수**: 0.82\n- **해석**: RF 파워 증가로 플라즈마 밀도 상승, 압력 증가\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **RF 매칭 네트워크 부정합** (가능성: 매우 높음)\n   - 반사 파워(Reflected Power) 증가 감지\n   - 매칭 효율 저하 (89.2% → 81.5%)\n   - 임피던스 미스매치 의심\n   \n2. **RF 제너레이터 캘리브레이션 오류** (가능성: 높음)\n   - 설정 파워 대비 실제 출력 과다\n   - 제너레이터 피드백 루프 문제 가능\n   \n3. **전극 표면 오염** (가능성: 중간)\n   - 장시간 사용으로 인한 표면 변질\n   - 플라즈마 임피던스 변화\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 13:30 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| RF_POWER | 1,550 W | 1,742 W | +192 W | 1,400-1,600 W | 🔴 심각 초과 |\n| ENERGY_CONSUMPTION | 50.2 kWh | 67.8 kWh | +17.6 kWh | 45-55 kWh | 🔴 심각 초과 |\n| PROCESS_STABILITY_INDEX | 91.3 | 79.5 | -11.8 | ≥88 | 🔴 미달 |\n| PRESSURE | 10.2 mTorr | 13.8 mTorr | +3.6 mTorr | 8.0-12.0 mTorr | 🔴 초과 |\n| WAFER_QUALITY | 94.5 | 87.2 | -7.3 | ≥92 | 🔴 미달 |\n\n#### 💥 5. 임계 위험 및 규제 이슈\n\n**임계 도달 시 영향**:\n- **플라즈마 아킹**: 전극 손상, 챔버 오염\n- **웨이퍼 파손**: 과도한 에너지로 인한 파티클 발생\n- **장비 손상**: RF 제너레이터 및 매칭 네트워크 과부하\n\n**환경 규제 이슈**:\n- **에너지 소비 초과**: 반도체 제조시설 에너지 효율 기준 (예: ISO 50001)\n- **현재 소비**: 67.8 kWh/웨이퍼\n- **규제 한계**: 60 kWh/웨이퍼\n- **초과율**: +13.0%\n- ⚠️ **규제 위반 가능성**: 높음\n\n**현재 상승률 지속 시**:\n- **임계치(1,800 W) 도달 예상**: 약 27분 후\n- **영향 웨이퍼 수**: 약 18장\n\n#### 💡 6. 긴급 권장 조치\n\n**즉시 조치 (우선순위: 최고 긴급)**\n1. **자동 제어 필요**: RF 파워 자동 감소 및 최적화\n   - 목표: 1,500 W로 하향 조정\n   - 매칭 네트워크 재튜닝\n   \n2. **규제 준수 검증 필수**: 제어 조치가 환경 및 안전 기준 만족하는지 확인\n   - ISO 50001 (에너지 관리)\n   - SEMI S2 (반도체 장비 안전)\n   - 클린룸 환경 기준\n\n⚠️ **Predictive Agent를 통한 임계치 도달 예측, AutoControl Agent를 통한 긴급 제어, ComplianceCheck Agent를 통한 규제 준수 검증 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T15:00:06Z  \n**분석 소요 시간**: 5.9초  \n**신뢰도**: 93%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T15:00:07Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "FAB_TASK_20250501_004_2",
+        "timeRange": {
+          "start": "2025-05-01T13:30:00Z",
+          "end": "2025-05-01T15:00:00Z"
+        },
+        "sensor_name": "TOOL_01,TOOL_02,TOOL_03,TOOL_04,TOOL_05,TOOL_06",
+        "target_cols": [
+          "RF_POWER",
+          "PROCESS_STABILITY_INDEX"
+        ],
+        "feature_cols": [
+          "RF_POWER",
+          "PRESSURE",
+          "TEMPERATURE",
+          "GAS_FLOW_RATE",
+          "VACUUM_PUMP"
+        ],
+        "prediction_horizon_minutes": 45,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T15:00:13Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 공정 안정성 저하 예측 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T15:00:00Z\n- **예측 종료 시각**: 2025-05-01T15:45:00Z\n- **예측 기간**: 45분\n- **예측 간격**: 5분\n- **사용 모델**: LSTM\n- **신뢰 구간**: 95%\n\n#### 📈 2. RF_POWER 예측 결과 (조치 없을 경우)\n\n| 시각 | 예측값 (W) | 95% 신뢰구간 | 임계치 대비 | 상태 |\n|------|-----------|-------------|------------|------|\n| 15:00 (현재) | 1,742 | - | 96.8% | 🔴 위험 |\n| 15:05 | 1,752 | [1,745, 1,759] | 97.3% | 🔴 위험 |\n| 15:10 | 1,763 | [1,753, 1,773] | 97.9% | 🔴 매우 위험 |\n| 15:15 | 1,774 | [1,761, 1,787] | 98.6% | 🔴 매우 위험 |\n| 15:20 | 1,785 | [1,769, 1,801] | 99.2% | 🔴 매우 위험 |\n| 15:25 | 1,796 | [1,777, 1,815] | 99.8% | 🔴 임계 근접 |\n| 15:30 | 1,807 | [1,785, 1,829] | 100.4% | 💥 **임계치 초과** |\n| 15:35 | 1,819 | [1,793, 1,845] | 101.1% | 💥 **임계치 초과** |\n| 15:40 | 1,830 | [1,801, 1,859] | 101.7% | 💥 **임계치 초과** |\n| 15:45 | 1,842 | [1,809, 1,875] | 102.3% | 💥 **임계치 초과** |\n\n**💥 임계치(1,800 W) 도달 예상 시각**: **2025-05-01T15:27:00Z** (약 27분 후)\n\n#### 💰 3. 에너지 소비 및 규제 위반 예측\n\n| 시각 | 예측 에너지 (kWh) | 규제 한계 대비 | 규제 준수 |\n|------|------------------|---------------|----------|\n| 15:00 (현재) | 67.8 | +13.0% | ❌ 위반 |\n| 15:15 | 70.2 | +17.0% | ❌ 위반 |\n| 15:30 | 72.8 | +21.3% | ❌ 심각 위반 |\n| 15:45 | 75.5 | +25.8% | ❌ 심각 위반 |\n\n#### ⚡ 4. 제어 시뮬레이션 결과\n\n**시나리오 A: 즉시 RF 파워 제어 (권장)**\n- **조치 시각**: 지금 즉시 (15:00)\n- **목표**: RF_POWER를 1,500 W로 감소\n- **제어 방법**: 매칭 네트워크 재튜닝 + 파워 감소\n- **예상 효과**:\n  - 15분 내 1,520 W 달성\n  - 에너지 소비 52 kWh/웨이퍼로 감소 (규제 준수)\n  - 공정 안정성 지수 86점 회복\n- **예상 손실**: 약 3,200,000원\n- **규제 준수**: ✅ 만족\n\n**시나리오 B: 조치 없음 (매우 위험)**\n- **45분 후**: RF 파워 1,842 W, 에너지 75.5 kWh/웨이퍼\n- **규제 위반**: 25.8% 초과\n- **장비 손상 위험**: 높음\n- **예상 손실**: 약 **45,000,000원** (장비 손상 + 규제 벌금)\n\n⚡ **긴급 AutoControl 및 ComplianceCheck 필수**\n\n---\n**예측 완료 시각**: 2025-05-01T15:00:13Z  \n**예측 소요 시간**: 6.5초  \n**모델 신뢰도**: 92%"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration",
+      "to": "AutoControl",
+      "timestamp": "2025-05-01T15:00:14Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "taskId": "FAB_TASK_20250501_004_3",
+        "feature_names": [
+          "RF_POWER_SETPOINT",
+          "MATCHING_CAPACITOR_C1",
+          "MATCHING_CAPACITOR_C2"
+        ],
+        "target_col": "RF_POWER",
+        "control_setpoint": 1500,
+        "control_horizon_minutes": 15,
+        "constraints": {
+          "RF_POWER_SETPOINT": {
+            "min": 1400,
+            "max": 1600,
+            "unit": "W"
+          },
+          "MATCHING_CAPACITOR_C1": {
+            "min": 50,
+            "max": 500,
+            "unit": "pF"
+          },
+          "MATCHING_CAPACITOR_C2": {
+            "min": 50,
+            "max": 500,
+            "unit": "pF"
+          }
+        },
+        "optimization_objective": "minimize_power_and_energy",
+        "safety_mode": true,
+        "simulation_before_apply": true
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T15:00:19Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct (response)",
+      "response": {
+        "result": "### RF 파워 최적 제어 실행 결과\n\n---\n\n#### ⚙️ 1. 제어 실행 개요\n- **제어 시작 시각**: 2025-05-01T15:00:14Z\n- **제어 목표**: RF_POWER를 1,500 W로 감소\n- **제어 방식**: RF Matching Network Auto-Tuning + Power Setpoint Adjustment\n- **안전 모드**: 활성화\n- **제어 적용 상태**: ✅ **실행 완료**\n\n#### 🎯 2. 계산된 최적 제어값\n\n| 제어 변수 | 현재값 | 목표값 | 변화량 | 조정률 |\n|----------|--------|--------|--------|--------|\n| **RF_POWER_SETPOINT** | 1,742 W | 1,500 W | -242 W | -13.9% |\n| **MATCHING_CAPACITOR_C1** | 285 pF | 312 pF | +27 pF | +9.5% |\n| **MATCHING_CAPACITOR_C2** | 178 pF | 195 pF | +17 pF | +9.6% |\n\n**제어 근거**:\n- **RF 파워 직접 감소**: 설정값 하향 조정\n- **매칭 네트워크 재튜닝**: 반사 파워 최소화, 임피던스 매칭 최적화\n\n#### 📊 3. 시뮬레이션 예측 결과 (제어 적용 시)\n\n**RF_POWER 변화 예측**:\n| 시각 | 예측값 (W) | 에너지 (kWh) | 상태 |\n|------|-----------|-------------|------|\n| 15:00 (현재) | 1,742 | 67.8 | 🔴 초과 |\n| 15:05 (제어 5분) | 1,645 | 62.3 | ⚠️ 감소 중 |\n| 15:10 (제어 10분) | 1,558 | 56.8 | ⚠️ 감소 중 |\n| 15:15 (제어 15분) | 1,502 | 51.5 | ✅ 목표 달성 |\n| 15:20 (제어 20분) | 1,498 | 50.8 | ✅ 안정 |\n\n**PROCESS_STABILITY_INDEX 회복 예측**:\n| 시각 | 예측값 | 상태 |\n|------|--------|------|\n| 15:00 (현재) | 79.5 | 🔴 미달 |\n| 15:10 | 83.2 | ⚠️ 회복 중 |\n| 15:15 | 86.8 | ✅ 거의 달성 |\n| 15:20 | 89.5 | ✅ 목표 달성 |\n\n#### 💰 4. 경제적 효과 분석\n\n**제어 실행 효과**:\n- **장비 손상 방지**: 약 **35,000,000원**\n- **에너지 비용 절감**: 약 **8,500,000원** (월 기준)\n- **규제 벌금 방지**: 약 **5,000,000원**\n- **총 예상 효과**: 약 **48,500,000원**\n\n**제어 실행 비용**:\n- **초기 웨이퍼 손실**: 약 3,200,000원\n- **제어 시스템 운영비**: 약 80,000원\n- **총 비용**: 약 3,280,000원\n\n**순 효과**: 약 **45,220,000원** 절감\n\n#### 📋 5. 규제 준수 사전 검증\n\n**예상 규제 준수 항목**:\n1. **ISO 50001 (에너지 관리)**\n   - 현재: 67.8 kWh/웨이퍼 (한계 60 kWh 초과)\n   - 제어 후: 50.8 kWh/웨이퍼\n   - **사전 판단**: ✅ 준수 예상\n\n2. **SEMI S2 (반도체 장비 안전)**\n   - RF 파워 한계: 1,800 W\n   - 제어 후: 1,498 W\n   - **사전 판단**: ✅ 준수 예상\n\n3. **클린룸 환경 기준**\n   - 발열량 한계: < 70 kW\n   - 제어 후: 58 kW\n   - **사전 판단**: ✅ 준수 예상\n\n⚠️ **ComplianceCheck Agent를 통한 정식 규제 준수 검증 권장**\n\n---\n**제어 완료 시각**: 2025-05-01T15:00:19Z  \n**제어 소요 시간**: 5.6초  \n**제어 신뢰도**: 94%"
+      }
+    },
+    "step_8_orchestration_to_compliance": {
+      "from": "Orchestration",
+      "to": "ComplianceCheck",
+      "timestamp": "2025-05-01T15:00:20Z",
+      "api_endpoint": "POST /api/v1/compliance/check",
+      "request": {
+        "taskId": "FAB_TASK_20250501_004_4",
+        "control_actions": {
+          "RF_POWER_SETPOINT": {
+            "current_value": 1742,
+            "target_value": 1500,
+            "change_percent": -13.9,
+            "unit": "W"
+          },
+          "MATCHING_CAPACITOR_C1": {
+            "current_value": 285,
+            "target_value": 312,
+            "change_percent": 9.5,
+            "unit": "pF"
+          },
+          "MATCHING_CAPACITOR_C2": {
+            "current_value": 178,
+            "target_value": 195,
+            "change_percent": 9.6,
+            "unit": "pF"
+          }
+        },
+        "expected_outcomes": {
+          "RF_POWER": {
+            "current_value": 1742,
+            "expected_value_15min": 1502,
+            "unit": "W"
+          },
+          "ENERGY_CONSUMPTION": {
+            "current_value": 67.8,
+            "expected_value_15min": 51.5,
+            "unit": "kWh/wafer"
+          },
+          "PROCESS_STABILITY_INDEX": {
+            "current_value": 79.5,
+            "expected_value_15min": 86.8
+          }
+        },
+        "regulations_to_check": [
+          "ISO_50001",
+          "SEMI_S2",
+          "CLEANROOM_ENV"
+        ],
+        "industry": "semiconductor",
+        "process": "full_manufacturing",
+        "safety_critical": true
+      }
+    },
+    "step_9_compliance_to_orchestration": {
+      "from": "ComplianceCheck",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T15:00:25Z",
+      "api_endpoint": "POST /api/v1/compliance/check (response)",
+      "response": {
+        "result": "### 환경 및 안전 규제 준수 검증 결과\n\n---\n\n#### ✅ 1. 검증 개요\n- **검증 시작 시각**: 2025-05-01T15:00:20Z\n- **검증 대상**: RF 파워 최적 제어 조치\n- **검증 규제**: ISO 50001, SEMI S2, Cleanroom ENV\n- **안전 중요도**: 🔴 **높음**\n- **검증 완료 상태**: ✅ **완료**\n\n#### 📋 2. 규제별 검증 결과\n\n##### 2.1 ISO 50001: 에너지 관리 시스템\n\n**규제 요구사항**:\n- 에너지 효율 기준: ≤ 60 kWh/웨이퍼\n- 에너지 절감 목표: 년 5% 개선\n\n**제어 전 현황**:\n- 에너지 소비: 67.8 kWh/웨이퍼\n- 규제 한계 대비: +13.0% 초과\n- **위반 상태**: ❌\n\n**제어 후 예상**:\n- 에너지 소비 (15분 후): 51.5 kWh/웨이퍼\n- 규제 한계 대비: -14.2% (기준 만족)\n- **검증 결과**: ✅ **준수**\n- **적합성**: 100%\n\n**추가 효과**:\n- 년간 에너지 절감: 약 120 MWh\n- 탄소 배출 감소: 약 48톤 CO2\n- 에너지 비용 절감: 약 102,000,000원/년\n\n##### 2.2 SEMI S2: 반도체 제조 장비 환경, 보건, 안전 지침\n\n**규제 요구사항**:\n- RF 파워 최대값: 1,800 W\n- 플라즈마 안정성: 변동 < ±5%\n- 긴급 정지 시스템: 활성화 필수\n\n**제어 전 현황**:\n- RF 파워: 1,742 W (96.8% 도달)\n- 임계치 도달 시간: 27분 후\n- **위험 수준**: 🔴 높음\n\n**제어 후 예상**:\n- RF 파워 (15분 후): 1,502 W (83.4% 수준)\n- 안전 여유: 298 W (16.6%)\n- 플라즈마 안정성: ±3.2% (기준 만족)\n\n**검증 결과**: ✅ **준수**\n- 파워 한계 만족\n- 플라즈마 안정성 만족\n- 안전 시스템 정상 동작\n- **적합성**: 100%\n\n##### 2.3 클린룸 환경 기준\n\n**규제 요구사항**:\n- 발열량 한계: < 70 kW (온도 관리)\n- 파티클 발생: Class 1 유지\n- 습도: 40-60% RH\n- 온도: 20-24°C\n\n**제어 전 현황**:\n- 발열량: 68.2 kW (97.4% 도달)\n- 온도: 23.8°C\n- **상태**: ⚠️ 경계\n\n**제어 후 예상**:\n- 발열량 (15분 후): 58.3 kW (83.3% 수준)\n- 온도: 22.1°C\n- 파티클: Class 1 유지 확인\n\n**검증 결과**: ✅ **준수**\n- 발열량 기준 만족\n- 온도/습도 정상 범위\n- 클린룸 등급 유지\n- **적합성**: 100%\n\n#### 🎯 3. 종합 규제 준수 판정\n\n| 규제 | 준수 여부 | 적합성 | 비고 |\n|------|----------|--------|------|\n| **ISO 50001** | ✅ 준수 | 100% | 에너지 효율 14.2% 개선 |\n| **SEMI S2** | ✅ 준수 | 100% | 안전 여유 16.6% 확보 |\n| **Cleanroom ENV** | ✅ 준수 | 100% | 환경 조건 정상 |\n\n**전체 준수율**: 100% (3개 규제 모두 완전 준수)\n\n#### 💡 4. 권장 사항\n\n**즉시 시행 (권장)**\n- 현재 제어 조치는 모든 주요 규제를 만족\n- 제어 미실행 시 규제 위반 및 장비 손상 위험 높음\n- **최종 판정**: ✅ **제어 조치 승인 권장**\n\n**지속 모니터링 항목**:\n1. RF 파워 추이 (5분 간격)\n2. 에너지 소비 모니터링\n3. 매칭 네트워크 효율\n4. 플라즈마 안정성\n\n#### 🛡️ 5. 안전성 최종 평가\n\n**안전 리스크 평가**:\n- **제어 전**: 🔴 **높음** (임계치 근접, 에너지 초과)\n- **제어 후**: ✅ **낮음** (모든 기준 만족)\n\n**규제 준수 이력**:\n- **현재**: ISO 50001 위반 (+13.0% 초과)\n- **제어 후**: 모든 규제 준수\n- **개선**: 100% 규제 준수 달성\n\n#### 📊 6. 규제 준수 모니터링 계획\n\n**1차 검증 (현재)**: 100% 준수 (예상)\n**2차 검증 (15분 후, 15:15)**: 실제 달성 확인\n**3차 검증 (1시간 후, 16:00)**: 안정성 장기 확인\n\n**지속 모니터링 항목**:\n- 에너지 소비 (목표: ≤ 60 kWh/웨이퍼)\n- RF 파워 (목표: 1,400-1,600 W)\n- 공정 안정성 지수 (목표: ≥ 88)\n\n---\n**검증 완료 시각**: 2025-05-01T15:00:25Z  \n**검증 소요 시간**: 5.3초  \n**검증 신뢰도**: 97%"
+      }
+    },
+    "step_10_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T15:00:26Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "fab_session_20250501_004",
+        "final_answer": "반도체 제조 공정의 RF 파워가 1,742 W로 임계치(1,800 W)의 96.8%에 도달하여 27분 후 임계치 초과가 예상됩니다. 에너지 소비가 67.8 kWh/웨이퍼로 규제 한계(60 kWh)를 13% 초과하여 ISO 50001 위반 상태입니다. 최적 제어를 실행하여 RF 파워를 13.9% 감소시키고 매칭 네트워크를 재튜닝한 결과, 15분 내 목표값 1,500 W 달성 및 에너지 소비 51.5 kWh/웨이퍼로 감소가 예상됩니다. 규제 준수 검증 결과, ISO 50001, SEMI S2, 클린룸 환경 기준을 모두 만족하여 전체 준수율 100%를 달성했습니다. 약 4,500만원의 손실을 방지할 수 있습니다.",
+        "final_markdown": "### RF 파워 제어 및 규제 준수 검증 결과\n\n(상세 내용은 monitoring, prediction, autocontrol, compliance response 참조)",
+        "task_history": [
+          {
+            "id": "FAB_TASK_20250501_004_1",
+            "name": "RF 파워 증가 추이 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T15:00:06Z"
+          },
+          {
+            "id": "FAB_TASK_20250501_004_2",
+            "name": "공정 안정성 저하 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T15:00:13Z"
+          },
+          {
+            "id": "FAB_TASK_20250501_004_3",
+            "name": "RF 파워 최적 제어 실행",
+            "assigned_agent_id": "AutoControl",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T15:00:19Z"
+          },
+          {
+            "id": "FAB_TASK_20250501_004_4",
+            "name": "환경 및 안전 규제 준수 검증",
+            "assigned_agent_id": "ComplianceCheck",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T15:00:25Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive",
+          "AutoControl",
+          "ComplianceCheck"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "current_rf_power": 1742,
+            "critical_threshold": 1800,
+            "utilization_percent": 96.8,
+            "energy_consumption": 67.8,
+            "regulation_violation": "ISO_50001",
+            "root_cause": "rf_matching_network_mismatch"
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 45,
+            "critical_threshold_time": "2025-05-01T15:27:00Z",
+            "time_until_critical_minutes": 27,
+            "expected_energy_45min_no_control": 75.5,
+            "expected_loss_krw": 45000000,
+            "confidence": 0.92
+          },
+          {
+            "tool": "AutoControl",
+            "status": "success",
+            "control_applied": true,
+            "target_achievement_time_minutes": 15,
+            "expected_rf_power_15min": 1502,
+            "expected_energy_15min": 51.5,
+            "expected_loss_prevention_krw": 45220000,
+            "confidence": 0.94
+          },
+          {
+            "tool": "ComplianceCheck",
+            "status": "success",
+            "regulations_checked": [
+              "ISO_50001",
+              "SEMI_S2",
+              "CLEANROOM_ENV"
+            ],
+            "compliance_rate": 100,
+            "fully_compliant": [
+              "ISO_50001",
+              "SEMI_S2",
+              "CLEANROOM_ENV"
+            ],
+            "conditionally_compliant": [],
+            "recommendation": "approve_control",
+            "confidence": 0.97
+          }
+        ],
+        "compliance_checked": true,
+        "compliance_summary": {
+          "overall_compliance_rate": 100,
+          "regulations_passed": 3,
+          "regulations_conditional": 0,
+          "regulations_failed": 0,
+          "safety_approved": true,
+          "action_recommendation": "제어 승인 및 실행, 15분 후 재검증"
+        }
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "RF 파워가 1,742 W로 임계치의 96.8%에 도달하여 27분 후 초과 예상되며, 에너지 소비 67.8 kWh/웨이퍼로 ISO 50001 위반 상태입니다. 최적 제어 실행으로 15분 내 1,500 W 달성 및 에너지 51.5 kWh/웨이퍼로 감소하여 ISO 50001, SEMI S2, 클린룸 기준 모두 만족, 전체 준수율 100%를 달성했습니다. 약 4,500만원 손실 방지 가능합니다.",
+    "detected_issues": [
+      {
+        "issue": "RF_POWER 지속 상승",
+        "severity": "critical",
+        "description": "1,742 W로 임계치(1,800 W)의 96.8% 도달, 27분 후 초과 예상",
+        "affected_timeframe": "2025-05-01T13:30:00Z ~ 2025-05-01T15:00:00Z",
+        "current_value": 1742,
+        "critical_threshold": 1800,
+        "time_to_critical_minutes": 27
+      },
+      {
+        "issue": "에너지 소비 규제 위반",
+        "severity": "critical",
+        "description": "67.8 kWh/웨이퍼로 규제 한계(60 kWh) 13% 초과, ISO 50001 위반",
+        "regulation_violated": "ISO_50001",
+        "current_value": 67.8,
+        "limit": 60,
+        "excess_percent": 13.0
+      },
+      {
+        "issue": "RF 매칭 네트워크 부정합",
+        "severity": "high",
+        "description": "매칭 효율 81.5%로 저하, 반사 파워 증가",
+        "root_cause": true
+      }
+    ],
+    "predictions": [
+      {
+        "target": "RF_POWER",
+        "scenario": "no_control",
+        "prediction_horizon_minutes": 45,
+        "critical_event": {
+          "description": "임계치(1,800 W) 도달",
+          "expected_time": "2025-05-01T15:27:00Z",
+          "time_until_event_minutes": 27
+        },
+        "final_predicted_value": 1842,
+        "expected_energy_consumption": 75.5,
+        "expected_loss_krw": 45000000
+      },
+      {
+        "target": "RF_POWER",
+        "scenario": "with_control",
+        "prediction_horizon_minutes": 20,
+        "expected_value_at_15min": 1502,
+        "expected_energy_at_15min": 51.5,
+        "target_achievement": true,
+        "regulation_compliance": true
+      }
+    ],
+    "control_actions": [
+      {
+        "priority": "critical",
+        "action": "RF 파워 최적 제어 (AutoControl)",
+        "control_variables": {
+          "RF_POWER_SETPOINT": {
+            "from": 1742,
+            "to": 1500,
+            "unit": "W",
+            "change_percent": -13.9
+          },
+          "MATCHING_CAPACITOR_C1": {
+            "from": 285,
+            "to": 312,
+            "unit": "pF",
+            "change_percent": 9.5
+          },
+          "MATCHING_CAPACITOR_C2": {
+            "from": 178,
+            "to": 195,
+            "unit": "pF",
+            "change_percent": 9.6
+          }
+        },
+        "expected_effect": "15분 내 목표 파워 달성, 에너지 소비 규제 준수",
+        "economic_impact": "약 45,220,000원 손실 방지",
+        "status": "executed",
+        "safety_verified": true
+      }
+    ],
+    "compliance_verification": {
+      "regulations_checked": [
+        {
+          "regulation": "ISO 50001",
+          "description": "에너지 관리 시스템",
+          "status": "compliant",
+          "compliance_rate": 100,
+          "details": "제어 후 51.5 kWh/웨이퍼, 기준 60 kWh 만족, 14.2% 개선"
+        },
+        {
+          "regulation": "SEMI S2",
+          "description": "반도체 장비 안전",
+          "status": "compliant",
+          "compliance_rate": 100,
+          "details": "제어 후 1,502 W, 안전 여유 16.6% 확보"
+        },
+        {
+          "regulation": "Cleanroom ENV",
+          "description": "클린룸 환경 기준",
+          "status": "compliant",
+          "compliance_rate": 100,
+          "details": "발열량 58.3 kW, 기준 70 kW 만족"
+        }
+      ],
+      "overall_compliance_rate": 100,
+      "safety_approved": true,
+      "recommendation": "제어 승인 및 실행"
+    },
+    "recommendations": [
+      {
+        "priority": "critical",
+        "action": "제어 실행 및 15분 후 재검증",
+        "details": "현재 제어 유지, 목표 달성 확인",
+        "expected_effect": "모든 규제 100% 준수 유지",
+        "implementation_time": "현재 진행 중"
+      },
+      {
+        "priority": "urgent",
+        "action": "RF 제너레이터 캘리브레이션",
+        "details": "피드백 루프 점검, 파워 측정 정확도 확인",
+        "implementation_time": "1시간 이내"
+      },
+      {
+        "priority": "high",
+        "action": "매칭 네트워크 정기 점검",
+        "details": "캐패시터 상태 확인, 임피던스 측정",
+        "implementation_time": "24시간 이내"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 5900,
+      "prediction_time_ms": 6500,
+      "autocontrol_time_ms": 5600,
+      "compliance_check_time_ms": 5300,
+      "total_analysis_time_ms": 23300,
+      "data_points_analyzed": 5400,
+      "prediction_horizon_minutes": 45,
+      "control_horizon_minutes": 15,
+      "compliance_rate_percent": 100,
+      "expected_loss_prevention_krw": 45220000
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration",
+      "AutoControl",
+      "Orchestration",
+      "ComplianceCheck",
+      "Orchestration"
+    ],
+    "expected_agents_count": 5,
+    "should_predict": true,
+    "should_control": true,
+    "should_check_compliance": true,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct",
+      "POST /api/v1/autocontrol/run-direct",
+      "POST /api/v1/compliance/check"
+    ]
+  }
+}

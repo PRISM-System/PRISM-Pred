@@ -1,0 +1,368 @@
+{
+  "scenario_id": "SCENARIO_13",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "배터리 화성 공정 전압 이상 모니터링",
+    "title_en": "Battery Formation Voltage Anomaly Monitoring",
+    "industry": "battery",
+    "process": "Formation",
+    "workflow_type": "monitoring_only",
+    "workflow_level": 1,
+    "complexity": "low",
+    "description": "배터리 화성(Formation) 공정에서 셀 전압이 비정상적으로 변동하는 현상을 실시간으로 감지하고 원인을 분석하는 시나리오. 화성 공정은 배터리 성능과 수명을 결정하는 핵심 공정으로, 전압 이상은 내부 단락, SEI 형성 불량 등 심각한 품질 문제로 이어질 수 있음",
+    "description_en": "Scenario for real-time detection and analysis of abnormal cell voltage fluctuations in battery formation process. Formation is a critical process determining battery performance and lifespan, and voltage anomalies can lead to serious quality issues such as internal short circuits and SEI formation defects",
+    "tags": ["battery", "formation", "voltage", "cell_quality", "sei_layer", "charging"]
+  },
+  "query": {
+    "text": "배터리 셀 CELL_F001의 VOLTAGE가 비정상적으로 변동하고 있습니다. 현재 상태를 분석해주세요.",
+    "text_en": "Battery cell CELL_F001 VOLTAGE is fluctuating abnormally. Please analyze the current status.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T08:00:00Z"
+    },
+    "user_id": "battery_engineer_01",
+    "priority": "high",
+    "expected_workflow": "monitoring_only"
+  },
+  "timeseries_data": {
+    "source_file": "/test_data/battery/formation_data.csv",
+    "parameters": [
+      {
+        "name": "VOLTAGE",
+        "unit": "V",
+        "description": "셀 전압",
+        "normal_range": [3.0, 4.2],
+        "critical_threshold": 4.3
+      },
+      {
+        "name": "CURRENT",
+        "unit": "A",
+        "description": "충전 전류",
+        "normal_range": [0.8, 1.2],
+        "critical_threshold": 1.5
+      },
+      {
+        "name": "CAPACITY",
+        "unit": "mAh",
+        "description": "셀 용량",
+        "normal_range": [2800, 3200],
+        "critical_threshold": 2600
+      },
+      {
+        "name": "TEMPERATURE",
+        "unit": "°C",
+        "description": "셀 온도",
+        "normal_range": [20, 35],
+        "critical_threshold": 45
+      },
+      {
+        "name": "SOC",
+        "unit": "%",
+        "description": "충전 상태",
+        "normal_range": [0, 100],
+        "critical_threshold": 105
+      },
+      {
+        "name": "CYCLE",
+        "unit": "count",
+        "description": "화성 사이클 횟수",
+        "normal_range": [1, 3],
+        "critical_threshold": 5
+      }
+    ],
+    "sampling_interval": "10s",
+    "data_points": 2880,
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T08:00:00Z"
+    },
+    "anomaly_info": {
+      "type": "voltage_fluctuation",
+      "description": "셀 전압이 4.15V 부근에서 ±0.08V 이상 불규칙하게 변동",
+      "start_time": "2025-05-01T05:30:00Z",
+      "peak_time": "2025-05-01T08:00:00Z",
+      "affected_parameters": ["VOLTAGE", "TEMPERATURE"]
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T08:00:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "배터리 셀 CELL_F001의 VOLTAGE가 비정상적으로 변동하고 있습니다. 현재 상태를 분석해주세요.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T08:00:00Z"
+        },
+        "user_id": "battery_engineer_01",
+        "priority": "high"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_formation_001",
+        "workflow_type": "monitoring_only",
+        "message": "배터리 화성 공정 전압 이상 모니터링 워크플로우를 시작합니다.",
+        "next_agent": "Monitoring Agent"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration Agent",
+      "to": "Monitoring Agent",
+      "timestamp": "2025-05-01T08:00:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_battery_formation_001",
+        "workflow_type": "monitoring_only",
+        "task": "analyze_voltage_anomaly",
+        "query": {
+          "text": "배터리 셀 CELL_F001의 VOLTAGE가 비정상적으로 변동하고 있습니다. 현재 상태를 분석해주세요.",
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T08:00:00Z"
+          }
+        },
+        "context": {
+          "industry": "battery",
+          "process": "Formation",
+          "priority": "high"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_formation_001",
+        "agent": "Monitoring Agent",
+        "analysis_result": {
+          "anomaly_detected": true,
+          "anomaly_type": "voltage_fluctuation",
+          "severity": "high",
+          "affected_parameters": [
+            {
+              "name": "VOLTAGE",
+              "current_value": 4.17,
+              "normal_range": [3.0, 4.2],
+              "deviation": 0.0,
+              "fluctuation_amplitude": 0.09,
+              "status": "unstable"
+            },
+            {
+              "name": "CURRENT",
+              "current_value": 1.05,
+              "normal_range": [0.8, 1.2],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "CAPACITY",
+              "current_value": 2985,
+              "normal_range": [2800, 3200],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "TEMPERATURE",
+              "current_value": 32.8,
+              "normal_range": [20, 35],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "SOC",
+              "current_value": 87.3,
+              "normal_range": [0, 100],
+              "deviation": 0.0,
+              "status": "normal"
+            },
+            {
+              "name": "CYCLE",
+              "current_value": 2,
+              "normal_range": [1, 3],
+              "deviation": 0.0,
+              "status": "normal"
+            }
+          ],
+          "trend_analysis": {
+            "VOLTAGE": {
+              "direction": "fluctuating",
+              "pattern": "irregular_oscillation",
+              "amplitude": 0.09,
+              "frequency": "약 8-12회/시간",
+              "duration": "2.5 hours",
+              "statistical_significance": 0.97,
+              "baseline": 4.15
+            },
+            "TEMPERATURE": {
+              "direction": "increasing",
+              "rate": 0.8,
+              "correlation_with_voltage": 0.42,
+              "interpretation": "전압 변동과 약한 양의 상관관계"
+            }
+          },
+          "temporal_analysis": {
+            "anomaly_start": "2025-05-01T05:30:00Z",
+            "anomaly_duration": "2.5 hours",
+            "formation_cycle": 2,
+            "formation_stage": "constant_voltage_charging",
+            "soc_at_anomaly_start": 75.2,
+            "voltage_stability_before_anomaly": "안정적 (편차 < 0.01V)"
+          },
+          "root_cause_hypothesis": [
+            "내부 마이크로 단락 (Micro short circuit) - 전압 강하 후 회복 패턴",
+            "SEI 층 불균일 형성 - 국부적 저항 변화로 인한 전압 요동",
+            "리튬 석출 (Lithium plating) 시작 - 과충전 영역 진입",
+            "분리막 불량 - 내부 저항 불안정",
+            "전극 활물질 박리 - 접촉 저항 변동"
+          ],
+          "safety_assessment": {
+            "immediate_safety_risk": "medium",
+            "thermal_runaway_probability": 0.12,
+            "internal_short_risk": "moderate",
+            "gas_generation_risk": "low_to_moderate",
+            "recommendation": "즉시 충전 중단 및 셀 격리 검토 필요"
+          },
+          "quality_impact": {
+            "cell_grade": "B급 또는 폐기 대상",
+            "capacity_retention_forecast": "초기 용량의 85% 이하 (정상: 95% 이상)",
+            "cycle_life_forecast": "300-400 사이클 (정상: 800+ 사이클)",
+            "internal_resistance_increase": "예상 15-20% 증가",
+            "safety_rating": "부적합 (전기차용 불가)"
+          },
+          "statistical_details": {
+            "voltage_mean": 4.15,
+            "voltage_std": 0.031,
+            "voltage_min": 4.08,
+            "voltage_max": 4.23,
+            "voltage_range": 0.15,
+            "normal_std_threshold": 0.008,
+            "anomaly_score": 0.87,
+            "anomaly_threshold": 0.65
+          },
+          "comparative_analysis": {
+            "normal_cells_in_batch": 47,
+            "total_cells_in_batch": 48,
+            "defect_rate": "2.08%",
+            "batch_average_voltage": 4.16,
+            "batch_voltage_std": 0.007,
+            "cell_F001_deviation_from_batch": "약 4.4배 높은 변동성"
+          },
+          "recommendation": "즉시 충전 중단 및 상세 검사 필요",
+          "summary_report": "## 배터리 화성 공정 전압 이상 감지 결과\n\n### 이상 감지\n- **이상 유형**: 셀 전압 불규칙 변동 (Voltage Fluctuation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 08:00:00 UTC\n- **이상 시작 시점**: 2025-05-01 05:30:00 UTC (2.5시간 전)\n\n### 주요 지표 현황\n| 파라미터 | 현재값 | 정상범위 | 상태 |\n|---------|--------|----------|------|\n| 셀 전압 | 4.17V (변동 ±0.09V) | 3.0-4.2V | ⚠️ **불안정** |\n| 충전 전류 | 1.05A | 0.8-1.2A | ✅ 정상 |\n| 셀 용량 | 2985 mAh | 2800-3200 mAh | ✅ 정상 |\n| 셀 온도 | 32.8°C | 20-35°C | ✅ 정상 |\n| 충전 상태 | 87.3% | 0-100% | ✅ 정상 |\n| 화성 사이클 | 2회 | 1-3회 | ✅ 정상 |\n\n### 전압 변동 상세 분석\n- **변동 패턴**: 불규칙 진동 (Irregular Oscillation)\n- **변동 폭**: ±0.09V (정상: ±0.01V 이내)\n- **변동 빈도**: 약 8-12회/시간\n- **기준선 전압**: 4.15V\n- **변동성**: 정상 대비 **4.4배 높음** (배치 평균 대비)\n\n**통계 분석**\n- 평균: 4.15V\n- 표준편차: 0.031V (정상: 0.008V)\n- 최소: 4.08V\n- 최대: 4.23V\n- 범위: 0.15V\n- **이상 점수**: 0.87 (임계값: 0.65)\n\n### 시간 분석\n- **이상 발생 구간**: 05:30 ~ 08:00 (2.5시간 지속)\n- **화성 단계**: 정전압 충전 단계 (Constant Voltage Charging)\n- **발생 사이클**: 2차 화성 사이클\n- **발생 시 SOC**: 75.2%\n- **이상 전 전압 안정도**: 안정적 (편차 < 0.01V)\n\n### 추세 분석\n- **전압**: 불규칙 변동, 기준선 4.15V, 진폭 ±0.09V\n- **온도**: 완만한 상승 추세 (+0.8°C/시간)\n- **전압-온도 상관관계**: 0.42 (약한 양의 상관)\n\n### 원인 가설 (우선순위 순)\n\n1. **내부 마이크로 단락 (Micro Short Circuit)** - 가능성 높음\n   - 증상: 전압 순간 강하 후 회복 패턴\n   - 원인: 금속 이물질, 덴드라이트, 분리막 천공\n   - 위험도: 높음 (열폭주 가능성)\n\n2. **SEI 층 불균일 형성** - 가능성 높음\n   - 증상: 국부적 저항 변화로 전압 요동\n   - 원인: 전해액 불균일, 온도 편차, 전류밀도 불균형\n   - 위험도: 중간 (용량 감소, 수명 단축)\n\n3. **리튬 석출 (Lithium Plating)** - 가능성 중간\n   - 증상: 과충전 영역(SOC 75% 이상)에서 발생\n   - 원인: 충전 전류 과다, 저온 충전\n   - 위험도: 높음 (내부 단락 유발 가능)\n\n4. **분리막 불량** - 가능성 중간\n   - 증상: 내부 저항 불안정\n   - 원인: 분리막 불균일, 기공 막힘\n   - 위험도: 높음 (단락 위험)\n\n5. **전극 활물질 박리** - 가능성 낮음\n   - 증상: 접촉 저항 변동\n   - 원인: 바인더 불량, 기계적 스트레스\n   - 위험도: 중간 (용량 감소)\n\n### 안전성 평가\n- **즉각적 안전 위험**: 중간 (Medium)\n- **열폭주 확률**: 12%\n- **내부 단락 위험**: 중간 (Moderate)\n- **가스 발생 위험**: 낮음~중간 (Low to Moderate)\n\n### 품질 영향 평가\n- **셀 등급**: **B급 또는 폐기 대상**\n- **용량 유지율 예측**: 초기 용량의 **85% 이하** (정상: 95% 이상)\n- **사이클 수명 예측**: **300-400 사이클** (정상: 800+ 사이클)\n- **내부 저항 증가**: 예상 **15-20% 증가**\n- **안전 등급**: **부적합** (전기차용 사용 불가)\n\n### 배치 비교 분석\n- **배치 내 정상 셀**: 47개\n- **배치 총 셀 수**: 48개\n- **불량률**: 2.08%\n- **배치 평균 전압**: 4.16V\n- **배치 전압 표준편차**: 0.007V\n- **CELL_F001 변동성**: 배치 평균 대비 **4.4배 높음**\n\n### 권고사항\n\n1. ✅ **즉시 조치** (우선순위 1)\n   - 충전 즉시 중단\n   - 해당 셀 격리 (다른 셀과 분리)\n   - 안전 모니터링 강화 (온도, 전압, 팽창)\n\n2. 🔬 **상세 검사** (우선순위 2)\n   - 전압 유지 테스트 (Self-discharge test)\n   - 임피던스 분석 (EIS: Electrochemical Impedance Spectroscopy)\n   - X-ray 검사 (내부 단락, 이물질 확인)\n   - CT 스캔 (전극 변형, 분리막 손상 확인)\n\n3. 📊 **품질 분석** (우선순위 3)\n   - 동일 배치 다른 셀 정밀 검사\n   - 원자재 불량 여부 확인 (분리막, 전해액)\n   - 공정 파라미터 검토 (전류, 온도, 시간)\n\n4. 🚫 **사용 제한**\n   - **폐기 권장**: 안전성 확보 불가 시\n   - **B급 전환**: 저전력 용도만 사용 (소형 전자기기)\n   - **전기차/ESS 사용 금지**: 안전 기준 미달\n\n---\n\n**결론**: CELL_F001은 화성 공정 중 비정상적인 전압 변동을 보이고 있으며, 내부 마이크로 단락 또는 SEI 층 불균일 형성이 주요 원인으로 추정됩니다. 즉시 충전을 중단하고 상세 검사를 통해 안전성을 확인한 후 폐기 또는 B급 전환을 결정해야 합니다."
+        },
+        "next_step": "return_to_orchestration"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T08:00:35Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_battery_formation_001",
+        "status": "completed",
+        "results": {
+          "monitoring_result": "voltage_fluctuation_detected"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_formation_001",
+        "message": "워크플로우 완료. 사용자에게 결과 전달.",
+        "next_step": "return_to_user"
+      }
+    },
+    "step_4_orchestration_to_user": {
+      "from": "Orchestration Agent",
+      "to": "User",
+      "timestamp": "2025-05-01T08:00:40Z",
+      "api_endpoint": "N/A",
+      "request": {},
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_battery_formation_001",
+        "workflow_type": "monitoring_only",
+        "summary": "배터리 셀 CELL_F001에서 비정상적인 전압 변동이 감지되었습니다. 화성 공정 2차 사이클의 정전압 충전 단계(SOC 75%)에서 전압이 ±0.09V 범위로 불규칙하게 변동하고 있으며, 이는 정상 셀 대비 4.4배 높은 변동성입니다. 주요 원인으로 내부 마이크로 단락 또는 SEI 층 불균일 형성이 의심되며, 열폭주 확률 12%, 용량 유지율 85% 이하, 사이클 수명 300-400회로 예측됩니다. 즉시 충전을 중단하고 셀을 격리한 후 상세 검사(임피던스 분석, X-ray)를 수행하여 폐기 또는 B급 전환을 결정해야 합니다. 전기차/ESS 용도로는 안전 기준 미달로 사용 불가합니다.",
+        "detailed_results": {
+          "monitoring": {
+            "anomaly_type": "voltage_fluctuation",
+            "severity": "high",
+            "voltage_fluctuation_amplitude": 0.09,
+            "fluctuation_frequency": "8-12 times/hour",
+            "anomaly_score": 0.87,
+            "batch_defect_rate": 0.0208,
+            "deviation_from_batch": 4.4
+          }
+        },
+        "recommendations": [
+          "즉시 충전 중단 및 셀 격리",
+          "전압 유지 테스트 및 임피던스 분석 수행",
+          "X-ray 및 CT 스캔으로 내부 결함 확인",
+          "동일 배치 다른 셀 정밀 검사",
+          "안전성 확인 후 폐기 또는 B급 전환 결정"
+        ],
+        "full_report": "## 🔋 배터리 화성 공정 전압 이상 모니터링 결과\n\n---\n\n### 📊 1. 이상 감지 개요\n\n**기본 정보**\n- **셀 ID**: CELL_F001\n- **이상 유형**: 전압 불규칙 변동 (Voltage Fluctuation)\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 08:00:00 UTC\n- **이상 시작**: 2025-05-01 05:30:00 UTC (2.5시간 전)\n- **화성 단계**: 2차 사이클, 정전압 충전 (CV Charging)\n\n**주요 지표**\n| 파라미터 | 현재값 | 정상범위 | 상태 |\n|---------|--------|----------|------|\n| 셀 전압 | 4.17V **(±0.09V 변동)** | 3.0-4.2V | ⚠️ **불안정** |\n| 충전 전류 | 1.05A | 0.8-1.2A | ✅ 정상 |\n| 셀 용량 | 2985 mAh | 2800-3200 mAh | ✅ 정상 |\n| 셀 온도 | 32.8°C | 20-35°C | ✅ 정상 |\n| 충전 상태 | 87.3% | 0-100% | ✅ 정상 |\n\n---\n\n### 📈 2. 전압 변동 상세 분석\n\n**변동 특성**\n- **패턴**: 불규칙 진동 (Irregular Oscillation)\n- **진폭**: ±0.09V (정상: ±0.01V)\n- **빈도**: 8-12회/시간\n- **기준선**: 4.15V\n- **지속 시간**: 2.5시간\n\n**통계 분석**\n| 통계량 | 값 | 정상 기준 |\n|--------|-----|----------|\n| 평균 | 4.15V | - |\n| 표준편차 | 0.031V | 0.008V |\n| 최소값 | 4.08V | - |\n| 최대값 | 4.23V | - |\n| 범위 | 0.15V | 0.02V |\n| **이상 점수** | **0.87** | **< 0.65** |\n\n**배치 비교**\n- 배치 평균 전압: 4.16V\n- 배치 표준편차: 0.007V\n- **CELL_F001 변동성**: 배치 평균 대비 **4.4배 높음** 🚨\n- 배치 불량률: 2.08% (48개 중 1개)\n\n---\n\n### 🔍 3. 원인 분석\n\n**가능한 원인 (우선순위 순)**\n\n1. **내부 마이크로 단락** (가능성: 높음) 🔴\n   - 증상: 전압 순간 강하 후 회복 패턴\n   - 원인: 금속 이물질, 덴드라이트, 분리막 천공\n   - 위험도: **높음** (열폭주 가능성)\n\n2. **SEI 층 불균일 형성** (가능성: 높음) 🟠\n   - 증상: 국부적 저항 변화로 전압 요동\n   - 원인: 전해액 불균일, 온도 편차\n   - 위험도: 중간 (용량 감소, 수명 단축)\n\n3. **리튬 석출** (가능성: 중간) 🟡\n   - 증상: SOC 75% 이상에서 발생\n   - 원인: 충전 전류 과다, 저온\n   - 위험도: **높음** (단락 유발 가능)\n\n4. **분리막 불량** (가능성: 중간) 🟡\n   - 증상: 내부 저항 불안정\n   - 원인: 분리막 불균일, 기공 막힘\n   - 위험도: **높음** (단락 위험)\n\n5. **전극 활물질 박리** (가능성: 낮음) 🟢\n   - 증상: 접촉 저항 변동\n   - 원인: 바인더 불량\n   - 위험도: 중간 (용량 감소)\n\n---\n\n### ⚠️ 4. 안전성 및 품질 영향 평가\n\n**안전성 평가**\n- 즉각적 위험: **중간**\n- 열폭주 확률: **12%**\n- 내부 단락 위험: **중간**\n- 가스 발생 위험: 낮음~중간\n\n**품질 영향**\n| 항목 | 예측값 | 정상값 | 평가 |\n|------|--------|--------|------|\n| 셀 등급 | **B급/폐기** | A급 | 🚨 |\n| 용량 유지율 | **≤ 85%** | ≥ 95% | 🚨 |\n| 사이클 수명 | **300-400회** | 800+회 | 🚨 |\n| 내부 저항 | **+15-20%** | 기준 | ⚠️ |\n| 안전 등급 | **부적합** | 적합 | 🚨 |\n\n**사용 제한**\n- ❌ **전기차 (EV)**: 안전 기준 미달\n- ❌ **에너지 저장 (ESS)**: 안전 기준 미달\n- ⚠️ **소형 전자기기**: B급 전환 시 가능 (추가 검사 필수)\n- ✅ **폐기**: 안전성 확보 불가 시 권장\n\n---\n\n### 🎯 5. 권고사항\n\n**즉시 조치** (우선순위 1) ⚡\n1. ✅ **충전 즉시 중단**\n   - 추가 충전 시 단락/열폭주 위험 증가\n2. ✅ **셀 격리**\n   - 다른 정상 셀과 물리적 분리\n   - 안전 거리 확보 (최소 30cm)\n3. ✅ **안전 모니터링 강화**\n   - 온도, 전압, 팽창 실시간 감시\n   - 30분 간격 측정\n\n**상세 검사** (우선순위 2) 🔬\n1. **전압 유지 테스트** (Self-discharge test)\n   - 24시간 방치 후 전압 강하율 측정\n   - 정상: < 0.05V/24h\n\n2. **임피던스 분석** (EIS)\n   - 내부 저항 및 용량성 성분 분석\n   - SEI 층 상태 평가\n\n3. **X-ray 검사**\n   - 내부 단락, 금속 이물질 확인\n   - 전극 변형 검사\n\n4. **CT 스캔**\n   - 3D 내부 구조 분석\n   - 분리막 손상, 전극 박리 확인\n\n**품질 분석** (우선순위 3) 📊\n1. 동일 배치 다른 셀 정밀 검사 (샘플링 10%)\n2. 원자재 불량 여부 확인\n   - 분리막 품질 검사\n   - 전해액 조성 분석\n3. 공정 파라미터 검토\n   - 충전 전류 프로파일\n   - 온도 제어 이력\n   - 화성 시간\n\n**최종 결정** (우선순위 4) 🏁\n- **폐기**: 안전성 확보 불가 시 (권장)\n- **B급 전환**: 저전력 용도만 (엄격한 기준 적용)\n- **전기차/ESS 사용**: **절대 금지**\n\n---\n\n### 📋 6. 종합 결론\n\nCELL_F001은 화성 공정 2차 사이클 중 비정상적인 전압 변동(±0.09V, 정상 대비 4.4배)을 보이고 있습니다. 주요 원인으로 **내부 마이크로 단락** 또는 **SEI 층 불균일 형성**이 의심되며, 다음과 같은 리스크가 있습니다:\n\n- 🚨 **안전 리스크**: 열폭주 확률 12%, 내부 단락 위험 중간\n- 📉 **품질 리스크**: 용량 유지율 85% 이하, 수명 300-400 사이클\n- ⛔ **사용 제한**: 전기차/ESS 용도 **부적합**\n\n**즉시 충전을 중단**하고 셀을 격리한 후, 상세 검사를 통해 안전성을 확인하여 **폐기 또는 B급 전환**을 결정해야 합니다. 안전성이 확보되지 않을 경우 폐기를 강력히 권장합니다."
+      }
+    }
+  },
+  "expected_answer": {
+    "workflow_type": "monitoring_only",
+    "agents_involved": ["Orchestration", "Monitoring"],
+    "key_findings": {
+      "anomaly_detected": true,
+      "anomaly_type": "voltage_fluctuation",
+      "voltage_fluctuation_amplitude": 0.09,
+      "fluctuation_frequency": "8-12 times/hour",
+      "anomaly_score": 0.87,
+      "severity": "high",
+      "root_causes": ["internal_micro_short", "sei_layer_non_uniformity", "lithium_plating"],
+      "safety_risk": "medium",
+      "thermal_runaway_probability": 0.12
+    },
+    "recommendations": [
+      "즉시 충전 중단 및 셀 격리",
+      "임피던스 분석 및 X-ray 검사",
+      "동일 배치 샘플 정밀 검사",
+      "폐기 또는 B급 전환 결정"
+    ],
+    "quality_impact": {
+      "cell_grade": "B_or_discard",
+      "capacity_retention": 0.85,
+      "cycle_life": 350,
+      "safety_rating": "not_suitable_for_ev_ess"
+    }
+  },
+  "test_validation": {
+    "validate_workflow": {
+      "expected_steps": 4,
+      "required_agents": ["Orchestration", "Monitoring"],
+      "workflow_sequence": [
+        "User → Orchestration",
+        "Orchestration → Monitoring",
+        "Monitoring → Orchestration",
+        "Orchestration → User"
+      ]
+    },
+    "validate_monitoring": {
+      "must_detect_anomaly": true,
+      "must_identify_voltage_fluctuation": true,
+      "must_analyze_trend": true,
+      "must_assess_safety": true,
+      "must_evaluate_quality_impact": true,
+      "must_compare_with_batch": true,
+      "must_provide_root_cause": true,
+      "must_recommend_action": true
+    },
+    "validate_api_compliance": {
+      "all_requests_valid": true,
+      "all_responses_valid": true,
+      "endpoints_match_spec": true
+    },
+    "performance_criteria": {
+      "total_workflow_time_max_seconds": 60,
+      "anomaly_detection_accuracy_min": 0.90,
+      "root_cause_identification_required": true,
+      "safety_assessment_required": true
+    }
+  }
+}

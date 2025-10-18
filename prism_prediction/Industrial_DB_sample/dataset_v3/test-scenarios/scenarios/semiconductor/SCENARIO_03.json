@@ -1,0 +1,414 @@
+{
+  "scenario_id": "SCENARIO_03",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "반도체 Deposition 공정 자동 제어",
+    "title_en": "Semiconductor Deposition Process Auto Control",
+    "industry": "semiconductor",
+    "process": "Deposition",
+    "workflow_type": "monitoring_prediction_control",
+    "workflow_level": 3,
+    "complexity": "high",
+    "description": "박막 증착 공정에서 온도 불안정을 감지하고 예측하여 자동으로 안정화시키는 시나리오"
+  },
+  "query": {
+    "text": "Deposition 공정의 TEMPERATURE가 불안정합니다. 자동으로 안정화시켜주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:40:00Z"
+    },
+    "user_id": "dep_engineer_03",
+    "priority": "critical"
+  },
+  "timeseries_data": {
+    "file": "semiconductor_deposition_003.csv",
+    "file_path": "test_data/semiconductor/semiconductor_deposition_003.csv",
+    "columns": [
+      "TIMESTAMP",
+      "CHAMBER_ID",
+      "TEMPERATURE",
+      "PRESSURE",
+      "GAS_FLOW_RATE",
+      "RF_POWER",
+      "DEPOSITION_RATE",
+      "FILM_THICKNESS",
+      "UNIFORMITY",
+      "STRESS",
+      "FILM_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "TEMPERATURE",
+      "DEPOSITION_RATE",
+      "FILM_QUALITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:40:00Z",
+      "total_points": 5280,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:40:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "Deposition 공정의 TEMPERATURE가 불안정합니다. 자동으로 안정화시켜주세요.",
+        "session_id": "dep_session_20250501_003",
+        "user_id": "dep_engineer_03",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "anomaly_detection_prediction_and_control",
+          "target_process": "thin_film_deposition",
+          "target_variable": "TEMPERATURE",
+          "action_required": "automatic_stabilization",
+          "urgency": "critical"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_prediction_control",
+          "reason": "User requests automatic stabilization requiring monitoring, prediction, and automated control",
+          "required_agents": [
+            "Monitoring",
+            "Predictive",
+            "AutoControl"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "DEP_TASK_20250501_003",
+          "subtasks": [
+            {
+              "subtask_id": "DEP_TASK_20250501_003_1",
+              "name": "Deposition 온도 불안정 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "critical"
+            },
+            {
+              "subtask_id": "DEP_TASK_20250501_003_2",
+              "name": "박막 품질 영향 예측",
+              "assigned_agent": "Predictive",
+              "priority": "critical",
+              "depends_on": "DEP_TASK_20250501_003_1"
+            },
+            {
+              "subtask_id": "DEP_TASK_20250501_003_3",
+              "name": "온도 자동 안정화 제어",
+              "assigned_agent": "AutoControl",
+              "priority": "critical",
+              "depends_on": "DEP_TASK_20250501_003_2"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T14:40:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "DEP_TASK_20250501_003_1",
+        "query": "Deposition 챔버 CHAMBER_D1~D4의 TEMPERATURE 불안정 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T14:40:00Z. 주요 변수: TEMPERATURE, DEPOSITION_RATE, FILM_QUALITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:40:06Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### Deposition 온도 불안정 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: Deposition 챔버 CHAMBER_D1~D4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 14:40:00 (14시간 40분)\n- **총 데이터 포인트**: 5,280건\n- **온도 불안정 감지 시작**: 2025-05-01T13:20:00Z\n- **불안정 지속 시간**: 1시간 20분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 TEMPERATURE 진동(Oscillation)\n- **현상**: 주기적 진동 패턴 (사인파 형태)\n- **정상 범위**: 380-420°C\n- **현재 평균**: 402.5°C (정상 범위 내)\n- **진동 폭**: ±32.8°C\n- **측정 범위**: 369.7-435.3°C\n- **진동 주기**: 약 8.5분\n- **표준편차**: 23.7°C (정상 대비 580% 증가)\n- **추세**: 불안정(oscillating)\n- **위험 수준**: 🔴 **높음**\n\n##### 2.2 DEPOSITION_RATE 변동\n- **정상 범위**: 45-55 nm/min\n- **현재 범위**: 38.2-62.5 nm/min\n- **평균**: 50.3 nm/min (정상 범위 내이나 변동 큼)\n- **TEMPERATURE와 상관계수**: 0.87 (강한 양의 상관관계)\n- **해석**: 온도 진동이 증착률에 직접 영향\n\n##### 2.3 FILM_QUALITY_INDEX 저하\n- **정상 범위**: ≥ 92\n- **현재 평균**: 84.7 (목표 대비 -7.9%)\n- **13:20 이전 평균**: 94.2\n- **저하율**: -10.1%\n- **최악값**: 78.3 (온도 피크 시 발생)\n- **추세**: 하향(declining with fluctuation)\n\n##### 2.4 FILM_UNIFORMITY 악화\n- **정상 범위**: ≥ 95%\n- **현재 평균**: 88.3% (목표 대비 -6.7%p)\n- **최악값**: 82.1%\n- **해석**: 온도 불균일로 웨이퍼 면내 두께 편차 발생\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **히터 제어 PID 파라미터 부적절** (가능성: 매우 높음)\n   - 주기적 진동 패턴 (8.5분)\n   - 과도한 오버슈트/언더슈트\n   - PID 게인 설정 오류 의심 (I-gain 과다)\n   \n2. **히터 파워 서플라이 불안정** (가능성: 높음)\n   - RF_POWER에서도 미세 변동 감지 (±35 W)\n   - 전원 공급 노이즈 가능\n   \n3. **냉각수 순환 불균일** (가능성: 중간)\n   - 냉각수 유량 센서 데이터 없음 (확인 필요)\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 13:20 이전 평균 | 현재 평균 | 최소값 | 최대값 | 목표 범위 | 이탈율 |\n|------|----------------|----------|--------|--------|-----------|--------|\n| TEMPERATURE | 400.5°C | 402.5°C | 369.7°C | 435.3°C | 380-420°C | 3.6% (피크) |\n| DEPOSITION_RATE | 50.2 nm/min | 50.3 nm/min | 38.2 nm/min | 62.5 nm/min | 45-55 nm/min | 13.6% |\n| FILM_QUALITY_INDEX | 94.2 | 84.7 | 78.3 | 91.5 | ≥92 | 10.1% |\n| UNIFORMITY | 96.5% | 88.3% | 82.1% | 94.2% | ≥95% | 6.9% |\n| RF_POWER | 1,500 W | 1,502 W | 1,465 W | 1,537 W | 1,450-1,550 W | 2.3% |\n\n#### 💥 5. 영향 분석\n\n**박막 품질 영향**:\n- **두께 불균일**: ±12.5% (목표: ±5% 이내)\n- **응력 변동**: 평균 185 MPa (목표: 150-200 MPa, 변동 큼)\n- **결정성 저하**: 온도 변동으로 결정 구조 불안정\n\n**불량률**:\n- **현재 (13:20 이후)**: 15.8%\n- **정상 시**: 2.1%\n- **증가율**: +13.7%p\n\n**영향 웨이퍼**:\n- **진행 중**: 38장\n- **불량 판정**: 6장\n- **경계선**: 9장 (재검사 필요)\n\n#### 💡 6. 긴급 권장 조치\n\n**즉시 조치 (우선순위: 최고 긴급)**\n1. **자동 제어 필요**: PID 파라미터 자동 튜닝 및 온도 안정화\n   - 현재 I-gain 감소\n   - D-gain 증가로 오버슈트 억제\n   - 목표 온도 400°C로 재설정\n   \n2. 히터 파워 서플라이 점검\n   - 전압/전류 안정성 확인\n   - 전원 필터 점검\n\n⚠️ **Predictive Agent를 통한 품질 저하 예측 및 AutoControl Agent를 통한 긴급 PID 튜닝 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T14:40:06Z  \n**분석 소요 시간**: 5.6초  \n**신뢰도**: 92%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T14:40:07Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "DEP_TASK_20250501_003_2",
+        "timeRange": {
+          "start": "2025-05-01T13:20:00Z",
+          "end": "2025-05-01T14:40:00Z"
+        },
+        "sensor_name": "CHAMBER_D1,CHAMBER_D2,CHAMBER_D3,CHAMBER_D4",
+        "target_cols": [
+          "TEMPERATURE",
+          "FILM_QUALITY_INDEX"
+        ],
+        "feature_cols": [
+          "TEMPERATURE",
+          "PRESSURE",
+          "GAS_FLOW_RATE",
+          "RF_POWER",
+          "DEPOSITION_RATE"
+        ],
+        "prediction_horizon_minutes": 40,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:40:13Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 박막 품질 영향 예측 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T14:40:00Z\n- **예측 종료 시각**: 2025-05-01T15:20:00Z\n- **예측 기간**: 40분\n- **예측 간격**: 5분\n- **사용 모델**: LSTM\n- **신뢰 구간**: 95%\n\n#### 📈 2. TEMPERATURE 예측 결과 (조치 없을 경우)\n\n| 시각 | 예측 평균 (°C) | 예측 범위 | 표준편차 | 상태 |\n|------|---------------|----------|---------|------|\n| 14:40 (현재) | 402.5 | [369.7, 435.3] | 23.7 | 🔴 불안정 |\n| 14:45 | 403.8 | [368.2, 439.4] | 25.8 | 🔴 악화 |\n| 14:50 | 405.2 | [366.5, 443.9] | 28.1 | 🔴 악화 |\n| 14:55 | 406.8 | [364.3, 449.3] | 30.8 | 🔴 심각 |\n| 15:00 | 408.7 | [361.5, 455.9] | 34.2 | 🔴 심각 |\n| 15:05 | 411.0 | [358.1, 463.9] | 38.3 | 💥 매우 심각 |\n| 15:10 | 413.8 | [353.8, 473.8] | 43.5 | 💥 매우 심각 |\n| 15:15 | 417.2 | [348.5, 485.9] | 49.8 | 💥 치명적 |\n| 15:20 | 421.5 | [341.8, 501.2] | 57.8 | 💥 치명적 |\n\n**⚠️ 진동 폭 증가 추이**: 현재 ±32.8°C → 40분 후 ±79.7°C (243% 증가)\n\n#### 📉 3. FILM_QUALITY_INDEX 예측 결과\n\n| 시각 | 예측값 | 불량률 (%) | 상태 |\n|------|--------|-----------|------|\n| 14:40 (현재) | 84.7 | 15.8% | 🔴 미달 |\n| 14:50 | 81.2 | 21.5% | 🔴 악화 |\n| 15:00 | 77.3 | 28.7% | 🔴 심각 |\n| 15:10 | 72.8 | 37.2% | 💥 매우 심각 |\n| 15:20 | 67.5 | 47.8% | 💥 치명적 |\n\n#### 💰 4. 경제적 영향 분석\n\n**조치 없이 40분 경과 시**:\n- **진행 중 웨이퍼**: 38장\n- **추가 불량 예상**: 15장\n- **총 불량**: 21장\n- **불량률**: 47.8%\n- **웨이퍼당 손실**: 1,350,000원\n- **총 예상 손실**: 약 **28,350,000원**\n\n#### ⚡ 5. 제어 필요성 분석\n\n**AutoControl 시뮬레이션 결과**:\n\n**시나리오 A: 즉시 PID 튜닝 (권장)**\n- **조치 시각**: 지금 즉시 (14:40)\n- **목표**: 온도 진동 폭 ±5°C 이내로 억제\n- **제어 방법**: PID 파라미터 자동 최적화\n  - P-gain: 현재 유지\n  - I-gain: -40% (0.5 → 0.3)\n  - D-gain: +150% (0.2 → 0.5)\n- **예상 효과**:\n  - 10분 내 진동 폭 ±12°C로 감소\n  - 20분 내 진동 폭 ±5°C 달성\n  - 품질 지수 90점 이상 회복\n  - 불량률 < 8%\n- **예상 손실**: 약 4,500,000원\n- **절감 효과**: 약 **23,850,000원**\n\n**시나리오 B: 조치 없음 (매우 위험)**\n- **40분 후**: 진동 폭 ±79.7°C, 불량률 47.8%\n- **예상 손실**: 약 **28,350,000원**\n\n⚡ **긴급 AutoControl 실행 필수**\n\n---\n**예측 완료 시각**: 2025-05-01T14:40:13Z  \n**예측 소요 시간**: 6.3초  \n**모델 신뢰도**: 91%"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration",
+      "to": "AutoControl",
+      "timestamp": "2025-05-01T14:40:14Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "taskId": "DEP_TASK_20250501_003_3",
+        "feature_names": [
+          "PID_P_GAIN",
+          "PID_I_GAIN",
+          "PID_D_GAIN"
+        ],
+        "target_col": "TEMPERATURE",
+        "control_setpoint": 400,
+        "control_horizon_minutes": 20,
+        "constraints": {
+          "PID_P_GAIN": {
+            "min": 0.8,
+            "max": 1.5,
+            "unit": "dimensionless"
+          },
+          "PID_I_GAIN": {
+            "min": 0.1,
+            "max": 0.8,
+            "unit": "dimensionless"
+          },
+          "PID_D_GAIN": {
+            "min": 0.1,
+            "max": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        "optimization_objective": "minimize_temperature_oscillation",
+        "safety_mode": true,
+        "simulation_before_apply": true
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:40:19Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct (response)",
+      "response": {
+        "result": "### 온도 자동 안정화 제어 결과\n\n---\n\n#### ⚙️ 1. 제어 실행 개요\n- **제어 시작 시각**: 2025-05-01T14:40:14Z\n- **제어 목표**: TEMPERATURE 진동 폭 ±5°C 이내로 억제\n- **제어 방식**: PID Parameter Auto-Tuning (Ziegler-Nichols + ML Optimization)\n- **안전 모드**: 활성화 (시뮬레이션 검증 완료)\n- **제어 적용 상태**: ✅ **실행 완료**\n\n#### 🎯 2. 계산된 최적 PID 파라미터\n\n| 파라미터 | 현재값 | 최적값 | 변화량 | 조정률 |\n|----------|--------|--------|--------|--------|\n| **P-gain** (비례 게인) | 1.0 | 1.05 | +0.05 | +5.0% |\n| **I-gain** (적분 게인) | 0.5 | 0.28 | -0.22 | -44.0% |\n| **D-gain** (미분 게인) | 0.2 | 0.52 | +0.32 | +160.0% |\n\n**튜닝 근거**:\n- **P-gain 소폭 증가**: 응답 속도 유지\n- **I-gain 대폭 감소**: 오버슈트 억제 (주요 문제 해결)\n- **D-gain 대폭 증가**: 진동 댐핑 강화\n\n#### 📊 3. 시뮬레이션 예측 결과 (제어 적용 시)\n\n**TEMPERATURE 안정화 예측**:\n| 시각 | 예측 평균 (°C) | 진동 폭 (±°C) | 상태 |\n|------|---------------|--------------|------|\n| 14:40 (현재) | 402.5 | ±32.8 | 🔴 불안정 |\n| 14:45 (제어 5분) | 401.8 | ±24.5 | ⚠️ 감소 중 |\n| 14:50 (제어 10분) | 400.9 | ±15.8 | ⚠️ 감소 중 |\n| 14:55 (제어 15분) | 400.3 | ±8.2 | ⚠️ 감소 중 |\n| 15:00 (제어 20분) | 400.1 | ±4.7 | ✅ 목표 달성 |\n| 15:05 (제어 25분) | 400.0 | ±3.8 | ✅ 안정 |\n| 15:10 (제어 30분) | 400.0 | ±3.2 | ✅ 안정 |\n\n**FILM_QUALITY_INDEX 회복 예측**:\n| 시각 | 예측값 | 불량률 (%) | 상태 |\n|------|--------|-----------|------|\n| 14:40 (현재) | 84.7 | 15.8% | 🔴 미달 |\n| 14:50 | 87.2 | 12.3% | ⚠️ 회복 중 |\n| 15:00 | 90.8 | 7.5% | ✅ 거의 달성 |\n| 15:10 | 93.5 | 4.2% | ✅ 목표 달성 |\n\n#### 💰 4. 경제적 효과 분석\n\n**제어 실행 효과**:\n- **불량률 감소**: 47.8% → 4.2% (43.6%p 개선)\n- **불량 웨이퍼 방지**: 15장 → 2장 (13장 절감)\n- **손실 방지**: 약 **17,550,000원**\n\n**제어 실행 비용**:\n- **초기 불량품 손실** (제어 안정화 기간 10분): 약 4,500,000원\n- **제어 시스템 운영비**: 약 60,000원\n- **총 비용**: 약 4,560,000원\n\n**순 효과**: 약 **19,290,000원** 절감\n\n#### 🛡️ 5. 안전성 검증\n\n**제어 안전성 체크리스트**:\n- ✅ 모든 PID 값이 안전 제약조건 내\n- ✅ 급격한 파라미터 변화 없음 (P-gain만 소폭 조정)\n- ✅ 시뮬레이션 검증 완료 (100회 Monte Carlo)\n- ✅ 온도 범위 안전 (350-450°C 이내 유지)\n- ✅ 진동 수렴 확인\n\n**위험 완화 조치**:\n- 점진적 파라미터 적용 (2분에 걸쳐 스무스 전환)\n- 온도 상한/하한 인터록 활성화 (350-450°C)\n- 실시간 모니터링 강화\n\n#### 📌 6. 모니터링 및 후속 조치\n\n**실시간 모니터링 항목**:\n1. TEMPERATURE 진동 폭 (1분 간격)\n2. FILM_QUALITY_INDEX 추이\n3. PID 출력값 (히터 파워)\n4. 웨이퍼별 품질 결과\n\n**후속 조치 권장사항**:\n1. **즉시 (14:40)**\n   - 히터 파워 서플라이 전압 안정성 점검\n   - 냉각수 유량 센서 확인\n\n2. **30분 후 (15:10)**\n   - PID 튜닝 효과 검증\n   - 안정화 완료 확인\n   - 필요시 미세 조정\n\n3. **24시간 이내**\n   - 전원 필터 교체/점검\n   - PID 파라미터 백업\n   - 예방 정비 스케줄 수립\n\n#### ✅ 7. 제어 실행 결과 요약\n\n- **제어 상태**: ✅ **성공적으로 실행됨**\n- **목표 달성 예상 시간**: 20분 (2025-05-01T15:00:00Z)\n- **온도 안정화**: ✅ **확인됨** (진동 폭 ±4.7°C 이내)\n- **품질 회복**: ✅ **예상됨** (30분 내 목표치 달성)\n- **경제적 효과**: 약 **19,290,000원** 절감\n\n---\n**제어 완료 시각**: 2025-05-01T14:40:19Z  \n**제어 소요 시간**: 5.4초  \n**제어 신뢰도**: 95%"
+      }
+    },
+    "step_8_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T14:40:20Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "dep_session_20250501_003",
+        "final_answer": "Deposition 챔버의 온도가 ±32.8°C 진동하며 불안정한 상태입니다. PID 제어기의 I-gain 과다가 주요 원인으로 확인되었으며, 조치 없이 40분 경과 시 진동 폭이 ±79.7°C로 악화되어 불량률 47.8%, 약 2,800만원의 손실이 예상됩니다. 최적 PID 튜닝을 즉시 실행하여 I-gain을 44% 감소하고 D-gain을 160% 증가시킨 결과, 20분 내 진동 폭 ±4.7°C 달성이 예상되며 약 1,900만원의 손실을 방지할 수 있습니다. 제어가 성공적으로 적용되었으며, 히터 파워 서플라이 및 냉각수 유량을 점검하시기 바랍니다.",
+        "final_markdown": "### Deposition 온도 자동 안정화 제어 결과\n\n(상세 내용은 monitoring, prediction, autocontrol response 참조)",
+        "task_history": [
+          {
+            "id": "DEP_TASK_20250501_003_1",
+            "name": "Deposition 온도 불안정 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:40:06Z"
+          },
+          {
+            "id": "DEP_TASK_20250501_003_2",
+            "name": "박막 품질 영향 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:40:13Z"
+          },
+          {
+            "id": "DEP_TASK_20250501_003_3",
+            "name": "온도 자동 안정화 제어",
+            "assigned_agent_id": "AutoControl",
+            "status": "completed",
+            "priority": "critical",
+            "completion_time": "2025-05-01T14:40:19Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive",
+          "AutoControl"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "temperature_oscillation_amplitude": 32.8,
+            "oscillation_period_minutes": 8.5,
+            "film_quality_degradation": 10.1,
+            "defect_rate": 15.8,
+            "root_cause": "pid_i_gain_excessive"
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 40,
+            "oscillation_amplitude_40min_no_control": 79.7,
+            "expected_defect_rate_no_control": 47.8,
+            "expected_loss_krw": 28350000,
+            "confidence": 0.91
+          },
+          {
+            "tool": "AutoControl",
+            "status": "success",
+            "control_applied": true,
+            "pid_tuning_completed": true,
+            "target_achievement_time_minutes": 20,
+            "expected_oscillation_amplitude_20min": 4.7,
+            "expected_defect_rate_20min": 7.5,
+            "expected_loss_prevention_krw": 19290000,
+            "confidence": 0.95
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "Deposition 챔버의 온도가 13:20부터 ±32.8°C 진동하며 불안정합니다. PID I-gain 과다가 주요 원인이며, 조치 없이 40분 경과 시 진동 폭 ±79.7°C, 불량률 47.8%로 악화되어 약 2,800만원 손실이 예상됩니다. PID 튜닝 실행으로 I-gain 44% 감소, D-gain 160% 증가하여 20분 내 진동 폭 ±4.7°C 달성 및 약 1,900만원 손실 방지가 가능합니다.",
+    "detected_issues": [
+      {
+        "issue": "TEMPERATURE 주기적 진동",
+        "severity": "critical",
+        "description": "±32.8°C 진동, 주기 8.5분, 평균값은 정상이나 변동 폭 큼",
+        "affected_timeframe": "2025-05-01T13:20:00Z ~ 2025-05-01T14:40:00Z",
+        "oscillation_amplitude": 32.8,
+        "oscillation_period_minutes": 8.5
+      },
+      {
+        "issue": "PID I-gain 과다",
+        "severity": "critical",
+        "description": "적분 게인 0.5, 오버슈트/언더슈트 과다 발생",
+        "root_cause": true
+      },
+      {
+        "issue": "FILM_QUALITY_INDEX 저하",
+        "severity": "high",
+        "description": "84.7로 목표치(≥92) 미달, 불량률 15.8%",
+        "defect_rate": 15.8
+      }
+    ],
+    "predictions": [
+      {
+        "target": "TEMPERATURE",
+        "scenario": "no_control",
+        "prediction_horizon_minutes": 40,
+        "oscillation_amplitude_increase": "32.8°C → 79.7°C (243% 증가)",
+        "final_predicted_amplitude": 79.7,
+        "expected_defect_rate": 47.8,
+        "expected_loss_krw": 28350000
+      },
+      {
+        "target": "TEMPERATURE",
+        "scenario": "with_control",
+        "prediction_horizon_minutes": 20,
+        "expected_amplitude_at_10min": 15.8,
+        "expected_amplitude_at_20min": 4.7,
+        "target_achievement": true,
+        "expected_defect_rate": 7.5
+      }
+    ],
+    "control_actions": [
+      {
+        "priority": "critical",
+        "action": "PID 파라미터 자동 튜닝 (AutoControl)",
+        "control_variables": {
+          "PID_P_GAIN": {
+            "from": 1.0,
+            "to": 1.05,
+            "change_percent": 5.0
+          },
+          "PID_I_GAIN": {
+            "from": 0.5,
+            "to": 0.28,
+            "change_percent": -44.0
+          },
+          "PID_D_GAIN": {
+            "from": 0.2,
+            "to": 0.52,
+            "change_percent": 160.0
+          }
+        },
+        "expected_effect": "20분 내 진동 폭 ±4.7°C 달성, 불량률 7.5%로 감소",
+        "economic_impact": "약 19,290,000원 손실 방지",
+        "status": "executed",
+        "safety_verified": true
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "urgent",
+        "action": "히터 파워 서플라이 전압 안정성 점검",
+        "details": "전압/전류 변동 측정, 전원 필터 상태 확인",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "high",
+        "action": "냉각수 유량 센서 확인",
+        "details": "유량 안정성 측정, 순환 펌프 동작 확인",
+        "implementation_time": "30분 내"
+      },
+      {
+        "priority": "medium",
+        "action": "PID 튜닝 효과 검증",
+        "details": "30분 후 온도 진동 폭 재측정, 필요시 미세 조정",
+        "implementation_time": "30분 후"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 5600,
+      "prediction_time_ms": 6300,
+      "autocontrol_time_ms": 5400,
+      "total_analysis_time_ms": 17300,
+      "data_points_analyzed": 5280,
+      "prediction_horizon_minutes": 40,
+      "control_horizon_minutes": 20,
+      "oscillation_amplitude_reduction_percent": 85.7,
+      "expected_loss_prevention_krw": 19290000
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration",
+      "AutoControl",
+      "Orchestration"
+    ],
+    "expected_agents_count": 4,
+    "should_predict": true,
+    "should_control": true,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct",
+      "POST /api/v1/autocontrol/run-direct"
+    ]
+  }
+}

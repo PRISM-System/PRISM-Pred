@@ -1,0 +1,812 @@
+{
+  "scenario_id": "SCENARIO_07",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "화학 정제 공정 순도 최적 제어",
+    "title_en": "Chemical Refining Purity Optimal Control",
+    "industry": "chemical",
+    "process": "Refining",
+    "workflow_type": "monitoring_prediction_control",
+    "workflow_level": 3,
+    "complexity": "high",
+    "description": "정제 공정에서 제품 순도가 목표치(99.5%) 이하로 하락하는 상황을 감지하고, 향후 품질 저하를 예측하여 최적 제어 파라미터(증류탑 온도, 환류비)를 자동 계산 및 적용하는 시나리오",
+    "description_en": "Scenario for detecting product purity drop below target (99.5%) in refining process, predicting future quality degradation, and automatically calculating and applying optimal control parameters (distillation tower temperature, reflux ratio)",
+    "tags": [
+      "chemical",
+      "refining",
+      "purity",
+      "quality_control",
+      "pid_tuning",
+      "distillation"
+    ]
+  },
+  "query": {
+    "text": "정제 공정에서 제품 순도가 계속 떨어지고 있어. 품질 불량이 예상되니까 최적 운전 조건을 찾아서 자동으로 적용해줘.",
+    "text_en": "Product purity in the refining process keeps dropping. Quality defects are expected, so find optimal operating conditions and apply them automatically.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:30:00Z"
+    },
+    "user_id": "chemical_operator_03",
+    "priority": "high",
+    "expected_workflow": "monitoring_prediction_control"
+  },
+  "timeseries_data": {
+    "source_file": "/test_data/chemical/refining_data.csv",
+    "parameters": [
+      {
+        "name": "PURITY",
+        "unit": "%",
+        "description": "제품 순도",
+        "normal_range": [
+          99.5,
+          99.9
+        ],
+        "critical_threshold": 99.0
+      },
+      {
+        "name": "TOWER_TEMP",
+        "unit": "°C",
+        "description": "증류탑 온도",
+        "normal_range": [
+          145,
+          155
+        ],
+        "critical_threshold": 160
+      },
+      {
+        "name": "REFLUX_RATIO",
+        "unit": "ratio",
+        "description": "환류비",
+        "normal_range": [
+          2.8,
+          3.2
+        ],
+        "critical_threshold": 2.5
+      },
+      {
+        "name": "FEED_RATE",
+        "unit": "kg/h",
+        "description": "원료 공급 속도",
+        "normal_range": [
+          4800,
+          5200
+        ],
+        "critical_threshold": 5500
+      }
+    ],
+    "sampling_interval": "10s",
+    "data_points": 5220,
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:30:00Z"
+    },
+    "anomaly_info": {
+      "type": "gradual_degradation",
+      "description": "제품 순도가 99.7%에서 99.2%로 서서히 하락",
+      "start_time": "2025-05-01T08:00:00Z",
+      "peak_time": "2025-05-01T14:30:00Z",
+      "affected_parameters": [
+        "PURITY",
+        "TOWER_TEMP",
+        "REFLUX_RATIO"
+      ]
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T14:30:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "정제 공정에서 제품 순도가 계속 떨어지고 있어. 품질 불량이 예상되니까 최적 운전 조건을 찾아서 자동으로 적용해줘.",
+        "time_range": {
+          "start": "2025-05-01T00:00:00Z",
+          "end": "2025-05-01T14:30:00Z"
+        },
+        "user_id": "chemical_operator_03",
+        "priority": "high"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "workflow_type": "monitoring_prediction_control",
+        "message": "정제 공정 품질 최적 제어 워크플로우를 시작합니다.",
+        "next_agent": "Monitoring Agent"
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration Agent",
+      "to": "Monitoring Agent",
+      "timestamp": "2025-05-01T14:30:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "workflow_type": "monitoring_prediction_control",
+        "task": "analyze_quality_degradation",
+        "query": {
+          "text": "정제 공정에서 제품 순도가 계속 떨어지고 있어. 품질 불량이 예상되니까 최적 운전 조건을 찾아서 자동으로 적용해줘.",
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T14:30:00Z"
+          }
+        },
+        "context": {
+          "industry": "chemical",
+          "process": "Refining",
+          "priority": "high"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "agent": "Monitoring Agent",
+        "analysis_result": {
+          "anomaly_detected": true,
+          "anomaly_type": "quality_degradation",
+          "severity": "high",
+          "affected_parameters": [
+            {
+              "name": "PURITY",
+              "current_value": 99.24,
+              "normal_range": [
+                99.5,
+                99.9
+              ],
+              "deviation": -0.26,
+              "status": "below_target"
+            },
+            {
+              "name": "TOWER_TEMP",
+              "current_value": 148.6,
+              "normal_range": [
+                145,
+                155
+              ],
+              "deviation": 0,
+              "status": "normal"
+            },
+            {
+              "name": "REFLUX_RATIO",
+              "current_value": 2.85,
+              "normal_range": [
+                2.8,
+                3.2
+              ],
+              "deviation": 0,
+              "status": "normal"
+            }
+          ],
+          "trend_analysis": {
+            "PURITY": {
+              "direction": "decreasing",
+              "rate": -0.0034,
+              "duration": "6.5 hours",
+              "statistical_significance": 0.98
+            }
+          },
+          "root_cause_hypothesis": [
+            "원료 조성 변화로 인한 분리 효율 저하",
+            "증류탑 단수 부족",
+            "환류비 최적값 미달"
+          ],
+          "recommendation": "예측 분석 및 제어 최적화 필요",
+          "summary_report": "## 정제 공정 품질 저하 분석 결과\n\n### 이상 감지\n- **이상 유형**: 제품 순도 지속적 감소\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 14:30:00 UTC\n\n### 주요 지표 현황\n| 파라미터 | 현재값 | 정상범위 | 편차 | 상태 |\n|---------|--------|----------|------|------|\n| 제품 순도 | 99.24% | 99.5-99.9% | -0.26%p | ⚠️ 목표 미달 |\n| 증류탑 온도 | 148.6°C | 145-155°C | 0 | ✅ 정상 |\n| 환류비 | 2.85 | 2.8-3.2 | 0 | ✅ 정상 |\n\n### 추세 분석\n- **순도 감소율**: -0.0034%/10분 (지난 6.5시간 동안)\n- **통계적 유의성**: 98%\n- **예상 품질 불량 시점**: 향후 2-3시간 내\n\n### 원인 가설\n1. 원료 조성 변화로 인한 분리 효율 저하\n2. 증류탑 단수 부족 (설계 한계)\n3. 환류비가 현재 조건에서 최적값 미달\n\n### 권고사항\n예측 모델을 통한 향후 품질 추이 분석 및 최적 제어 파라미터 도출이 필요합니다."
+        },
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T14:30:25Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "workflow_id": "wf_chem_refining_003",
+          "agent": "Predictive Agent",
+          "prediction_result": {
+            "forecast_completed": true,
+            "model_used": "LSTM Multivariate Time Series Model",
+            "model_accuracy": 0.94,
+            "forecast_horizon": "3 hours",
+            "predictions": [
+              {
+                "timestamp": "2025-05-01T15:30:00Z",
+                "PURITY": {
+                  "predicted_value": 99.04,
+                  "confidence_interval": [
+                    98.92,
+                    99.16
+                  ],
+                  "confidence_level": 0.95
+                }
+              },
+              {
+                "timestamp": "2025-05-01T16:30:00Z",
+                "PURITY": {
+                  "predicted_value": 98.83,
+                  "confidence_interval": [
+                    98.68,
+                    98.98
+                  ],
+                  "confidence_level": 0.95
+                }
+              },
+              {
+                "timestamp": "2025-05-01T17:30:00Z",
+                "PURITY": {
+                  "predicted_value": 98.61,
+                  "confidence_interval": [
+                    98.42,
+                    98.8
+                  ],
+                  "confidence_level": 0.95
+                }
+              }
+            ],
+            "risk_assessment": {
+              "quality_defect_probability": 0.89,
+              "expected_defect_time": "2025-05-01T16:45:00Z",
+              "severity": "critical",
+              "estimated_loss": {
+                "defective_product": "약 2,500 kg",
+                "financial_impact": "약 1,500만원 (재처리 비용 포함)"
+              }
+            },
+            "recommendation": "즉시 제어 최적화 필요 - 환류비 증가 및 온도 미세조정 권장",
+            "summary_report": "## 정제 공정 품질 예측 결과\n\n### 예측 모델 정보\n- **모델**: LSTM 다변량 시계열 모델\n- **정확도**: 94%\n- **예측 구간**: 향후 3시간\n\n### 품질 예측 추이\n| 시간 | 예측 순도 | 신뢰구간 (95%) | 상태 |\n|------|-----------|----------------|------|\n| +1시간 | 99.04% | 98.92-99.16% | ⚠️ 목표 미달 |\n| +2시간 | 98.83% | 98.68-98.98% | 🚨 품질 불량 |\n| +3시간 | 98.61% | 98.42-98.80% | 🚨 심각한 불량 |\n\n### 리스크 평가\n- **품질 불량 발생 확률**: 89%\n- **예상 불량 시점**: 2025-05-01 16:45 UTC (약 2시간 15분 후)\n- **심각도**: 치명적 (Critical)\n\n### 예상 피해\n- **불량품 발생량**: 약 2,500 kg\n- **재무적 영향**: 약 1,500만원 (재처리 비용 포함)\n- **납기 지연 리스크**: 높음\n\n### 권고사항\n현재 추세가 지속될 경우 심각한 품질 불량이 발생할 것으로 예상됩니다. 즉시 제어 최적화를 통해 환류비를 증가시키고 증류탑 온도를 미세 조정할 것을 권장합니다."
+          },
+          "next_step": "control_optimization"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "message": "Monitoring 완료. Predictive Agent로 전달.",
+        "next_step": "prediction_analysis"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration Agent",
+      "to": "Predictive Agent",
+      "timestamp": "2025-05-01T14:30:25Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "prediction_task": "quality_forecast",
+        "input_data": {
+          "time_range": {
+            "start": "2025-05-01T00:00:00Z",
+            "end": "2025-05-01T14:30:00Z"
+          },
+          "parameters": [
+            "PURITY",
+            "TOWER_TEMP",
+            "REFLUX_RATIO",
+            "FEED_RATE"
+          ],
+          "current_state": {
+            "PURITY": 99.24,
+            "TOWER_TEMP": 148.6,
+            "REFLUX_RATIO": 2.85,
+            "FEED_RATE": 5050
+          },
+          "anomaly_context": {
+            "type": "quality_degradation",
+            "severity": "high",
+            "trend": "decreasing",
+            "rate": -0.0034
+          }
+        },
+        "forecast_horizon": "3_hours",
+        "model_type": "lstm_multivariate"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "agent": "Predictive Agent",
+        "prediction_result": {
+          "forecast_completed": true,
+          "model_used": "LSTM Multivariate Time Series Model",
+          "model_accuracy": 0.94,
+          "forecast_horizon": "3 hours",
+          "predictions": [
+            {
+              "timestamp": "2025-05-01T15:30:00Z",
+              "PURITY": {
+                "predicted_value": 99.04,
+                "confidence_interval": [
+                  98.92,
+                  99.16
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T16:30:00Z",
+              "PURITY": {
+                "predicted_value": 98.83,
+                "confidence_interval": [
+                  98.68,
+                  98.98
+                ],
+                "confidence_level": 0.95
+              }
+            },
+            {
+              "timestamp": "2025-05-01T17:30:00Z",
+              "PURITY": {
+                "predicted_value": 98.61,
+                "confidence_interval": [
+                  98.42,
+                  98.8
+                ],
+                "confidence_level": 0.95
+              }
+            }
+          ],
+          "risk_assessment": {
+            "quality_defect_probability": 0.89,
+            "expected_defect_time": "2025-05-01T16:45:00Z",
+            "severity": "critical",
+            "estimated_loss": {
+              "defective_product": "약 2,500 kg",
+              "financial_impact": "약 1,500만원 (재처리 비용 포함)"
+            }
+          },
+          "recommendation": "즉시 제어 최적화 필요 - 환류비 증가 및 온도 미세조정 권장",
+          "summary_report": "## 정제 공정 품질 예측 결과\n\n### 예측 모델 정보\n- **모델**: LSTM 다변량 시계열 모델\n- **정확도**: 94%\n- **예측 구간**: 향후 3시간\n\n### 품질 예측 추이\n| 시간 | 예측 순도 | 신뢰구간 (95%) | 상태 |\n|------|-----------|----------------|------|\n| +1시간 | 99.04% | 98.92-99.16% | ⚠️ 목표 미달 |\n| +2시간 | 98.83% | 98.68-98.98% | 🚨 품질 불량 |\n| +3시간 | 98.61% | 98.42-98.80% | 🚨 심각한 불량 |\n\n### 리스크 평가\n- **품질 불량 발생 확률**: 89%\n- **예상 불량 시점**: 2025-05-01 16:45 UTC (약 2시간 15분 후)\n- **심각도**: 치명적 (Critical)\n\n### 예상 피해\n- **불량품 발생량**: 약 2,500 kg\n- **재무적 영향**: 약 1,500만원 (재처리 비용 포함)\n- **납기 지연 리스크**: 높음\n\n### 권고사항\n현재 추세가 지속될 경우 심각한 품질 불량이 발생할 것으로 예상됩니다. 즉시 제어 최적화를 통해 환류비를 증가시키고 증류탑 온도를 미세 조정할 것을 권장합니다."
+        },
+        "next_step": "control_optimization"
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T14:30:45Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "status": "completed",
+        "results": {
+          "status": "success",
+          "workflow_id": "wf_chem_refining_003",
+          "agent": "AutoControl Agent",
+          "control_result": {
+            "optimization_completed": true,
+            "control_method": "Model Predictive Control with PID Fine-tuning",
+            "optimization_algorithm": "Sequential Quadratic Programming (SQP)",
+            "optimal_parameters": {
+              "TOWER_TEMP": {
+                "current": 148.6,
+                "optimal": 151.2,
+                "change": 2.6,
+                "unit": "°C",
+                "rationale": "증류탑 온도 상승으로 경성분 분리 효율 향상"
+              },
+              "REFLUX_RATIO": {
+                "current": 2.85,
+                "optimal": 3.15,
+                "change": 0.3,
+                "unit": "ratio",
+                "rationale": "환류비 증가로 정제 순도 개선"
+              }
+            },
+            "predicted_improvement": {
+              "PURITY_1h": {
+                "without_control": 99.04,
+                "with_control": 99.52,
+                "improvement": 0.48
+              },
+              "PURITY_2h": {
+                "without_control": 98.83,
+                "with_control": 99.61,
+                "improvement": 0.78
+              },
+              "PURITY_3h": {
+                "without_control": 98.61,
+                "with_control": 99.63,
+                "improvement": 1.02
+              }
+            },
+            "control_sequence": [
+              {
+                "step": 1,
+                "time": "2025-05-01T14:30:45Z",
+                "action": "REFLUX_RATIO 증가 시작",
+                "value": "2.85 → 2.95 (0.1 증가)",
+                "duration": "10분"
+              },
+              {
+                "step": 2,
+                "time": "2025-05-01T14:40:45Z",
+                "action": "TOWER_TEMP 증가 시작",
+                "value": "148.6°C → 149.9°C (1.3°C 증가)",
+                "duration": "20분"
+              },
+              {
+                "step": 3,
+                "time": "2025-05-01T15:00:45Z",
+                "action": "REFLUX_RATIO 추가 증가",
+                "value": "2.95 → 3.05 (0.1 증가)",
+                "duration": "10분"
+              },
+              {
+                "step": 4,
+                "time": "2025-05-01T15:10:45Z",
+                "action": "TOWER_TEMP 추가 증가",
+                "value": "149.9°C → 151.2°C (1.3°C 증가)",
+                "duration": "20분"
+              },
+              {
+                "step": 5,
+                "time": "2025-05-01T15:30:45Z",
+                "action": "REFLUX_RATIO 최종 조정",
+                "value": "3.05 → 3.15 (0.1 증가)",
+                "duration": "10분"
+              },
+              {
+                "step": 6,
+                "time": "2025-05-01T15:40:45Z",
+                "action": "안정화 및 모니터링",
+                "value": "모든 파라미터 목표값 도달",
+                "duration": "지속"
+              }
+            ],
+            "execution_plan": {
+              "total_duration": "70분",
+              "expected_stabilization": "2025-05-01T15:40:45Z",
+              "monitoring_interval": "30초",
+              "rollback_conditions": [
+                "TOWER_TEMP > 158°C",
+                "REFLUX_RATIO > 3.4",
+                "PURITY < 98.5%"
+              ]
+            },
+            "cost_benefit_analysis": {
+              "control_implementation_cost": {
+                "energy_cost_increase": "약 8만원 (환류비 증가로 인한 냉각 에너지)",
+                "time_cost": "70분 운전 조정 시간"
+              },
+              "expected_benefit": {
+                "defect_prevention": "약 1,500만원 (재처리 비용 회피)",
+                "quality_improvement": "순도 99.6% 달성",
+                "production_continuity": "납기 준수 가능"
+              },
+              "roi": "약 187배 (1,500만원 / 8만원)",
+              "recommendation": "즉시 실행 강력 권장"
+            },
+            "safety_validation": {
+              "all_constraints_satisfied": true,
+              "safety_margin": 0.18,
+              "risk_level": "low",
+              "approval_required": false
+            },
+            "summary_report": "## 정제 공정 최적 제어 결과\n\n### 제어 최적화 완료\n- **제어 방법**: 모델 예측 제어 (MPC) + PID 미세조정\n- **최적화 알고리즘**: Sequential Quadratic Programming\n- **안전성 검증**: 통과 ✅\n\n### 최적 제어 파라미터\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 증류탑 온도 | 148.6°C | 151.2°C | +2.6°C | 경성분 분리 효율 향상 |\n| 환류비 | 2.85 | 3.15 | +0.30 | 정제 순도 개선 |\n\n### 예상 개선 효과\n| 시점 | 제어 없이 | 제어 적용 시 | 개선폭 |\n|------|-----------|-------------|--------|\n| +1시간 | 99.04% | 99.52% | +0.48%p |\n| +2시간 | 98.83% | 99.61% | +0.78%p |\n| +3시간 | 98.61% | 99.63% | +1.02%p |\n\n### 제어 실행 계획\n1. **1단계** (0-10분): 환류비 2.85 → 2.95\n2. **2단계** (10-30분): 증류탑 온도 148.6°C → 149.9°C\n3. **3단계** (30-40분): 환류비 2.95 → 3.05\n4. **4단계** (40-60분): 증류탑 온도 149.9°C → 151.2°C\n5. **5단계** (60-70분): 환류비 3.05 → 3.15\n6. **6단계** (70분~): 안정화 및 모니터링\n\n**총 소요 시간**: 70분  \n**예상 안정화 시점**: 2025-05-01 15:40 UTC\n\n### 비용-편익 분석\n- **제어 비용**: 약 8만원 (냉각 에너지 증가)\n- **예상 편익**: 약 1,500만원 (품질 불량 방지)\n- **투자수익률 (ROI)**: 약 187배\n\n### 안전성 검증\n- ✅ 모든 제약조건 만족\n- ✅ 안전 여유도: 18%\n- ✅ 리스크 수준: 낮음\n- ✅ 승인 불필요 (자동 실행 가능)\n\n### 권고사항\n최적 제어 파라미터 적용 시 품질 불량을 방지하고 목표 순도(99.6%)를 달성할 수 있습니다. 즉시 실행을 강력히 권장합니다.",
+            "auto_execution_enabled": true,
+            "execution_status": "ready_to_execute"
+          },
+          "next_step": "return_to_orchestration"
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "message": "Prediction 완료. AutoControl Agent로 전달.",
+        "next_step": "control_optimization"
+      }
+    },
+    "step_6_orchestration_to_autocontrol": {
+      "from": "Orchestration Agent",
+      "to": "AutoControl Agent",
+      "timestamp": "2025-05-01T14:30:45Z",
+      "api_endpoint": "POST /api/v1/autocontrol/run-direct",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "control_task": "optimize_quality_control",
+        "current_state": {
+          "PURITY": 99.24,
+          "TOWER_TEMP": 148.6,
+          "REFLUX_RATIO": 2.85,
+          "FEED_RATE": 5050
+        },
+        "target_state": {
+          "PURITY": 99.6,
+          "TOWER_TEMP": "optimize",
+          "REFLUX_RATIO": "optimize"
+        },
+        "constraints": {
+          "TOWER_TEMP": {
+            "min": 145,
+            "max": 160,
+            "rate_limit": 2.0
+          },
+          "REFLUX_RATIO": {
+            "min": 2.5,
+            "max": 3.5,
+            "rate_limit": 0.1
+          },
+          "optimization_time": "minimize",
+          "stability_margin": 0.15
+        },
+        "prediction_context": {
+          "forecast_severity": "critical",
+          "defect_probability": 0.89,
+          "time_to_defect": "2.25_hours"
+        },
+        "control_method": "mpc_with_pid"
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "agent": "AutoControl Agent",
+        "control_result": {
+          "optimization_completed": true,
+          "control_method": "Model Predictive Control with PID Fine-tuning",
+          "optimization_algorithm": "Sequential Quadratic Programming (SQP)",
+          "optimal_parameters": {
+            "TOWER_TEMP": {
+              "current": 148.6,
+              "optimal": 151.2,
+              "change": 2.6,
+              "unit": "°C",
+              "rationale": "증류탑 온도 상승으로 경성분 분리 효율 향상"
+            },
+            "REFLUX_RATIO": {
+              "current": 2.85,
+              "optimal": 3.15,
+              "change": 0.3,
+              "unit": "ratio",
+              "rationale": "환류비 증가로 정제 순도 개선"
+            }
+          },
+          "predicted_improvement": {
+            "PURITY_1h": {
+              "without_control": 99.04,
+              "with_control": 99.52,
+              "improvement": 0.48
+            },
+            "PURITY_2h": {
+              "without_control": 98.83,
+              "with_control": 99.61,
+              "improvement": 0.78
+            },
+            "PURITY_3h": {
+              "without_control": 98.61,
+              "with_control": 99.63,
+              "improvement": 1.02
+            }
+          },
+          "control_sequence": [
+            {
+              "step": 1,
+              "time": "2025-05-01T14:30:45Z",
+              "action": "REFLUX_RATIO 증가 시작",
+              "value": "2.85 → 2.95 (0.1 증가)",
+              "duration": "10분"
+            },
+            {
+              "step": 2,
+              "time": "2025-05-01T14:40:45Z",
+              "action": "TOWER_TEMP 증가 시작",
+              "value": "148.6°C → 149.9°C (1.3°C 증가)",
+              "duration": "20분"
+            },
+            {
+              "step": 3,
+              "time": "2025-05-01T15:00:45Z",
+              "action": "REFLUX_RATIO 추가 증가",
+              "value": "2.95 → 3.05 (0.1 증가)",
+              "duration": "10분"
+            },
+            {
+              "step": 4,
+              "time": "2025-05-01T15:10:45Z",
+              "action": "TOWER_TEMP 추가 증가",
+              "value": "149.9°C → 151.2°C (1.3°C 증가)",
+              "duration": "20분"
+            },
+            {
+              "step": 5,
+              "time": "2025-05-01T15:30:45Z",
+              "action": "REFLUX_RATIO 최종 조정",
+              "value": "3.05 → 3.15 (0.1 증가)",
+              "duration": "10분"
+            },
+            {
+              "step": 6,
+              "time": "2025-05-01T15:40:45Z",
+              "action": "안정화 및 모니터링",
+              "value": "모든 파라미터 목표값 도달",
+              "duration": "지속"
+            }
+          ],
+          "execution_plan": {
+            "total_duration": "70분",
+            "expected_stabilization": "2025-05-01T15:40:45Z",
+            "monitoring_interval": "30초",
+            "rollback_conditions": [
+              "TOWER_TEMP > 158°C",
+              "REFLUX_RATIO > 3.4",
+              "PURITY < 98.5%"
+            ]
+          },
+          "cost_benefit_analysis": {
+            "control_implementation_cost": {
+              "energy_cost_increase": "약 8만원 (환류비 증가로 인한 냉각 에너지)",
+              "time_cost": "70분 운전 조정 시간"
+            },
+            "expected_benefit": {
+              "defect_prevention": "약 1,500만원 (재처리 비용 회피)",
+              "quality_improvement": "순도 99.6% 달성",
+              "production_continuity": "납기 준수 가능"
+            },
+            "roi": "약 187배 (1,500만원 / 8만원)",
+            "recommendation": "즉시 실행 강력 권장"
+          },
+          "safety_validation": {
+            "all_constraints_satisfied": true,
+            "safety_margin": 0.18,
+            "risk_level": "low",
+            "approval_required": false
+          },
+          "summary_report": "## 정제 공정 최적 제어 결과\n\n### 제어 최적화 완료\n- **제어 방법**: 모델 예측 제어 (MPC) + PID 미세조정\n- **최적화 알고리즘**: Sequential Quadratic Programming\n- **안전성 검증**: 통과 ✅\n\n### 최적 제어 파라미터\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 증류탑 온도 | 148.6°C | 151.2°C | +2.6°C | 경성분 분리 효율 향상 |\n| 환류비 | 2.85 | 3.15 | +0.30 | 정제 순도 개선 |\n\n### 예상 개선 효과\n| 시점 | 제어 없이 | 제어 적용 시 | 개선폭 |\n|------|-----------|-------------|--------|\n| +1시간 | 99.04% | 99.52% | +0.48%p |\n| +2시간 | 98.83% | 99.61% | +0.78%p |\n| +3시간 | 98.61% | 99.63% | +1.02%p |\n\n### 제어 실행 계획\n1. **1단계** (0-10분): 환류비 2.85 → 2.95\n2. **2단계** (10-30분): 증류탑 온도 148.6°C → 149.9°C\n3. **3단계** (30-40분): 환류비 2.95 → 3.05\n4. **4단계** (40-60분): 증류탑 온도 149.9°C → 151.2°C\n5. **5단계** (60-70분): 환류비 3.05 → 3.15\n6. **6단계** (70분~): 안정화 및 모니터링\n\n**총 소요 시간**: 70분  \n**예상 안정화 시점**: 2025-05-01 15:40 UTC\n\n### 비용-편익 분석\n- **제어 비용**: 약 8만원 (냉각 에너지 증가)\n- **예상 편익**: 약 1,500만원 (품질 불량 방지)\n- **투자수익률 (ROI)**: 약 187배\n\n### 안전성 검증\n- ✅ 모든 제약조건 만족\n- ✅ 안전 여유도: 18%\n- ✅ 리스크 수준: 낮음\n- ✅ 승인 불필요 (자동 실행 가능)\n\n### 권고사항\n최적 제어 파라미터 적용 시 품질 불량을 방지하고 목표 순도(99.6%)를 달성할 수 있습니다. 즉시 실행을 강력히 권장합니다.",
+          "auto_execution_enabled": true,
+          "execution_status": "ready_to_execute"
+        },
+        "next_step": "return_to_orchestration"
+      }
+    },
+    "step_7_autocontrol_to_orchestration": {
+      "from": "AutoControl Agent",
+      "to": "Orchestration Agent",
+      "timestamp": "2025-05-01T14:31:15Z",
+      "api_endpoint": "POST /api/v1/orchestrate/report",
+      "request": {
+        "workflow_id": "wf_chem_refining_003",
+        "status": "completed",
+        "results": {
+          "monitoring_result": "quality_degradation_detected",
+          "prediction_result": "critical_defect_forecasted",
+          "control_result": "optimal_parameters_calculated",
+          "execution_ready": true
+        }
+      },
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "message": "워크플로우 완료. 사용자에게 결과 전달.",
+        "next_step": "return_to_user"
+      }
+    },
+    "step_8_orchestration_to_user": {
+      "from": "Orchestration Agent",
+      "to": "User",
+      "timestamp": "2025-05-01T14:31:20Z",
+      "api_endpoint": "N/A",
+      "request": {},
+      "response": {
+        "status": "success",
+        "workflow_id": "wf_chem_refining_003",
+        "workflow_type": "monitoring_prediction_control",
+        "summary": "정제 공정에서 제품 순도 저하가 감지되었습니다. 현재 순도는 99.24%로 목표치(99.5%) 이하이며, 제어하지 않을 경우 2시간 15분 후 심각한 품질 불량(순도 98.6%)이 발생할 것으로 예측됩니다. 최적 제어 분석 결과, 증류탑 온도를 151.2°C로, 환류비를 3.15로 조정하면 순도를 99.6%까지 회복할 수 있습니다. 제어 비용은 약 8만원이며, 1,500만원의 품질 불량 손실을 방지할 수 있어 즉시 실행을 권장합니다.",
+        "detailed_results": {
+          "monitoring": {
+            "anomaly_type": "quality_degradation",
+            "severity": "high",
+            "current_purity": 99.24,
+            "target_purity": 99.6,
+            "deviation": -0.36
+          },
+          "prediction": {
+            "defect_probability": 0.89,
+            "time_to_defect": "2.25 hours",
+            "expected_loss": "1,500만원",
+            "forecast_accuracy": 0.94
+          },
+          "control": {
+            "optimal_tower_temp": 151.2,
+            "optimal_reflux_ratio": 3.15,
+            "execution_time": "70분",
+            "expected_purity_3h": 99.63,
+            "roi": "187배"
+          }
+        },
+        "recommendations": [
+          "즉시 최적 제어 파라미터 적용 (증류탑 온도 151.2°C, 환류비 3.15)",
+          "제어 실행 후 30초 간격으로 순도 모니터링",
+          "안정화 예상 시점(70분 후) 이후 품질 검증 수행",
+          "원료 조성 분석을 통한 근본 원인 규명"
+        ],
+        "full_report": "## 🏭 정제 공정 순도 최적 제어 분석 결과\n\n---\n\n### 📊 1. 현황 모니터링 결과\n\n**이상 감지 정보**\n- **이상 유형**: 제품 순도 지속적 감소\n- **심각도**: 높음 (High)\n- **감지 시간**: 2025-05-01 14:30:00 UTC\n\n**주요 지표 현황**\n| 파라미터 | 현재값 | 정상범위 | 편차 | 상태 |\n|---------|--------|----------|------|------|\n| 제품 순도 | 99.24% | 99.5-99.9% | -0.26%p | ⚠️ 목표 미달 |\n| 증류탑 온도 | 148.6°C | 145-155°C | 0 | ✅ 정상 |\n| 환류비 | 2.85 | 2.8-3.2 | 0 | ✅ 정상 |\n\n**추세 분석**\n- 순도 감소율: -0.0034%/10분 (지난 6.5시간 동안)\n- 통계적 유의성: 98%\n\n**원인 가설**\n1. 원료 조성 변화로 인한 분리 효율 저하\n2. 증류탑 단수 부족 (설계 한계)\n3. 환류비가 현재 조건에서 최적값 미달\n\n---\n\n### 🔮 2. 예측 분석 결과\n\n**예측 모델**: LSTM 다변량 시계열 모델 (정확도 94%)\n\n**품질 예측 추이 (제어 없이)**\n| 시간 | 예측 순도 | 신뢰구간 (95%) | 상태 |\n|------|-----------|----------------|------|\n| 현재 | 99.24% | - | ⚠️ 목표 미달 |\n| +1시간 | 99.04% | 98.92-99.16% | ⚠️ 목표 미달 |\n| +2시간 | 98.83% | 98.68-98.98% | 🚨 품질 불량 |\n| +3시간 | 98.61% | 98.42-98.80% | 🚨 심각한 불량 |\n\n**리스크 평가**\n- 품질 불량 발생 확률: **89%**\n- 예상 불량 시점: 2025-05-01 16:45 UTC (약 2시간 15분 후)\n- 심각도: **치명적 (Critical)**\n\n**예상 피해**\n- 불량품 발생량: 약 2,500 kg\n- 재무적 영향: **약 1,500만원** (재처리 비용 포함)\n- 납기 지연 리스크: 높음\n\n---\n\n### ⚙️ 3. 최적 제어 결과\n\n**제어 방법**: 모델 예측 제어 (MPC) + PID 미세조정\n\n**최적 제어 파라미터**\n| 파라미터 | 현재값 | 최적값 | 변화량 | 사유 |\n|---------|--------|--------|--------|------|\n| 증류탑 온도 | 148.6°C | **151.2°C** | +2.6°C | 경성분 분리 효율 향상 |\n| 환류비 | 2.85 | **3.15** | +0.30 | 정제 순도 개선 |\n\n**예상 개선 효과**\n| 시점 | 제어 없이 | 제어 적용 시 | 개선폭 |\n|------|-----------|-------------|--------|\n| +1시간 | 99.04% | **99.52%** | +0.48%p |\n| +2시간 | 98.83% | **99.61%** | +0.78%p |\n| +3시간 | 98.61% | **99.63%** | +1.02%p |\n\n**제어 실행 계획**\n1. **1단계** (0-10분): 환류비 2.85 → 2.95\n2. **2단계** (10-30분): 증류탑 온도 148.6°C → 149.9°C\n3. **3단계** (30-40분): 환류비 2.95 → 3.05\n4. **4단계** (40-60분): 증류탑 온도 149.9°C → 151.2°C\n5. **5단계** (60-70분): 환류비 3.05 → 3.15\n6. **6단계** (70분~): 안정화 및 모니터링\n\n**총 소요 시간**: 70분  \n**예상 안정화 시점**: 2025-05-01 15:40 UTC\n\n---\n\n### 💰 4. 비용-편익 분석\n\n**제어 비용**\n- 에너지 비용 증가: 약 8만원 (환류비 증가로 인한 냉각 에너지)\n- 운전 조정 시간: 70분\n\n**예상 편익**\n- 품질 불량 방지: **약 1,500만원** (재처리 비용 회피)\n- 품질 개선: 순도 99.6% 달성\n- 생산 연속성: 납기 준수 가능\n\n**투자수익률 (ROI)**: **약 187배** (1,500만원 / 8만원)\n\n---\n\n### ✅ 5. 안전성 검증\n\n- ✅ 모든 운전 제약조건 만족\n- ✅ 안전 여유도: 18%\n- ✅ 리스크 수준: 낮음\n- ✅ 승인 불필요 (자동 실행 가능)\n\n**롤백 조건**\n- 증류탑 온도 > 158°C\n- 환류비 > 3.4\n- 제품 순도 < 98.5%\n\n---\n\n### 🎯 6. 최종 권고사항\n\n1. ✅ **즉시 최적 제어 파라미터 적용** (증류탑 온도 151.2°C, 환류비 3.15)\n   - 현재 추세가 지속될 경우 2시간 15분 후 심각한 품질 불량 발생\n   - 제어 적용 시 순도 99.6%까지 회복 가능\n   - ROI 187배로 경제적 타당성 매우 높음\n\n2. 📊 **제어 실행 후 모니터링 강화**\n   - 30초 간격으로 순도, 온도, 환류비 추적\n   - 70분 후 안정화 확인\n\n3. 🔬 **품질 검증 및 근본 원인 분석**\n   - 안정화 후 제품 샘플 분석\n   - 원료 조성 변화 여부 확인\n   - 장기 대책 수립 (증류탑 단수 증설 검토)\n\n4. 📝 **작업 이력 기록**\n   - 제어 전후 데이터 저장\n   - 효과 분석 리포트 작성\n\n---\n\n**결론**: 최적 제어 적용을 통해 약 1,500만원의 품질 불량 손실을 8만원의 비용으로 방지할 수 있습니다. 즉시 실행을 강력히 권장합니다."
+      }
+    }
+  },
+  "expected_answer": {
+    "workflow_type": "monitoring_prediction_control",
+    "agents_involved": [
+      "Orchestration",
+      "Monitoring",
+      "Predictive",
+      "AutoControl"
+    ],
+    "key_findings": {
+      "anomaly_detected": true,
+      "anomaly_type": "quality_degradation",
+      "current_purity": 99.24,
+      "defect_forecasted": true,
+      "defect_probability": 0.89,
+      "time_to_defect_hours": 2.25,
+      "optimal_control_found": true,
+      "optimal_tower_temp": 151.2,
+      "optimal_reflux_ratio": 3.15
+    },
+    "recommendations": [
+      "즉시 최적 제어 파라미터 적용",
+      "제어 후 지속적 모니터링",
+      "품질 검증 수행",
+      "원료 조성 분석"
+    ],
+    "economic_impact": {
+      "control_cost": 80000,
+      "prevented_loss": 15000000,
+      "roi": 187.5
+    }
+  },
+  "test_validation": {
+    "validate_workflow": {
+      "expected_steps": 6,
+      "required_agents": [
+        "Orchestration",
+        "Monitoring",
+        "Predictive",
+        "AutoControl"
+      ],
+      "workflow_sequence": [
+        "User → Orchestration",
+        "Orchestration → Monitoring",
+        "Monitoring → Predictive",
+        "Predictive → AutoControl",
+        "AutoControl → Orchestration",
+        "Orchestration → User"
+      ]
+    },
+    "validate_monitoring": {
+      "must_detect_anomaly": true,
+      "must_identify_degradation": true,
+      "must_analyze_trend": true,
+      "must_recommend_prediction": true
+    },
+    "validate_prediction": {
+      "must_forecast_quality": true,
+      "must_calculate_risk": true,
+      "must_estimate_impact": true,
+      "forecast_horizon_min_hours": 3,
+      "must_recommend_control": true
+    },
+    "validate_control": {
+      "must_optimize_parameters": true,
+      "must_provide_sequence": true,
+      "must_verify_safety": true,
+      "must_calculate_benefit": true,
+      "must_enable_execution": true
+    },
+    "validate_api_compliance": {
+      "all_requests_valid": true,
+      "all_responses_valid": true,
+      "endpoints_match_spec": true
+    },
+    "performance_criteria": {
+      "total_workflow_time_max_seconds": 120,
+      "prediction_accuracy_min": 0.9,
+      "safety_margin_min": 0.1,
+      "roi_min": 10
+    }
+  }
+}

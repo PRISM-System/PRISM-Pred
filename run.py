@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from importlib import import_module
+import traceback
 
 _env = os.getenv("MAX_LENGTH", "").strip()
 MAX_LENGTH = int(_env) if _env.isdigit() and int(_env) > 0 else None
@@ -198,9 +199,63 @@ def build_model(name: str, cfg: Configs, device: torch.device):
     model = mod.Model(cfg)
     return model.to(device)
 
-def forward_for_all(model: nn.Module, x_enc, x_mark_enc, x_dec, x_mark_dec):
+# def forward_for_all(model: nn.Module, x_enc, x_mark_enc, x_dec, x_mark_dec):
     
-    return model(x_enc, x_mark_enc, x_dec, x_mark_dec)  # [B, pred_len, C] 
+#     return model(x_enc, x_mark_enc, x_dec, x_mark_dec)  # [B, pred_len, C] 
+def forward_for_all(model: nn.Module, x_enc, x_mark_enc, x_dec, x_mark_dec):
+    """
+    다양한 모델 시그니처 호환:
+      - model(x_enc, x_mark_enc, x_dec, x_mark_dec)
+      - model(x_enc, x_mark_enc)
+      - model(x_enc)
+    출력은 [B, H, C]로 정규화.
+    """
+    B = x_enc.size(0)
+    # 4 → 2 → 1 인자 순서로 시도
+    try:
+        yhat = model(x_enc, x_mark_enc, x_dec, x_mark_dec)
+    except TypeError:
+        try:
+            yhat = model(x_enc, x_mark_enc)
+        except TypeError:
+            yhat = model(x_enc)
+
+    if isinstance(yhat, (list, tuple)):
+        yhat = yhat[0]
+    if yhat.dim() == 1:        # [H]  -> [1,H,1]
+        yhat = yhat.view(1, -1, 1)
+    elif yhat.dim() == 2:      # [H,C] -> [1,H,C]
+        yhat = yhat.unsqueeze(0)
+
+    if yhat.size(0) != B:      # 배치 크기 보정(예외 대비)
+        if yhat.dim() == 2:
+            yhat = yhat.unsqueeze(0)
+        else:
+            yhat = yhat.expand(B, -1, -1)
+    return yhat
+
+def _unpack_batch(batch):
+    if not isinstance(batch, (list, tuple)):
+        raise TypeError(f"Unexpected batch type: {type(batch)}")
+    if len(batch) == 5:
+        return batch
+    if len(batch) == 4:
+        x_enc, x_mark_enc, x_dec, x_mark_dec = batch
+        H = x_dec.shape[0] if x_dec.dim() >= 2 else x_enc.shape[0]
+        C = x_enc.shape[-1]
+        y = torch.zeros(H, C, dtype=x_enc.dtype, device=x_enc.device if x_enc.is_cuda else 'cpu')
+        return x_enc, x_mark_enc, x_dec, x_mark_dec, y
+    if len(batch) == 3:
+        a, b, c = batch
+        if hasattr(b, "dim") and b.dim() >= 2 and b.shape[-1] <= a.shape[-1]:
+            x_enc, y, x_mark_enc = a, b, c
+        else:
+            x_enc, x_mark_enc, y = a, b, c
+        B, L, C = x_enc.shape
+        x_dec = torch.zeros(L, C, dtype=x_enc.dtype, device=x_enc.device if x_enc.is_cuda else 'cpu')
+        x_mark_dec = torch.zeros(L, 4, dtype=x_enc.dtype, device=x_enc.device if x_enc.is_cuda else 'cpu')
+        return x_enc, x_mark_enc, x_dec, x_mark_dec, y
+    raise ValueError(f"Unexpected batch length: {len(batch)}")
 
 # -----------------------------
 # Trainer
@@ -228,7 +283,10 @@ def train_and_validate(
         # ---- train ----
         model.train()
         total_loss, n = 0.0, 0
-        for x_enc, x_mark_enc, x_dec, x_mark_dec, y in train_loader:
+        #for x_enc, x_mark_enc, x_dec, x_mark_dec, y in train_loader:
+            # x_enc, x_mark_enc = x_enc.to(device), x_mark_enc.to(device)
+        for batch in train_loader:
+            x_enc, x_mark_enc, x_dec, x_mark_dec, y = _unpack_batch(batch)
             x_enc, x_mark_enc = x_enc.to(device), x_mark_enc.to(device)
             x_dec, x_mark_dec = x_dec.to(device), x_mark_dec.to(device)
             y = y.to(device)                               # [B, H, C]
@@ -248,7 +306,9 @@ def train_and_validate(
         model.eval()
         Y, YH = [], []
         with torch.no_grad():
-            for x_enc, x_mark_enc, x_dec, x_mark_dec, y in val_loader:
+            #for x_enc, x_mark_enc, x_dec, x_mark_dec, y in val_loader:
+            for batch in val_loader:
+                x_enc, x_mark_enc, x_dec, x_mark_dec, y = _unpack_batch(batch)
                 x_enc, x_mark_enc = x_enc.to(device), x_mark_enc.to(device)
                 x_dec, x_mark_dec = x_dec.to(device), x_mark_dec.to(device)
                 y = y.to(device)
@@ -405,7 +465,7 @@ def main():
 
     for name in candidates:
         try:
-            focus_rmse, metrics, model_obj = train_and_validate(
+            focus_rmse, metrics, model_obj, ckpt_path = train_and_validate(
                 name=name, cfg=cfg,
                 train_loader=train_loader, val_loader=val_loader,
                 device=device, epochs=args.epochs,
@@ -413,12 +473,14 @@ def main():
                 save_dir=os.path.join("outputs", name),
             )
             results[name] = metrics
+            ckpt_paths[name] = ckpt_path
+            
             if focus_rmse < best_metric:
                 best_metric = focus_rmse
                 best_name = name
                 best_model_obj = model_obj
         except Exception as e:
-            results[name] = {"error": str(e)}
+            results[name] = {"error": str(e),  "trace": traceback.format_exc(),}
             ckpt_paths[name] = None
             print(f"[WARN] {name} failed: {e}")
 
@@ -462,7 +524,7 @@ def main():
 
     if best_name is None:
         best_name = "Autoformer"
-        
+
     best_all = results.get(best_name, {}).get("val_rmse_all") if best_name in results else None
     best_weight_path = ckpt_paths.get(best_name) if best_name is not None else ckpt_paths.get("Autoformer")
 

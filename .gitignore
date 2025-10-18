@@ -1,0 +1,11 @@
+# Python 캐시 파일
+__pycache__/
+*.py[cod]
+
+# 가상환경 디렉토리
+.env/
+venv/
+ENV/
+*.env
+# prism-core 디렉토리 전체 무시
+prism/prism-core/

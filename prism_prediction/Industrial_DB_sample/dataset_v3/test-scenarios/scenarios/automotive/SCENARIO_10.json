@@ -1,0 +1,307 @@
+{
+  "scenario_id": "SCENARIO_10",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "자동차 도장 습도 상승 예측",
+    "title_en": "Automotive Painting Humidity Prediction",
+    "industry": "automotive",
+    "process": "Painting",
+    "workflow_type": "monitoring_prediction",
+    "workflow_level": 2,
+    "complexity": "medium",
+    "description": "도장 부스의 습도 상승 추이를 모니터링하고 도막 품질에 미칠 영향을 예측하는 시나리오"
+  },
+  "query": {
+    "text": "도장 부스의 HUMIDITY가 계속 상승하고 있습니다. 도막 품질에 미칠 영향을 예측해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:40:00Z"
+    },
+    "user_id": "paint_operator_02",
+    "priority": "high"
+  },
+  "timeseries_data": {
+    "file": "automotive_painting_002.csv",
+    "file_path": "test_data/automotive/automotive_painting_002.csv",
+    "columns": [
+      "TIMESTAMP",
+      "BOOTH_ID",
+      "HUMIDITY",
+      "TEMPERATURE",
+      "AIR_FLOW",
+      "PAINT_PRESSURE",
+      "ATOMIZATION",
+      "FLASH_OFF_TIME",
+      "FILM_THICKNESS",
+      "COATING_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "HUMIDITY",
+      "TEMPERATURE",
+      "COATING_QUALITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:40:00Z",
+      "total_points": 4920,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:40:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "도장 부스의 HUMIDITY가 계속 상승하고 있습니다. 도막 품질에 미칠 영향을 예측해주세요.",
+        "session_id": "paint_session_20250501_002",
+        "user_id": "paint_operator_02",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "trend_monitoring_and_prediction",
+          "target_process": "painting",
+          "target_variable": "HUMIDITY",
+          "action_required": "impact_prediction",
+          "urgency": "high"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_prediction",
+          "reason": "User requests prediction of future impact based on current trend",
+          "required_agents": [
+            "Monitoring",
+            "Predictive"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "PAINT_TASK_20250501_002",
+          "subtasks": [
+            {
+              "subtask_id": "PAINT_TASK_20250501_002_1",
+              "name": "습도 상승 추이 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "high"
+            },
+            {
+              "subtask_id": "PAINT_TASK_20250501_002_2",
+              "name": "도막 품질 영향 예측",
+              "assigned_agent": "Predictive",
+              "priority": "high",
+              "depends_on": "PAINT_TASK_20250501_002_1"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T13:40:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "PAINT_TASK_20250501_002_1",
+        "query": "도장 부스 BOOTH_P1~P4의 HUMIDITY 상승 추이 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T13:40:00Z. 주요 변수: HUMIDITY, TEMPERATURE, COATING_QUALITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:40:05Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### 도장 부스 습도 상승 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: 도장 부스 BOOTH_P1~P4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 13:40:00 (13시간 40분)\n- **총 데이터 포인트**: 4,920건\n- **습도 상승 감지 시작**: 2025-05-01T12:00:00Z\n- **상승 지속 시간**: 1시간 40분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 HUMIDITY 지속 상승\n- **현상**: 선형 상승(linear increase) 패턴 감지\n- **현재값**: 68.2% RH (목표: 55-65% RH)\n- **초기값 (12:00)**: 58.3% RH\n- **상승률**: +5.9% RH / 1시간 40분\n- **평균 변화율**: +0.059% RH/분\n- **추세**: 상승(increasing)\n\n##### 2.2 TEMPERATURE 연동 상승\n- **현재값**: 24.8°C\n- **초기값 (12:00)**: 23.1°C\n- **HUMIDITY와 상관계수**: 0.82 (강한 양의 상관관계)\n- **해석**: 온도 상승이 습도 증가에 기여\n\n##### 2.3 도막 품질 저하 징후\n- **COATING_QUALITY_INDEX 현재 평균**: 86.5 (목표치: 90 이상)\n- **12:00 이전 평균**: 92.3\n- **저하율**: -6.3%\n- **추세**: 하향(declining)\n- **품질 불량 건수**: 23건 (습도 상승 이후)\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 후보**:\n1. **공조 시스템 제습 기능 저하** (가능성: 매우 높음)\n   - 습도와 온도의 동시 상승\n   - 선형 상승 패턴\n   - AIR_FLOW는 정상 범위 (2.8±0.2 m³/min)\n   \n2. **외기 유입 증가** (가능성: 중간)\n   - 12:00 이후 외부 기상 조건 변화 가능\n   - 도장 부스 밀폐 상태 점검 필요\n   \n3. **냉각수 순환 불량** (가능성: 낮음)\n   - 온도 상승폭이 크지 않음 (1.7°C)\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 12:00 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| HUMIDITY | 58.3% RH | 68.2% RH | +9.9% RH | 55-65% RH | ⚠️ 초과 |\n| TEMPERATURE | 23.1°C | 24.8°C | +1.7°C | 20-24°C | ⚠️ 초과 |\n| COATING_QUALITY_INDEX | 92.3 | 86.5 | -5.8 | ≥90 | ⚠️ 미달 |\n| AIR_FLOW | 2.9 m³/min | 2.8 m³/min | -0.1 | 2.5-3.5 | ✅ 정상 |\n| FILM_THICKNESS | 48.2 μm | 52.1 μm | +3.9 μm | 45-50 μm | ⚠️ 초과 |\n\n#### 💡 5. 즉시 조치 필요 사항\n\n**긴급 조치 (우선순위: 최상)**\n1. 공조 시스템 제습 기능 점검\n   - 제습기 필터 상태 확인\n   - 냉매 압력 측정\n   - 드레인 배수 상태 점검\n   \n2. 도장 부스 밀폐도 검사\n   - 출입문 씰(seal) 상태 확인\n   - 환기 댐퍼 위치 점검\n\n#### 📌 6. 예측 필요성\n\n현재 상승률(+0.059% RH/분)이 지속될 경우:\n- **30분 후**: 약 69.9% RH 도달 예상\n- **1시간 후**: 약 71.7% RH 도달 예상\n- **임계치(75% RH)**: 약 1시간 55분 후 도달 예상\n\n⚠️ **Predictive Agent를 통한 정밀 예측 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T13:40:05Z  \n**분석 소요 시간**: 4.8초  \n**신뢰도**: 91%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T13:40:06Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "PAINT_TASK_20250501_002_2",
+        "timeRange": {
+          "start": "2025-05-01T12:00:00Z",
+          "end": "2025-05-01T13:40:00Z"
+        },
+        "sensor_name": "BOOTH_P1,BOOTH_P2,BOOTH_P3,BOOTH_P4",
+        "target_cols": [
+          "HUMIDITY",
+          "COATING_QUALITY_INDEX"
+        ],
+        "feature_cols": [
+          "HUMIDITY",
+          "TEMPERATURE",
+          "AIR_FLOW",
+          "PAINT_PRESSURE",
+          "FILM_THICKNESS"
+        ],
+        "prediction_horizon_minutes": 120,
+        "prediction_interval_minutes": 10,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:40:11Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 도막 품질 영향 예측 분석 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T13:40:00Z\n- **예측 종료 시각**: 2025-05-01T15:40:00Z\n- **예측 기간**: 2시간 (120분)\n- **예측 간격**: 10분\n- **사용 모델**: LSTM (Long Short-Term Memory)\n- **신뢰 구간**: 95%\n\n#### 📈 2. HUMIDITY 예측 결과\n\n| 시각 | 예측값 (% RH) | 95% 신뢰구간 | 목표 범위 대비 | 상태 |\n|------|--------------|-------------|---------------|------|\n| 13:40 (현재) | 68.2 | - | +3.2% | ⚠️ 초과 |\n| 13:50 | 68.8 | [68.1, 69.5] | +3.8% | ⚠️ 초과 |\n| 14:00 | 69.5 | [68.6, 70.4] | +4.5% | ⚠️ 초과 |\n| 14:10 | 70.1 | [69.0, 71.2] | +5.1% | ⚠️ 초과 |\n| 14:20 | 70.8 | [69.5, 72.1] | +5.8% | ⚠️ 초과 |\n| 14:30 | 71.4 | [69.9, 72.9] | +6.4% | ⚠️ 초과 |\n| 14:40 | 72.1 | [70.4, 73.8] | +7.1% | 🔴 위험 |\n| 14:50 | 72.7 | [70.8, 74.6] | +7.7% | 🔴 위험 |\n| 15:00 | 73.4 | [71.2, 75.6] | +8.4% | 🔴 위험 |\n| 15:10 | 74.0 | [71.6, 76.4] | +9.0% | 🔴 위험 |\n| 15:20 | 74.7 | [72.0, 77.4] | +9.7% | 🔴 위험 |\n| 15:30 | 75.3 | [72.3, 78.3] | +10.3% | 🔴 임계치 도달 |\n| 15:40 | 76.0 | [72.7, 79.3] | +11.0% | 🔴 임계치 초과 |\n\n**⚠️ 임계치(75% RH) 도달 예상 시각**: **2025-05-01T15:30:00Z** (약 1시간 50분 후)\n\n#### 📉 3. COATING_QUALITY_INDEX 예측 결과\n\n| 시각 | 예측값 | 95% 신뢰구간 | 목표치 대비 | 불량률 예상 |\n|------|--------|-------------|------------|------------|\n| 13:40 (현재) | 86.5 | - | -3.5 | 2.1% |\n| 13:50 | 85.8 | [84.9, 86.7] | -4.2 | 2.8% |\n| 14:00 | 85.1 | [84.0, 86.2] | -4.9 | 3.6% |\n| 14:10 | 84.3 | [83.0, 85.6] | -5.7 | 4.5% |\n| 14:20 | 83.6 | [82.1, 85.1] | -6.4 | 5.4% |\n| 14:30 | 82.8 | [81.1, 84.5] | -7.2 | 6.5% |\n| 14:40 | 82.1 | [80.1, 84.1] | -7.9 | 7.7% |\n| 14:50 | 81.3 | [79.1, 83.5] | -8.7 | 9.1% |\n| 15:00 | 80.6 | [78.2, 83.0] | -9.4 | 10.6% |\n| 15:10 | 79.8 | [77.2, 82.4] | -10.2 | 12.3% |\n| 15:20 | 79.1 | [76.2, 82.0] | -10.9 | 14.2% |\n| 15:30 | 78.3 | [75.2, 81.4] | -11.7 | 16.4% |\n| 15:40 | 77.6 | [74.3, 80.9] | -12.4 | 18.8% |\n\n**🔴 심각한 품질 저하 예상**: 2시간 후 불량률 **18.8%**까지 상승 예상\n\n#### 🎯 4. 핵심 예측 인사이트\n\n##### 4.1 습도-품질 상관관계 모델\n```\nCOATING_QUALITY_INDEX = 132.8 - 0.68 × HUMIDITY\nR² = 0.89 (강한 음의 상관관계)\n```\n\n##### 4.2 임계점 분석\n- **습도 70% RH 초과 시**: 품질 지수 평균 83.2 (7.5% 저하)\n- **습도 75% RH 초과 시**: 품질 지수 평균 77.8 (13.6% 저하)\n- **예상 재작업 비용** (15:40 기준): 약 3,200,000원 (불량률 18.8% 기준)\n\n##### 4.3 영향 메커니즘\n1. **도막 두께 증가** (습도↑ → 용제 휘발↓ → 두께↑)\n2. **표면 거칠기 증가** (물방울 응축 → 오렌지필 현상)\n3. **접착력 저하** (수분 개재 → 밀착성↓)\n4. **건조 시간 지연** (습기 → 경화 속도↓)\n\n#### ⚡ 5. 권장 조치 시나리오\n\n**시나리오 A: 즉시 조치 (권장)**\n- **조치 시각**: 지금 즉시 (13:40)\n- **조치 내용**: 제습 강화 + 온도 하강 2°C\n- **예상 효과**: 14:30까지 습도 62% RH 회복\n- **품질 지수 회복**: 88.5까지 회복 (불량률 5% 이하)\n- **예상 손실**: 약 450,000원\n\n**시나리오 B: 30분 후 조치 (비권장)**\n- **조치 시각**: 14:10\n- **조치 내용**: 제습 강화 + 온도 하강 3°C\n- **예상 효과**: 15:00까지 습도 65% RH 회복\n- **품질 지수 회복**: 85.2 (불량률 10%)\n- **예상 손실**: 약 1,800,000원\n\n**시나리오 C: 조치 없음 (위험)**\n- **2시간 후 상황**: 습도 76% RH, 품질 지수 77.6\n- **불량률**: 18.8%\n- **예상 손실**: 약 3,200,000원\n- **추가 리스크**: 생산 중단 가능성\n\n#### 📊 6. 예측 모델 성능\n\n- **모델 정확도**: RMSE = 1.23 (HUMIDITY), 2.45 (COATING_QUALITY_INDEX)\n- **검증 데이터 R²**: 0.92 (HUMIDITY), 0.89 (COATING_QUALITY_INDEX)\n- **Feature Importance**:\n  1. HUMIDITY (42.3%)\n  2. TEMPERATURE (28.7%)\n  3. FILM_THICKNESS (15.2%)\n  4. PAINT_PRESSURE (8.9%)\n  5. AIR_FLOW (4.9%)\n\n---\n**예측 완료 시각**: 2025-05-01T13:40:11Z  \n**예측 소요 시간**: 5.4초  \n**모델 신뢰도**: 92%"
+      }
+    },
+    "step_6_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T13:40:12Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "paint_session_20250501_002",
+        "final_answer": "도장 부스의 습도가 현재 68.2% RH로 목표 범위(55-65%)를 초과하여 지속 상승 중입니다. 예측 결과, 1시간 50분 후 임계치(75% RH)에 도달하며, 이로 인해 도막 품질 지수가 77.6까지 저하되고 불량률이 18.8%까지 상승할 것으로 예상됩니다. 즉시 공조 시스템 제습 기능을 강화하고 온도를 2°C 낮추면 14:30까지 정상 범위로 회복 가능하며, 손실을 약 450,000원으로 최소화할 수 있습니다.",
+        "final_markdown": "### 도장 부스 습도 상승 예측 분석 결과\n\n(상세 내용은 monitoring 및 prediction response 참조)",
+        "task_history": [
+          {
+            "id": "PAINT_TASK_20250501_002_1",
+            "name": "습도 상승 추이 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "high",
+            "completion_time": "2025-05-01T13:40:05Z"
+          },
+          {
+            "id": "PAINT_TASK_20250501_002_2",
+            "name": "도막 품질 영향 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "high",
+            "completion_time": "2025-05-01T13:40:11Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "current_humidity": 68.2,
+            "humidity_increase_rate": 0.059,
+            "quality_degradation": 6.3
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 120,
+            "critical_threshold_time": "2025-05-01T15:30:00Z",
+            "expected_defect_rate": 18.8,
+            "confidence": 0.92
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "도장 부스의 습도가 12시부터 지속 상승하여 현재 68.2% RH로 목표 범위를 초과했습니다. 현재 상승률이 유지될 경우 약 1시간 50분 후 임계치(75% RH)에 도달하며, 도막 품질 지수는 77.6까지 저하되고 불량률은 18.8%까지 증가할 것으로 예측됩니다. 즉시 제습 강화 조치를 취하면 손실을 최소화할 수 있습니다.",
+    "detected_issues": [
+      {
+        "issue": "HUMIDITY 선형 상승",
+        "severity": "high",
+        "description": "58.3% RH에서 68.2% RH로 1시간 40분간 지속 상승, 평균 변화율 +0.059% RH/분",
+        "affected_timeframe": "2025-05-01T12:00:00Z ~ 2025-05-01T13:40:00Z",
+        "current_value": 68.2,
+        "target_range": "55-65% RH"
+      },
+      {
+        "issue": "도막 품질 저하",
+        "severity": "high",
+        "description": "COATING_QUALITY_INDEX가 92.3에서 86.5로 6.3% 저하",
+        "impact": "불량률 2.1% 발생, 재작업 필요"
+      }
+    ],
+    "predictions": [
+      {
+        "target": "HUMIDITY",
+        "prediction_horizon_minutes": 120,
+        "critical_event": {
+          "description": "임계치(75% RH) 도달",
+          "expected_time": "2025-05-01T15:30:00Z",
+          "time_until_event_minutes": 110
+        },
+        "final_predicted_value": 76.0,
+        "confidence_interval_95": [
+          72.7,
+          79.3
+        ]
+      },
+      {
+        "target": "COATING_QUALITY_INDEX",
+        "prediction_horizon_minutes": 120,
+        "trend": "declining",
+        "current_value": 86.5,
+        "predicted_value_120min": 77.6,
+        "degradation_percent": 10.3,
+        "expected_defect_rate": 18.8,
+        "confidence": 0.92
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "urgent",
+        "action": "공조 시스템 제습 기능 강화 및 온도 2°C 하강",
+        "details": "제습기 필터 교체/청소, 냉매 압력 점검, 설정 온도 22°C로 조정",
+        "expected_effect": "14:30까지 습도 62% RH 회복, 품질 지수 88.5 회복",
+        "expected_loss_reduction": "약 2,750,000원 손실 방지",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "high",
+        "action": "도장 부스 밀폐도 점검",
+        "details": "출입문 씰 상태 확인, 환기 댐퍼 위치 점검",
+        "expected_effect": "외기 유입 차단",
+        "implementation_time": "1시간 이내"
+      },
+      {
+        "priority": "medium",
+        "action": "예측 모니터링 지속",
+        "details": "10분 간격으로 습도 및 품질 지수 추적, 예측 모델 재실행",
+        "expected_effect": "조치 효과 검증 및 추가 대응"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 4800,
+      "prediction_time_ms": 5400,
+      "total_analysis_time_ms": 10200,
+      "data_points_analyzed": 4920,
+      "prediction_horizon_minutes": 120,
+      "model_accuracy_rmse": 1.23,
+      "confidence_score": 0.92
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration"
+    ],
+    "expected_agents_count": 3,
+    "should_predict": true,
+    "should_control": false,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct"
+    ]
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "scenario_id": "SCENARIO_09",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "자동차 용접 전류 이상 모니터링",
+    "title_en": "Automotive Welding Current Anomaly Monitoring",
+    "industry": "automotive",
+    "process": "Welding",
+    "workflow_type": "monitoring_only",
+    "workflow_level": 1,
+    "complexity": "low",
+    "description": "용접 라인에서 WELD_CURRENT 변동을 감지하고 용접 품질 상태를 분석하는 시나리오"
+  },
+  "query": {
+    "text": "용접 라인의 WELD_CURRENT가 불안정합니다. 현재 용접 품질 상태를 분석해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:20:00Z"
+    },
+    "user_id": "weld_operator_01",
+    "priority": "high"
+  },
+  "timeseries_data": {
+    "file": "automotive_welding_001.csv",
+    "file_path": "test_data/automotive/automotive_welding_001.csv",
+    "columns": [
+      "TIMESTAMP",
+      "LINE_ID",
+      "WELD_CURRENT",
+      "WELD_VOLTAGE",
+      "WIRE_SPEED",
+      "TRAVEL_SPEED",
+      "SHIELDING_GAS",
+      "ARC_LENGTH",
+      "HEAT_INPUT",
+      "PENETRATION_DEPTH",
+      "WELD_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "WELD_CURRENT",
+      "WELD_VOLTAGE",
+      "WELD_QUALITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T13:20:00Z",
+      "total_points": 4800,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:20:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "용접 라인의 WELD_CURRENT가 불안정합니다. 현재 용접 품질 상태를 분석해주세요.",
+        "session_id": "weld_session_20250501_001",
+        "user_id": "weld_operator_01",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "anomaly_detection_and_analysis",
+          "target_process": "welding",
+          "target_variable": "WELD_CURRENT",
+          "action_required": "current_state_analysis",
+          "urgency": "high"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_only",
+          "reason": "User requests current state analysis without prediction or control",
+          "required_agents": [
+            "Monitoring"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "WELD_TASK_20250501_001",
+          "name": "용접 전류 이상 감지 및 품질 분석",
+          "assigned_agent": "Monitoring",
+          "priority": "high"
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T13:20:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "WELD_TASK_20250501_001",
+        "query": "용접 라인 WELD_L1~L4의 WELD_CURRENT 이상 감지 및 용접 품질 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T13:20:00Z. 주요 변수: WELD_CURRENT, WELD_VOLTAGE, WELD_QUALITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T13:20:04Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### 용접 전류 이상 탐지 분석 결과\n\n---\n\n#### 📊 1. 탐지 결과 개요\n- **분석 대상**: 용접 라인 WELD_L1~L4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 13:20:00 (13시간 20분)\n- **총 데이터 포인트**: 4,800건\n- **이상치 감지**: 127건 (2.6%)\n- **이상 감지 시작 시간**: 2025-05-01T13:00:00Z\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 WELD_CURRENT 불안정\n- **현상**: 진동(oscillation) 패턴 감지\n- **진폭**: 목표 범위 대비 ±12.2%\n- **측정 범위**: 165.2A ~ 235.8A (목표: 180-220A)\n- **평균값**: 198.5A (정상 범위 내이나 변동성 높음)\n- **표준편차**: 24.3A (정상 대비 300% 증가)\n\n##### 2.2 WELD_VOLTAGE 연동 변동\n- **평균**: 26.1V\n- **WELD_CURRENT와 상관계수**: 0.78 (높은 양의 상관관계)\n- **표준편차**: 1.8V\n- **해석**: 전류 변동이 전압에도 영향을 미치고 있음\n\n##### 2.3 용접 품질 저하\n- **WELD_QUALITY_INDEX 평균**: 87.3 (목표치: 90 이상)\n- **목표치 미달 건수**: 43건 (이상 발생 후)\n- **품질 저하율**: 3.0%\n- **추세**: 하향(declining)\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 후보**:\n1. **전원 공급 불안정** (가능성: 높음)\n   - 전류와 전압의 동시 변동\n   - 규칙적 진동 패턴\n   \n2. **케이블/접지 접촉 불량** (가능성: 중간)\n   - 간헐적 저항 변화 가능\n   \n3. **와이어 공급 불균일** (가능성: 낮음)\n   - WIRE_SPEED는 안정적 (9.8±0.3 m/min)\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 평균 | 표준편차 | 최소값 | 최대값 | 목표 범위 | 이탈율 |\n|------|------|----------|--------|--------|-----------|--------|\n| WELD_CURRENT | 198.5A | 24.3A | 165.2A | 235.8A | 180-220A | 12.2% |\n| WELD_VOLTAGE | 26.1V | 1.8V | 23.1V | 29.4V | 24-28V | 8.3% |\n| WELD_QUALITY_INDEX | 87.3 | 4.2 | 78 | 98 | ≥90 | 33.8% |\n\n#### 💡 5. 권장 조치사항\n\n**즉시 조치 (우선순위: 긴급)**\n1. 용접기 주 전원 공급 시스템 점검\n   - 전압 변동률 측정\n   - 전원 안정화 장치(AVR) 동작 확인\n   \n2. 케이블 연결 상태 점검\n   - 용접 케이블 단자 조임 확인\n   - 접지 저항 측정 (목표: < 10Ω)\n\n**단기 조치 (24시간 내)**\n3. 와이어 공급 시스템 검사\n   - 와이어 공급 모터 점검\n   - 컨택팁/라이너 상태 확인\n\n**중기 조치 (1주일 내)**\n4. 예방 정비 스케줄 조정\n   - 용접기 정기 교정\n   - 전력 품질 모니터링 시스템 설치 검토\n\n#### 📌 6. 영향 범위 및 리스크\n\n- **품질 영향**: 중간 (일부 용접부 재작업 필요 가능성)\n- **생산성 영향**: 낮음 (현재는 품질 허용 범위 내 운영 중)\n- **안전성 리스크**: 낮음\n- **고객 불만 가능성**: 중간 (품질 저하 지속 시)\n\n---\n**분석 완료 시각**: 2025-05-01T13:20:04Z  \n**분석 소요 시간**: 4.2초  \n**신뢰도**: 89%"
+      }
+    },
+    "step_4_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T13:20:05Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "weld_session_20250501_001",
+        "final_answer": "용접 라인의 WELD_CURRENT에서 ±12.2% 진폭의 진동 패턴이 감지되었습니다. 전원 공급 불안정이 주요 원인으로 추정되며, 용접 품질 지수가 평균 87.3으로 목표치 90 이하로 저하되었습니다. 즉시 전원 시스템 및 케이블 연결 상태를 점검하시기 바랍니다.",
+        "final_markdown": "### 용접 전류 이상 탐지 분석 결과\n\n(상세 내용은 monitoring response 참조)",
+        "task_history": [
+          {
+            "id": "WELD_TASK_20250501_001",
+            "name": "용접 전류 이상 감지 및 품질 분석",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "high"
+          }
+        ],
+        "tools_used": [
+          "Monitoring"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "anomalies_detected": 127,
+            "severity": "medium"
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "용접 라인의 WELD_CURRENT에서 진폭 ±12.2%의 진동 패턴이 감지되었습니다. 13:00부터 현재까지 127건의 이상치가 발생하였으며, 용접 품질 지수가 평균 87.3으로 목표치 90 이하로 저하되었습니다. 전원 공급 불안정이 주요 원인으로 추정됩니다.",
+    "detected_issues": [
+      {
+        "issue": "WELD_CURRENT 진동 패턴",
+        "severity": "medium",
+        "description": "165.2A~235.8A 범위에서 진동, 목표 범위(180-220A) 대비 ±12.2% 이탈",
+        "affected_timeframe": "2025-05-01T13:00:00Z ~ 2025-05-01T13:20:00Z",
+        "occurrence_count": 127
+      },
+      {
+        "issue": "용접 품질 저하",
+        "severity": "medium",
+        "description": "WELD_QUALITY_INDEX 평균 87.3, 목표치 90 미만 43건 발생",
+        "impact": "재작업 필요 가능성"
+      },
+      {
+        "issue": "WELD_VOLTAGE 연동 변동",
+        "severity": "low",
+        "description": "전압도 전류와 높은 상관관계(0.78)로 동시 변동",
+        "root_cause_hint": "전원 공급계 문제 시사"
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "urgent",
+        "action": "용접기 주 전원 공급 시스템 점검",
+        "details": "전압 변동률 측정, AVR 동작 확인",
+        "expected_effect": "전류 안정화"
+      },
+      {
+        "priority": "high",
+        "action": "케이블 연결 상태 점검",
+        "details": "단자 조임 확인, 접지 저항 측정(< 10Ω)",
+        "expected_effect": "접촉 저항 감소"
+      },
+      {
+        "priority": "medium",
+        "action": "와이어 공급 시스템 검사",
+        "details": "모터, 컨택팁, 라이너 상태 확인"
+      }
+    ],
+    "metrics": {
+      "analysis_time_ms": 4200,
+      "data_points_analyzed": 4800,
+      "anomalies_detected": 127,
+      "anomaly_rate_percent": 2.6,
+      "confidence_score": 0.89
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration"
+    ],
+    "expected_agents_count": 2,
+    "should_predict": false,
+    "should_control": false,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start"
+    ]
+  }
+}

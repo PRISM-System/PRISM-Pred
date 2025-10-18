@@ -1,0 +1,322 @@
+{
+  "scenario_id": "SCENARIO_02",
+  "version": "1.0",
+  "created_date": "2025-10-14",
+  "metadata": {
+    "title": "반도체 Etching 공정 예측 분석",
+    "title_en": "Semiconductor Etching Process Predictive Analysis",
+    "industry": "semiconductor",
+    "process": "Etching",
+    "workflow_type": "monitoring_prediction",
+    "workflow_level": 2,
+    "complexity": "medium",
+    "description": "플라즈마 식각 공정에서 압력 상승 추이를 모니터링하고 임계치 도달 시점을 예측하는 시나리오"
+  },
+  "query": {
+    "text": "Etching 공정의 PRESSURE가 계속 상승하고 있습니다. 언제 임계치에 도달할지 예측해주세요.",
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:20:00Z"
+    },
+    "user_id": "etch_engineer_02",
+    "priority": "high"
+  },
+  "timeseries_data": {
+    "file": "semiconductor_etch_002.csv",
+    "file_path": "test_data/semiconductor/semiconductor_etch_002.csv",
+    "columns": [
+      "TIMESTAMP",
+      "CHAMBER_ID",
+      "PRESSURE",
+      "VACUUM_PUMP",
+      "GAS_FLOW_RATE",
+      "RF_POWER",
+      "TEMPERATURE",
+      "ETCH_RATE",
+      "ENDPOINT_SIGNAL",
+      "UNIFORMITY",
+      "PROCESS_QUALITY_INDEX"
+    ],
+    "key_variables": [
+      "PRESSURE",
+      "VACUUM_PUMP",
+      "PROCESS_QUALITY_INDEX"
+    ],
+    "time_range": {
+      "start": "2025-05-01T00:00:00Z",
+      "end": "2025-05-01T14:20:00Z",
+      "total_points": 5160,
+      "interval_seconds": 10
+    }
+  },
+  "agent_workflow": {
+    "step_1_user_to_orchestration": {
+      "from": "User",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:20:00Z",
+      "api_endpoint": "GET /api/v1/orchestrate",
+      "request": {
+        "query": "Etching 공정의 PRESSURE가 계속 상승하고 있습니다. 언제 임계치에 도달할지 예측해주세요.",
+        "session_id": "etch_session_20250501_002",
+        "user_id": "etch_engineer_02",
+        "user_preferences": {},
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "use_tools": true,
+        "max_tool_calls": 5
+      },
+      "processing": {
+        "query_analysis": {
+          "intent": "trend_monitoring_and_prediction",
+          "target_process": "plasma_etching",
+          "target_variable": "PRESSURE",
+          "action_required": "critical_threshold_prediction",
+          "urgency": "high"
+        },
+        "workflow_determination": {
+          "selected_workflow": "monitoring_prediction",
+          "reason": "User requests prediction of critical threshold arrival time based on current trend",
+          "required_agents": [
+            "Monitoring",
+            "Predictive"
+          ]
+        },
+        "task_decomposition": {
+          "task_id": "ETCH_TASK_20250501_002",
+          "subtasks": [
+            {
+              "subtask_id": "ETCH_TASK_20250501_002_1",
+              "name": "Etching 챔버 압력 상승 모니터링",
+              "assigned_agent": "Monitoring",
+              "priority": "high"
+            },
+            {
+              "subtask_id": "ETCH_TASK_20250501_002_2",
+              "name": "임계 압력 도달 시점 예측",
+              "assigned_agent": "Predictive",
+              "priority": "high",
+              "depends_on": "ETCH_TASK_20250501_002_1"
+            }
+          ]
+        }
+      }
+    },
+    "step_2_orchestration_to_monitoring": {
+      "from": "Orchestration",
+      "to": "Monitoring",
+      "timestamp": "2025-05-01T14:20:01Z",
+      "api_endpoint": "POST /api/v1/workflow/start",
+      "request": {
+        "taskId": "ETCH_TASK_20250501_002_1",
+        "query": "플라즈마 식각 챔버 CHAMBER_E1~E4의 PRESSURE 상승 추이 감지 및 현재 상태 분석. 시간 범위: 2025-05-01T00:00:00Z ~ 2025-05-01T14:20:00Z. 주요 변수: PRESSURE, VACUUM_PUMP, PROCESS_QUALITY_INDEX"
+      }
+    },
+    "step_3_monitoring_to_orchestration": {
+      "from": "Monitoring",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:20:06Z",
+      "api_endpoint": "POST /api/v1/workflow/start (response)",
+      "response": {
+        "result": "### Etching 챔버 압력 상승 모니터링 결과\n\n---\n\n#### 📊 1. 현재 상태 개요\n- **분석 대상**: 플라즈마 식각 챔버 CHAMBER_E1~E4\n- **분석 시간**: 2025-05-01 00:00:00 ~ 14:20:00 (14시간 20분)\n- **총 데이터 포인트**: 5,160건\n- **압력 상승 감지 시작**: 2025-05-01T12:50:00Z\n- **상승 지속 시간**: 1시간 30분\n\n#### ⚠️ 2. 주요 이상 사항\n\n##### 2.1 PRESSURE 선형 상승\n- **현상**: 지속적 선형 증가(linear increase) 패턴\n- **정상 범위**: 5.0-7.0 mTorr\n- **현재값**: 8.7 mTorr (목표 상한 대비 +24.3%)\n- **초기값 (12:50)**: 6.2 mTorr\n- **상승량**: +2.5 mTorr\n- **평균 상승률**: +0.028 mTorr/분\n- **추세**: 지속 상승(continuously increasing)\n- **위험 수준**: 🔴 **높음**\n\n**임계치 정보**:\n- **공정 한계**: 10.0 mTorr (이상 시 플라즈마 불안정)\n- **현재 도달률**: 87.0%\n- **임계치까지 여유**: 1.3 mTorr (13.0%)\n\n##### 2.2 VACUUM_PUMP 성능 저하\n- **정상 범위**: 85-95%\n- **현재 효율**: 72.3% (목표 대비 -13.4%p)\n- **초기값 (12:50)**: 88.7%\n- **저하율**: -16.4%p\n- **PRESSURE와 상관계수**: -0.94 (매우 강한 음의 상관관계)\n- **해석**: 진공 펌프 성능 저하가 압력 상승의 직접적 원인\n\n##### 2.3 ETCH_RATE 변동\n- **정상 범위**: 180-220 nm/min\n- **현재 평균**: 158.5 nm/min (목표 대비 -20.3%)\n- **변동 폭**: 142.8-176.3 nm/min\n- **해석**: 압력 상승으로 플라즈마 밀도 변화, 식각률 저하\n\n##### 2.4 PROCESS_QUALITY_INDEX 저하\n- **정상 범위**: ≥ 90\n- **현재 평균**: 81.2 (목표 대비 -8.8)\n- **12:50 이전 평균**: 93.5\n- **저하율**: -13.2%\n- **추세**: 하향(declining)\n\n#### 🔍 3. 근본 원인 분석\n\n**주요 원인 (확실)**:\n1. **진공 펌프 성능 저하** (가능성: 매우 높음)\n   - 펌프 효율 72.3% (정상 대비 -13.4%p)\n   - 압력과 강한 음의 상관관계 (-0.94)\n   - 펌프 베어링 마모 또는 오일 오염 의심\n   \n2. **진공 라인 누설** (가능성: 높음)\n   - 지속적 선형 상승 패턴\n   - O-ring 열화 또는 플랜지 씰 불량 가능\n   \n3. **가스 공급 과다** (가능성: 낮음)\n   - GAS_FLOW_RATE는 정상 범위 (142±3 sccm)\n\n#### 📈 4. 통계 분석 상세\n\n| 변수 | 12:50 이전 평균 | 현재값 | 변화량 | 목표 범위 | 상태 |\n|------|----------------|--------|--------|-----------|------|\n| PRESSURE | 6.2 mTorr | 8.7 mTorr | +2.5 mTorr | 5.0-7.0 mTorr | 🔴 심각 초과 |\n| VACUUM_PUMP | 88.7% | 72.3% | -16.4%p | 85-95% | 🔴 심각 미달 |\n| ETCH_RATE | 200.3 nm/min | 158.5 nm/min | -41.8 nm/min | 180-220 nm/min | 🔴 미달 |\n| PROCESS_QUALITY_INDEX | 93.5 | 81.2 | -12.3 | ≥90 | 🔴 미달 |\n| RF_POWER | 1,200 W | 1,198 W | -2 W | 1,150-1,250 W | ✅ 정상 |\n| GAS_FLOW_RATE | 142 sccm | 143 sccm | +1 sccm | 140-150 sccm | ✅ 정상 |\n\n#### 💥 5. 임계 위험 분석\n\n**임계 압력 도달 시 영향**:\n- **플라즈마 불안정**: 이온 밀도 및 에너지 분포 변화\n- **식각 불균일**: 웨이퍼 면내 식각 편차 증가\n- **미세패턴 손상**: Critical Dimension (CD) 편차 확대\n- **공정 중단 가능성**: 압력 인터록 작동 (10.5 mTorr)\n\n**현재 상승률 지속 시**:\n- **임계치(10.0 mTorr) 도달 예상**: 약 46분 후\n- **인터록 작동(10.5 mTorr) 예상**: 약 64분 후\n- **영향 웨이퍼 수**: 약 52장 (현재 진행 중 + 대기 중)\n\n#### 💡 6. 긴급 권장 조치\n\n**즉시 조치 (우선순위: 최고 긴급)**\n1. 진공 펌프 긴급 점검\n   - 펌프 오일 레벨 및 상태 확인\n   - 베어링 진동 측정\n   - 펌프 전류 확인\n   \n2. 진공 라인 누설 점검\n   - Helium leak detector 사용\n   - O-ring 및 플랜지 씰 육안 검사\n   \n3. **예측 필요**: 현재 상승률 지속 시 임계치 도달 시점 정확한 예측\n\n⚠️ **Predictive Agent를 통한 정밀 임계치 도달 시점 예측 권장**\n\n---\n**분석 완료 시각**: 2025-05-01T14:20:06Z  \n**분석 소요 시간**: 5.1초  \n**신뢰도**: 93%"
+      }
+    },
+    "step_4_orchestration_to_prediction": {
+      "from": "Orchestration",
+      "to": "Predictive",
+      "timestamp": "2025-05-01T14:20:07Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct",
+      "request": {
+        "taskId": "ETCH_TASK_20250501_002_2",
+        "timeRange": {
+          "start": "2025-05-01T12:50:00Z",
+          "end": "2025-05-01T14:20:00Z"
+        },
+        "sensor_name": "CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4",
+        "target_cols": [
+          "PRESSURE",
+          "PROCESS_QUALITY_INDEX"
+        ],
+        "feature_cols": [
+          "PRESSURE",
+          "VACUUM_PUMP",
+          "GAS_FLOW_RATE",
+          "RF_POWER",
+          "TEMPERATURE"
+        ],
+        "prediction_horizon_minutes": 90,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      }
+    },
+    "step_5_prediction_to_orchestration": {
+      "from": "Predictive",
+      "to": "Orchestration",
+      "timestamp": "2025-05-01T14:20:13Z",
+      "api_endpoint": "POST /api/v1/prediction/run-direct (response)",
+      "response": {
+        "result": "### 임계 압력 도달 시점 예측 결과\n\n---\n\n#### 🔮 1. 예측 개요\n- **예측 시작 시각**: 2025-05-01T14:20:00Z\n- **예측 종료 시각**: 2025-05-01T15:50:00Z\n- **예측 기간**: 90분\n- **예측 간격**: 5분\n- **사용 모델**: LSTM (Long Short-Term Memory)\n- **신뢰 구간**: 95%\n\n#### 📈 2. PRESSURE 예측 결과\n\n| 시각 | 예측값 (mTorr) | 95% 신뢰구간 | 임계치 대비 | 상태 |\n|------|---------------|-------------|------------|------|\n| 14:20 (현재) | 8.70 | - | 87.0% | 🔴 위험 |\n| 14:25 | 8.84 | [8.76, 8.92] | 88.4% | 🔴 위험 |\n| 14:30 | 8.98 | [8.87, 9.09] | 89.8% | 🔴 위험 |\n| 14:35 | 9.12 | [8.98, 9.26] | 91.2% | 🔴 매우 위험 |\n| 14:40 | 9.26 | [9.09, 9.43] | 92.6% | 🔴 매우 위험 |\n| 14:45 | 9.40 | [9.20, 9.60] | 94.0% | 🔴 매우 위험 |\n| 14:50 | 9.54 | [9.31, 9.77] | 95.4% | 🔴 매우 위험 |\n| 14:55 | 9.68 | [9.42, 9.94] | 96.8% | 🔴 매우 위험 |\n| 15:00 | 9.82 | [9.53, 10.11] | 98.2% | 🔴 임계 근접 |\n| 15:05 | 9.96 | [9.64, 10.28] | 99.6% | 🔴 임계 근접 |\n| 15:10 | 10.10 | [9.75, 10.45] | 101.0% | 💥 **임계치 도달** |\n| 15:15 | 10.24 | [9.86, 10.62] | 102.4% | 💥 **임계치 초과** |\n| 15:20 | 10.38 | [9.97, 10.79] | 103.8% | 💥 **임계치 초과** |\n\n**💥 임계치(10.0 mTorr) 도달 예상 시각**: **2025-05-01T15:08:00Z** (약 48분 후)\n\n**⚠️ 인터록 작동(10.5 mTorr) 예상 시각**: **2025-05-01T15:26:00Z** (약 66분 후)\n\n#### 📉 3. PROCESS_QUALITY_INDEX 예측 결과\n\n| 시각 | 예측값 | 품질 저하율 (%) | 불량 위험 |\n|------|--------|----------------|----------|\n| 14:20 (현재) | 81.2 | 13.2% | 중간 |\n| 14:30 | 78.5 | 16.0% | 높음 |\n| 14:40 | 75.7 | 19.0% | 높음 |\n| 14:50 | 72.8 | 22.2% | 매우 높음 |\n| 15:00 | 69.9 | 25.2% | 매우 높음 |\n| 15:10 | 66.9 | 28.5% | 임계 |\n| 15:20 | 63.8 | 31.8% | 임계 |\n\n#### 🎯 4. 핵심 예측 인사이트\n\n##### 4.1 압력-품질 상관관계 모델\n```\nPROCESS_QUALITY_INDEX = 165.8 - 9.72 × PRESSURE\nR² = 0.91 (매우 강한 음의 상관관계)\n```\n\n##### 4.2 시간대별 영향 분석\n\n**현재 ~ 15:00 (40분간)**:\n- 압력 범위: 8.7 → 9.8 mTorr\n- 품질 지수: 81.2 → 69.9\n- 예상 영향: 진행 중 웨이퍼 28장 품질 저하\n- 불량 가능성: 15-25%\n\n**15:00 ~ 15:20 (20분간)**:\n- 압력 범위: 9.8 → 10.4 mTorr\n- 품질 지수: 69.9 → 63.8\n- 예상 영향: 웨이퍼 14장 심각한 품질 저하\n- 불량 가능성: 35-50%\n\n**15:20 ~ 인터록 작동**:\n- 공정 중단\n- 진행 중 웨이퍼 10장 폐기 가능성\n\n##### 4.3 VACUUM_PUMP 성능 추이 예측\n\n| 시각 | 예측 효율 (%) | 상태 |\n|------|--------------|------|\n| 14:20 (현재) | 72.3 | 불량 |\n| 14:40 | 68.8 | 심각 |\n| 15:00 | 65.2 | 매우 심각 |\n| 15:20 | 61.5 | 치명적 |\n\n#### 💰 5. 경제적 영향 분석\n\n**조치 없이 90분 경과 시**:\n- **진행 중 웨이퍼**: 28장\n- **대기 중 웨이퍼**: 24장\n- **총 영향 웨이퍼**: 52장\n\n**예상 손실 시나리오**:\n- **품질 저하 웨이퍼** (불량률 20%): 28장 × 1,250,000원 × 20% = 7,000,000원\n- **심각 불량 웨이퍼** (불량률 45%): 14장 × 1,250,000원 × 45% = 7,875,000원\n- **폐기 웨이퍼**: 10장 × 1,250,000원 = 12,500,000원\n- **공정 중단 손실**: 약 8,000,000원 (복구 시간 4시간)\n- **총 예상 손실**: 약 **35,375,000원**\n\n#### ⚡ 6. 권장 조치 시나리오\n\n**시나리오 A: 즉시 공정 중단 (권장)**\n- **조치 시각**: 지금 즉시 (14:20)\n- **조치 내용**: 현재 진행 중 웨이퍼 완료 후 공정 중단, 진공 펌프 교체/수리\n- **예상 효과**:\n  - 진행 중 웨이퍼 28장 정상 완료 가능\n  - 품질 저하 최소화 (불량률 < 10%)\n  - 공정 복구 시간 4시간\n- **예상 손실**: 약 5,500,000원 (중단 시간 손실 + 경미한 품질 저하)\n- **절감 효과**: 약 **29,875,000원**\n\n**시나리오 B: 30분 후 조치 (비권장)**\n- **조치 시각**: 14:50\n- **시점**: 압력 9.5 mTorr (95% 도달)\n- **예상 효과**: 진행 중 웨이퍼 품질 저하 불가피\n- **예상 손실**: 약 18,000,000원\n\n**시나리오 C: 조치 없음 (매우 위험)**\n- **90분 후**: 인터록 작동, 공정 강제 중단\n- **예상 손실**: 약 **35,375,000원**\n- **추가 리스크**: 챔버 오염, 장비 손상 가능성\n\n#### 📊 7. 예측 모델 성능\n\n- **모델 정확도**: RMSE = 0.087 mTorr (PRESSURE), 2.8 (QUALITY_INDEX)\n- **검증 데이터 R²**: 0.94 (PRESSURE), 0.91 (QUALITY_INDEX)\n- **Feature Importance**:\n  1. VACUUM_PUMP (58.3%)\n  2. PRESSURE (기존값) (25.1%)\n  3. TEMPERATURE (9.2%)\n  4. GAS_FLOW_RATE (4.8%)\n  5. RF_POWER (2.6%)\n\n---\n**예측 완료 시각**: 2025-05-01T14:20:13Z  \n**예측 소요 시간**: 6.1초  \n**모델 신뢰도**: 94%"
+      }
+    },
+    "step_6_orchestration_to_user": {
+      "from": "Orchestration",
+      "to": "User",
+      "timestamp": "2025-05-01T14:20:14Z",
+      "api_endpoint": "GET /api/v1/orchestrate (response)",
+      "response": {
+        "session_id": "etch_session_20250501_002",
+        "final_answer": "Etching 챔버의 압력이 현재 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 예측 결과, 현재 상승률이 지속될 경우 약 48분 후인 15:08에 임계치(10.0 mTorr)에 도달하며, 66분 후인 15:26에 인터록이 작동하여 공정이 강제 중단됩니다. 이 경우 52장의 웨이퍼가 영향을 받아 약 3,500만원의 손실이 예상됩니다. 즉시 공정을 중단하고 진공 펌프를 교체/수리하면 약 3,000만원의 손실을 방지할 수 있습니다.",
+        "final_markdown": "### Etching 챔버 압력 상승 예측 결과\n\n(상세 내용은 monitoring 및 prediction response 참조)",
+        "task_history": [
+          {
+            "id": "ETCH_TASK_20250501_002_1",
+            "name": "Etching 챔버 압력 상승 모니터링",
+            "assigned_agent_id": "Monitoring",
+            "status": "completed",
+            "priority": "high",
+            "completion_time": "2025-05-01T14:20:06Z"
+          },
+          {
+            "id": "ETCH_TASK_20250501_002_2",
+            "name": "임계 압력 도달 시점 예측",
+            "assigned_agent_id": "Predictive",
+            "status": "completed",
+            "priority": "high",
+            "completion_time": "2025-05-01T14:20:13Z"
+          }
+        ],
+        "tools_used": [
+          "Monitoring",
+          "Predictive"
+        ],
+        "tool_results": [
+          {
+            "tool": "Monitoring",
+            "status": "success",
+            "current_pressure": 8.7,
+            "target_range": "5.0-7.0 mTorr",
+            "deviation_percent": 24.3,
+            "vacuum_pump_efficiency": 72.3,
+            "root_cause": "vacuum_pump_performance_degradation"
+          },
+          {
+            "tool": "Predictive",
+            "status": "success",
+            "prediction_horizon_minutes": 90,
+            "critical_threshold": 10.0,
+            "critical_threshold_time": "2025-05-01T15:08:00Z",
+            "time_until_critical_minutes": 48,
+            "interlock_time": "2025-05-01T15:26:00Z",
+            "affected_wafers": 52,
+            "expected_loss_krw": 35375000,
+            "confidence": 0.94
+          }
+        ],
+        "compliance_checked": false
+      }
+    }
+  },
+  "expected_answer": {
+    "summary": "Etching 챔버의 압력이 12:50부터 지속 상승하여 현재 8.7 mTorr로 정상 범위를 24.3% 초과했습니다. 진공 펌프 효율 72.3%로 저하가 주요 원인이며, 현재 상승률이 지속될 경우 48분 후인 15:08에 임계치(10.0 mTorr)에 도달하고 66분 후 인터록 작동이 예상됩니다. 52장 웨이퍼에 영향을 미쳐 약 3,500만원의 손실이 예상되므로 즉시 공정 중단 및 펌프 수리가 필요합니다.",
+    "detected_issues": [
+      {
+        "issue": "PRESSURE 선형 상승",
+        "severity": "high",
+        "description": "8.7 mTorr로 목표 범위(5.0-7.0 mTorr) 24.3% 초과, 평균 상승률 +0.028 mTorr/분",
+        "affected_timeframe": "2025-05-01T12:50:00Z ~ 2025-05-01T14:20:00Z",
+        "current_value": 8.7,
+        "critical_threshold": 10.0,
+        "time_to_critical_minutes": 48
+      },
+      {
+        "issue": "진공 펌프 성능 저하",
+        "severity": "critical",
+        "description": "펌프 효율 72.3%로 정상 대비 13.4%p 저하",
+        "root_cause": true
+      }
+    ],
+    "predictions": [
+      {
+        "target": "PRESSURE",
+        "prediction_horizon_minutes": 90,
+        "critical_event": {
+          "description": "임계치(10.0 mTorr) 도달",
+          "expected_time": "2025-05-01T15:08:00Z",
+          "time_until_event_minutes": 48
+        },
+        "interlock_event": {
+          "description": "인터록 작동(10.5 mTorr)",
+          "expected_time": "2025-05-01T15:26:00Z",
+          "time_until_event_minutes": 66
+        },
+        "final_predicted_value": 10.38,
+        "confidence_interval_95": [
+          9.97,
+          10.79
+        ],
+        "confidence": 0.94
+      },
+      {
+        "target": "PROCESS_QUALITY_INDEX",
+        "prediction_horizon_minutes": 90,
+        "trend": "declining",
+        "current_value": 81.2,
+        "predicted_value_90min": 63.8,
+        "degradation_percent": 21.5,
+        "affected_wafers": 52,
+        "expected_loss_krw": 35375000
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "critical",
+        "action": "즉시 공정 중단 및 진공 펌프 교체/수리",
+        "details": "현재 진행 중 웨이퍼 완료 후 공정 중단, 펌프 오일 교체 또는 베어링 수리",
+        "expected_effect": "손실 약 5,500,000원으로 최소화, 29,875,000원 절감",
+        "implementation_time": "즉시"
+      },
+      {
+        "priority": "urgent",
+        "action": "진공 라인 누설 점검",
+        "details": "Helium leak detector 사용, O-ring 및 씰 검사",
+        "implementation_time": "펌프 수리와 동시"
+      },
+      {
+        "priority": "high",
+        "action": "대기 중 웨이퍼 다른 챔버로 이동",
+        "details": "24장 웨이퍼를 정상 챔버로 이동하여 생산 지속",
+        "implementation_time": "30분 내"
+      }
+    ],
+    "metrics": {
+      "monitoring_time_ms": 5100,
+      "prediction_time_ms": 6100,
+      "total_analysis_time_ms": 11200,
+      "data_points_analyzed": 5160,
+      "prediction_horizon_minutes": 90,
+      "model_accuracy_rmse": 0.087,
+      "confidence_score": 0.94,
+      "time_to_critical_minutes": 48,
+      "expected_loss_krw": 35375000,
+      "expected_loss_prevention_krw": 29875000
+    }
+  },
+  "test_validation": {
+    "expected_workflow": [
+      "Orchestration",
+      "Monitoring",
+      "Orchestration",
+      "Predictive",
+      "Orchestration"
+    ],
+    "expected_agents_count": 3,
+    "should_predict": true,
+    "should_control": false,
+    "should_check_compliance": false,
+    "api_calls": [
+      "GET /api/v1/orchestrate",
+      "POST /api/v1/workflow/start",
+      "POST /api/v1/prediction/run-direct"
+    ]
+  }
+}
