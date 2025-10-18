@@ -9,3 +9,12 @@ ENV/
 *.env
 # prism-core 디렉토리 전체 무시
 prism/prism-core/
+
+# Checkpoints / Model weights
+outputs/*          
+!outputs/
+!outputs/summary.json  
+
+*.pt
+*.pth
+*.ckpt
