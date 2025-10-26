@@ -70,9 +70,34 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 - UI: [http://localhost:8001/ui] 
 - Swagger 문서: [http://localhost:8001/docs]
 
-또는, 다른 터미널에서 예측 엔드포인트를 호출할 수도 있습니다 (`jq`가 없다면 마지막 `| jq .`는 생략 가능):
+아래는 SCENARIO 02의 예측 에이전트 호출 예시입니다.:
 ```bash
-curl -s -X POST "http:///api/v1/prediction/run-direct" -H "Content-Type: application/json" -d '{"taskId":"1","fromAgent":"orchestration","objective":"prediction","timeRange":"2025-08-20 09:00:00 - 09:10:00","sensor_name":"CMP","target_cols":"MOTOR_CURRENT","constraints":null,"userRole":"engineer"}' | jq .
+curl -X POST "http://localhost:8001/api/v1/prediction/run-direct" \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<'JSON'
+{
+  "step_4_orchestration_to_prediction": {
+    "from": "Orchestration",
+    "to": "Predictive",
+    "timestamp": "2025-05-01T14:20:07Z",
+    "api_endpoint": "POST /api/v1/prediction/run-direct",
+    "request": {
+      "taskId": "ETCH_TASK_20250501_002_2",
+      "timeRange": {
+        "start": "2025-05-01T12:50:00Z",
+        "end": "2025-05-01T14:20:00Z"
+      },
+      "sensor_name": "ETCH_CH1,ETCH_CH2,ETCH_CH3,ETCH_CH4",
+      "target_cols": ["PRESSURE", "PROCESS_QUALITY_INDEX"],
+      "feature_cols": ["VACUUM_PUMP", "GAS_FLOW_RATE", "RF_POWER", "TEMPERATURE"],
+      "prediction_horizon_minutes": 90,
+      "prediction_interval_minutes": 5,
+      "confidence_level": 0.95
+    }
+  }
+}
+JSON
+
 ```
 
 #### 참고

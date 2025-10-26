@@ -1,0 +1,23 @@
+{
+  "step_4_orchestration_to_prediction": {
+    "from": "Orchestration",
+    "to": "Predictive",
+    "timestamp": "2025-05-01T14:20:07Z",
+    "api_endpoint": "POST /api/v1/prediction/run-direct",
+    "request": {
+      "taskId": "ETCH_TASK_20250501_002_2",
+      "query": "모니터링 결과 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 상승률(+0.028 mTorr/분)이 계속될 경우 향후 90분간 압력과 공정 품질이 어떻게 전개될지 예측해주세요. 특히 임계치(10.0 mTorr) 도달 시점과 인터록 작동 가능성을 분석해주세요.",
+      "timeRange": {
+        "start": "2025-05-01T12:50:00Z",
+        "end": "2025-05-01T14:20:00Z"
+      },
+      "sensor_name": "CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4",
+      "target_cols": ["PRESSURE", "VACUUM_PUMP"],
+      "feature_cols": ["PRESSURE", "VACUUM_PUMP", "GAS_FLOW_RATE", "RF_POWER", "TEMPERATURE"],
+      "prediction_horizon_minutes": 90,
+      "prediction_interval_minutes": 5,
+      "model_type": "lstm",
+      "confidence_level": 0.95
+    }
+  }
+}

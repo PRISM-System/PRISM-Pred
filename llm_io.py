@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 class LLMBridge:
     def __init__(self, base_url=None, api_key=None, model=None):
         # base_url 예: "http://147.47.39.144:8001/v1" (끝에 /v1 포함해도 됨)
-        self.base_url = (base_url or os.getenv("OPENAI_BASE_URL", "http://147.47.39.144:8001/v1")).rstrip("/")
+        self.base_url = (base_url or os.getenv("OPENAI_BASE_URL")).rstrip("/")
         self.api_key  = api_key or os.getenv("OPENAI_API_KEY", "EMPTY")
         self.model    = model  or os.getenv("OPENAI_MODEL", "Qwen/Qwen3-14B")
         self.url      = f"{self.base_url}/chat/completions"
@@ -160,6 +160,175 @@ class LLMBridge:
             return f"Could not generate narrative fallback: {e}"
 
     # 아래는 한국어 설명에 대한 함수들 (TBU)
+    def narrate_ko_markdown(self, payload: Dict[str, Any]) -> str:
+        """
+        JSON payload를 바탕으로 섹션/표가 포함된 한국어 Markdown 리포트를 생성한다.
+        - LLM 사용 (실패 시 _fallback_ko_md로 폴백)
+        - JSON에 '없는 값'은 만들지 말고 '정보 없음'으로 표기
+        - 예측값(prediction)은 가능한 한 모두 표시하되 길면 앞/뒤 5개만
+        """
+        try:
+            system_msg = (
+                "너는 제조 예측 시스템의 기술 라이터다. "
+                "사용자가 제공한 JSON 안의 값들만 사용해 한국어로 Markdown 리포트를 작성하라. "
+                "새로운 수치/사실/가정을 만들지 말고, 누락된 값은 '정보 없음'으로 표기하라. "
+                "아래 섹션 구조를 반드시 지켜라. 표가 있으면 Markdown 표로 작성하라. "
+                "절대 <think> 같은 내부 추론을 출력하지 마라."
+            )
+
+            # 샘플과 동일한 섹션 구조 유도
+            user_msg = (
+                "다음 JSON을 바탕으로 한국어 Markdown 리포트를 작성하라.\n\n"
+                "섹션 구조:\n"
+                "### 예측 결과 요약\n"
+                "- 예측 기간/간격/신뢰수준/모델명 등 핵심 메타 요약\n\n"
+                "### 1) 예측 개요\n"
+                "- 시간 범위(timeRange), 예측 기간(horizon_minutes), 예측 간격(interval_minutes), "
+                "모델(modelSelected), 신뢰수준(confidence_level)을 한글로 정리\n\n"
+                "### 2) 타깃 지표 예측\n"
+                "- target_col을 제목으로 명시 (예: PRESSURE)\n"
+                "- 예측값이 길면 [앞 5] ... [뒤 5]와 총 개수를 함께 표기\n"
+                "- 가능하면 간단한 표 형태로 인덱스(1..N)와 예측값을 나란히 표시(표가 너무 길면 생략하고 요약)\n\n"
+                "### 3) 위험도 평가\n"
+                "- risk.riskLevel, exceedsThreshold 등 JSON에 있는 필드만 나열\n\n"
+                "### 4) 변수 기여도(설명)\n"
+                "- explanation.importantFeatures(최대 5개), method\n\n"
+                "### 5) 데이터/파이프라인 정보\n"
+                "- csv_path, df_info, feature_names(길면 앞 5개 + 총 개수), enc_in, pred_len 등\n"
+                "- events는 줄바꿈으로 항목별 정리\n\n"
+                "### 6) 결론\n"
+                "- 현재 상태 한 줄 요약(위험/주의/정상 등 JSON 근거로), 즉시 조치 필요 여부가 JSON에 있으면 언급\n\n"
+                "JSON:\n"
+                f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+            )
+
+            data = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ],
+                "temperature": 0.0,
+                "max_tokens": 1600,
+            }
+            resp = self._chat(data)
+            return resp["choices"][0]["message"]["content"].strip()
+        except Exception:
+            return self._fallback_ko_md(payload)
+
+    def _fallback_ko_md(self, payload: Dict[str, Any]) -> str:
+        """LLM 실패 시에도 같은 섹션 레이아웃을 유지하는 결정적 마크다운 폴백."""
+        d = payload.get("data", {})
+        md = []
+
+        # 헬퍼
+        def fmt(v):
+            if v is None: return "정보 없음"
+            if isinstance(v, float): return f"{v:.6g}"
+            return str(v)
+
+        def head_tail(arr, k=5):
+            if not isinstance(arr, list) or not arr:
+                return "정보 없음"
+            if len(arr) <= 2*k:
+                return ", ".join(fmt(x) for x in arr) + f" (총 {len(arr)}개)"
+            return (
+                f"[앞 {k}] " + ", ".join(fmt(x) for x in arr[:k]) +
+                " / [뒤 {k}] " + ", ".join(fmt(x) for x in arr[-k:]) +
+                f" (총 {len(arr)}개)"
+            )
+
+        # 필드 추출
+        time_range = d.get("timeRange", {})
+        horizon = d.get("horizon_minutes")
+        interval = d.get("interval_minutes")
+        model = d.get("modelSelected")
+        conf = d.get("confidence_level", 0.95)
+        target = d.get("target_col")
+        preds = d.get("prediction", [])
+        risk = d.get("risk", {}) or {}
+        expl = d.get("explanation", {}) or {}
+        feature_names = d.get("feature_names", [])
+        events = d.get("events", [])
+
+        # --- Markdown 구성 ---
+        md.append("### 예측 결과 요약")
+        md.append(f"- 모델: **{fmt(model)}**, 신뢰수준: **{fmt(conf)}**")
+        md.append(f"- 예측 기간/간격: **{fmt(horizon)}분 / {fmt(interval)}분**")
+        md.append(f"- 타깃: **{fmt(target)}**")
+        if isinstance(time_range, dict):
+            md.append(f"- 입력 구간: **{fmt(time_range.get('start'))} ~ {fmt(time_range.get('end'))}**")
+        else:
+            md.append(f"- 입력 구간: **{fmt(time_range)}**")
+        md.append("")
+
+        md.append("### 1) 예측 개요")
+        md.append(f"- 모델: {fmt(model)}")
+        md.append(f"- 신뢰수준(confidence_level): {fmt(conf)}")
+        md.append(f"- 예측 길이(pred_len): {fmt(d.get('pred_len'))}")
+        md.append(f"- 예측 간격(interval_minutes): {fmt(interval)}")
+        md.append("")
+
+        md.append("### 2) 타깃 지표 예측")
+        md.append(f"- 타깃 컬럼: **{fmt(target)}**")
+        md.append(f"- 예측값 요약: {head_tail(preds, k=5)}")
+        # 길지 않게 10개까지만 표로
+        if isinstance(preds, list) and len(preds) > 0:
+            show = preds[:10]
+            md.append("")
+            md.append("| step | 예측값 |")
+            md.append("|---:|---:|")
+            for i, v in enumerate(show, 1):
+                md.append(f"| {i} | {fmt(v)} |")
+            if len(preds) > 10:
+                md.append(f"| ... | ... |")
+        md.append("")
+
+        md.append("### 3) 위험도 평가")
+        md.append(f"- 위험도(riskLevel): **{fmt(risk.get('riskLevel'))}**")
+        for k, v in risk.items():
+            if k == "riskLevel": 
+                continue
+            md.append(f"- {k}: {fmt(v)}")
+        md.append("")
+
+        md.append("### 4) 변수 기여도(설명)")
+        feats = expl.get("importantFeatures", [])
+        if feats:
+            md.append("- 주요 변수(최대 5개): " + ", ".join(str(x) for x in feats[:5]))
+        else:
+            md.append("- 주요 변수: 정보 없음")
+        if "method" in expl:
+            md.append(f"- 산출 방식: {fmt(expl['method'])}")
+        md.append("")
+
+        md.append("### 5) 데이터/파이프라인 정보")
+        md.append(f"- CSV 경로: {fmt(d.get('csv_path'))}")
+        df_info = d.get("df_info", {})
+        if isinstance(df_info, dict):
+            md.append(f"- 데이터프레임: rows={fmt(df_info.get('rows'))}, cols={fmt(df_info.get('cols'))}")
+        md.append(f"- feature 시작 컬럼(1-based): {fmt(d.get('features_start_col_index_based'))}")
+        if feature_names:
+            if len(feature_names) > 8:
+                md.append(f"- feature_names: {', '.join(feature_names[:5])} ... (총 {len(feature_names)}개)")
+            else:
+                md.append(f"- feature_names: {', '.join(feature_names)}")
+        md.append(f"- enc_in: {fmt(d.get('enc_in'))}")
+        md.append(f"- target_idx_in_features: {fmt(d.get('target_idx_in_features'))}")
+        md.append("")
+        md.append("- 처리 이벤트 타임라인:")
+        if events:
+            for e in events:
+                md.append(f"  - {e}")
+        else:
+            md.append("  - 정보 없음")
+        md.append("")
+
+        md.append("### 6) 결론")
+        level = fmt(risk.get("riskLevel"))
+        md.append(f"- 현재 상태 요약: **{level}**")
+        md.append("- 추가 조치: JSON에 근거 정보가 없는 경우 '특이 조치 없음'")
+        return "\n".join(md)
     def _narrate(self, payload: Dict[str, Any]) -> str:
         """
         입력 JSON(payload)의 모든 필드를 '누락 없이' 한국어로 풀어쓴 설명문을 생성.

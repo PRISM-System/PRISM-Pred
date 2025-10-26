@@ -83,7 +83,7 @@ class CSVForecastDataset(Dataset):
         seq_len: int,
         label_len: int,
         pred_len: int,
-        feature_start_col: int = 5,   # 1-based
+        feature_start_col: int = 2,   # 1-based
         target_col_name: Optional[str] = None,
         mark_dim: int = 4,
     ):
@@ -375,11 +375,10 @@ def main():
     ap.add_argument("--models", type=str, default="Autoformer,DLinear,TimesNet,LightTS,SegRNN")
     ap.add_argument("--eval_channel_idx", type=int, default=None)
     ap.add_argument("--seg_len", type=int, default=12)
-
-    # CSV 모드
+    # CSV 
     ap.add_argument("--csv_path", type=str, default=None)
     ap.add_argument("--feature_start_col", type=int, default=5)
-    ap.add_argument("--target_col_name", type=str, default=None)
+    ap.add_argument("--target_col_name", type=str, default=None, help="타깃 컬럼명. 다중 지정 시 콤마로 구분 (예: MOTOR_CURRENT,TEMPERATURE)")
     ap.add_argument("--auto_eval_idx", action="store_true")
 
     args = ap.parse_args()
@@ -397,6 +396,10 @@ def main():
     ds = None
     train_loader = val_loader = None
 
+    raw_targets = (args.target_col_name or "").strip()
+    target_names = [t.strip() for t in raw_targets.split(",") if t.strip()] if raw_targets else []
+    primary_target = target_names[0] if target_names else None
+
     if csv_mode:
         ds = CSVForecastDataset(
             csv_path=args.csv_path,
@@ -404,9 +407,12 @@ def main():
             label_len=args.label_len,
             pred_len=args.pred_len,
             feature_start_col=args.feature_start_col,
-            target_col_name=args.target_col_name,
+            target_col_name=primary_target,
             mark_dim=4,
         )
+        
+       
+
         enc_in = ds.enc_in
         c_out = ds.enc_in                     
         eval_idx = ds.target_idx if (args.auto_eval_idx or args.eval_channel_idx is None) else args.eval_channel_idx
@@ -414,6 +420,18 @@ def main():
 
         n = len(ds)
         g = torch.Generator().manual_seed(42)  
+
+        all_feature_names = list(ds.feature_df.columns)
+
+        # 요청 타깃 목록이 비어있으면 primary만 사용
+        if target_names:
+            target_indices = {t: all_feature_names.index(t) for t in target_names if t in all_feature_names}
+        else:
+            target_indices = {ds.target_col: ds.target_idx}
+
+        missing = [t for t in target_names if t not in target_indices]
+        if missing:
+            print(f"[WARN] targets not found in features and will be ignored: {missing}")
 
         if MAX_LENGTH is not None and n > MAX_LENGTH:
             idx = torch.randperm(n, generator=g)[:MAX_LENGTH]
@@ -485,11 +503,15 @@ def main():
             print(f"[WARN] {name} failed: {e}")
 
     # 예측 생성
+   
+    predictions_by_target: Dict[str, List[float]] = {}
     prediction: List[float] = []
+
     if csv_mode:
         try:
             if len(ds) == 0:
                 raise RuntimeError("dataset has no windows")
+
             # ds의 마지막 윈도우로 예측
             x_enc, x_mark_enc, x_dec, x_mark_dec, _ = ds[len(ds)-1]
             x_enc = x_enc.unsqueeze(0).to(device)
@@ -501,25 +523,45 @@ def main():
                 best_model_obj.eval()
                 with torch.no_grad():
                     yhat = forward_for_all(best_model_obj, x_enc, x_mark_enc, x_dec, x_mark_dec)  # [B, H, C] 기대
-                    if yhat.dim() == 2:  # [H, C]
+                    if yhat.dim() == 2:
                         yhat = yhat.unsqueeze(0)
                     C = yhat.size(-1)
-                    ch = max(0, min(int(eval_idx), C - 1))  # MOTOR_CURRENT 채널
-                    pred = yhat[0, :, ch].detach().cpu().numpy().tolist()
-                    prediction = [float(round(p, 6)) for p in pred]
+
+                    # 요청된 각 타깃 채널로부터 예측 추출
+                    for t, idx in target_indices.items():
+                        ch = max(0, min(int(idx), C - 1))
+                        pred_t = yhat[0, :, ch].detach().cpu().numpy().tolist()
+                        predictions_by_target[t] = [float(round(p, 6)) for p in pred_t]
+
             else:
-                # 베스트가 없으면 간단 외삽 fallback (타깃 채널 기준)
-                series = ds.y_target_series
-                delta = float(series[-1] - series[-2]) if len(series) >= 2 else 0.0
-                start = float(series[-1])
-                prediction = [round(start + (i+1)*delta, 6) for i in range(args.pred_len)]
+                # 베스트 모델이 없으면 간단 외삽 (각 타깃별)
+                X = ds.X  # [T, C]
+                for t, idx in target_indices.items():
+                    series = X[:, idx]
+                    delta = float(series[-1] - series[-2]) if len(series) >= 2 else 0.0
+                    start = float(series[-1])
+                    predictions_by_target[t] = [round(start + (i+1)*delta, 6) for i in range(args.pred_len)]
+
+            # 레거시 호환: 첫 타깃을 기존 summary["prediction"]에 그대로 넣어둠
+            if not predictions_by_target:
+                # 안전장치: 그래도 비면 zeros
+                key = next(iter(target_indices.keys()), ds.target_col)
+                predictions_by_target[key] = [0.0 for _ in range(args.pred_len)]
+            primary_key = next(iter(predictions_by_target.keys()))
+            prediction = predictions_by_target[primary_key]
+
         except Exception as e:
             results["inference_error"] = {"error": str(e)}
-            # 최후 fallback: zeros
-            prediction = [0.0 for _ in range(args.pred_len)]
+            # 최후 fallback: 모든 타깃에 대해 zeros
+            key = next(iter(target_indices.keys()), (ds.target_col if hasattr(ds, "target_col") else "target"))
+            predictions_by_target = {key: [0.0 for _ in range(args.pred_len)]}
+            prediction = predictions_by_target[key]
     else:
-        # mock 모드: zeros
-        prediction = [0.0 for _ in range(args.pred_len)]
+        # mock 모드: zeros (레거시 + 다중 모두 채움)
+        key = (primary_target or "target")
+        predictions_by_target = {key: [0.0 for _ in range(args.pred_len)]}
+        prediction = predictions_by_target[key]
+
 
 
     if best_name is None:
@@ -546,6 +588,9 @@ def main():
         "target_col_name": args.target_col_name,
         "feature_start_col": args.feature_start_col,
         "best_weight_path": best_weight_path,
+        #"target_names": target_names if target_names else [ds.target_col] if csv_mode else [primary_target or "target"],
+        #"predictions_by_target": predictions_by_target,
+
     }
     ensure_dir("outputs")
     with open(os.path.join("outputs", "summary.json"), "w") as f:
