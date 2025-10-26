@@ -40,41 +40,53 @@
 
 ---
 
-## 3. 실행 방법
 
-시계열 전용 후보 모델 학습 과정 업데이트 후, 아래 예시 코드로 실행할 수 있습니다.
+
+## 3. 설치 & 실행
 
 ### 3-1. 의존성 설치
-프로젝트 루트에서 아래 명령으로 필요한 패키지를 설치합니다:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3-2. 환경 설정
-`.env` 파일에 필요한 정보를 채워줍니다:
+### 3-2. 환경 변수 설정 (`.env`)
 ```env
-LLM_API_URL=http://*/api/agents
-DB_API_URL=http://*/api/db
-OPENAI_API_KEY=*
+OPENAI_BASE_URL=http://localhost:8000/v1
+OPENAI_MODEL=gpt-oss-120b
+OPENAI_API_KEY=EMPTY-KEY
 ```
 
-### 3-3. API 서버 실행
-FastAPI 서버를 실행합니다:
+### 3-3. 서버 실행
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-### 3-4. 이후 절차
-서버 실행 후, 아래 주소에서 예측 모듈 기능을 확인할 수 있습니다:
+서버 시작 시 LLM 연결 상태가 로그로 표시됩니다:
+```
+[LLM] Connected → model=gpt-oss-120b
+```
 
-- UI: [http://localhost:8001/ui] 
-- Swagger 문서: [http://localhost:8001/docs]
+---
 
-아래는 SCENARIO 02의 예측 에이전트 호출 예시입니다.:
+## 4. 예측 API
+
+### 엔드포인트
+```
+POST /api/v1/prediction/run-direct
+```
+
+---
+
+## 4-1. 실행 예시
+
+### (A) 시나리오 JSON 파일로 실행
 ```bash
-curl -X POST "http://localhost:8001/api/v1/prediction/run-direct" \
-  -H "Content-Type: application/json" \
-  --data-binary @- <<'JSON'
+curl -X POST "http://localhost:8001/api/v1/prediction/run-direct"   -H "Content-Type: application/json"   --data @scenario/scenario02.json
+```
+
+### (B) 직접 JSON을 입력하여 실행
+```bash
+curl -X POST http://localhost:8001/api/v1/prediction/run-direct   -H "Content-Type: application/json"   --data-binary @- <<'JSON'
 {
   "step_4_orchestration_to_prediction": {
     "from": "Orchestration",
@@ -89,7 +101,7 @@ curl -X POST "http://localhost:8001/api/v1/prediction/run-direct" \
       },
       "sensor_name": "ETCH_CH1,ETCH_CH2,ETCH_CH3,ETCH_CH4",
       "target_cols": ["PRESSURE", "PROCESS_QUALITY_INDEX"],
-      "feature_cols": ["VACUUM_PUMP", "GAS_FLOW_RATE", "RF_POWER", "TEMPERATURE"],
+      "feature_cols": ["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE"],
       "prediction_horizon_minutes": 90,
       "prediction_interval_minutes": 5,
       "confidence_level": 0.95
@@ -97,17 +109,17 @@ curl -X POST "http://localhost:8001/api/v1/prediction/run-direct" \
   }
 }
 JSON
-
 ```
+
 
 #### 참고
 
-- 현재 DB는 `./prism_prediction/Industrial_DB_sample/dataset_v2`의 하위 파일인 CMP/CVD/ETCH/ION/PHOTO 공정의 데이터를 사용합니다.
+- 현재 DB는 `./prism_prediction/Industrial_DB_sample/dataset_v3`의 하위 파일인 CMP/CVD/ETCH/ION/PHOTO 공정의 데이터를 사용합니다.
 - 서버 로그는 uvicorn을 실행한 터미널에서 확인할 수 있습니다.
 
 ---
 
-## 4. 응답 예시 (실제 출력)
+## 응답 예시 (실제 출력)
 
 아래는 예측 API 호출 시의 예시 응답입니다.  
 모델/버전/데이터에 따라 수치는 달라질 수 있습니다.
