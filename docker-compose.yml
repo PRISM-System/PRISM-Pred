@@ -1,0 +1,29 @@
+services:
+  prism-pred:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prism-pred
+    ports:
+      - "8004:8001"  # Prediction API server (호스트 8004 → 컨테이너 8001)
+    volumes:
+      - ./main.py:/app/main.py
+      - ./module.py:/app/module.py
+      - ./llm_io.py:/app/llm_io.py
+      - ./run.py:/app/run.py
+      - ./demo_prediction.sh:/app/demo_prediction.sh
+      - ./prism_prediction:/app/prism_prediction
+      - ./outputs:/app/outputs
+      - ./static:/app/static
+      - ./templates:/app/templates
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - prism-shared-network
+
+networks:
+  prism-shared-network:
+    external: true
