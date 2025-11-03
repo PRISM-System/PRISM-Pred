@@ -85,14 +85,14 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 ---
 
-## 4-1. 서버를 실행한 이후, 예측 에이전트에 scenario의 input을 입력하면 output을 출력함을 확인할 수 있습니다.(--data @데이터 json 위치 경로 입력 시, 해당 json에 대한 응답이 출력되며, 현재 scenario 2,3,4,6,11 의 형식과 호환 완료된 상태입니다.)
+### 4-1. 서버를 실행한 이후, 예측 에이전트에 scenario의 input을 입력하면 output을 출력함을 확인할 수 있습니다.(--data @데이터 json 위치 경로 입력 시, 해당 json에 대한 응답이 출력되며, 현재 scenario 2,3,4,6,11 의 형식과 호환 완료된 상태입니다.)
 
 
 ```
 curl -X POST "http://localhost:8001/api/v1/prediction/run-direct"   -H "Content-Type: application/json"   --data @scenarios/scenario02.json
 
 ```
-## 4-2. 서버를 실행한 이후,직접 입력을 넣으셔도 작동합니다.
+### 4-2. 서버를 실행한 이후,직접 입력을 넣으셔도 작동합니다.
 
 ```bash
 curl -X POST http://localhost:8001/api/v1/prediction/run-direct   -H "Content-Type: application/json"   --data-binary @- <<'JSON'
@@ -139,5 +139,44 @@ POST /api/v1/prediction/run-direct
 모델/버전/데이터에 따라 수치는 달라질 수 있습니다.
 
 ```json
-{"code":"SUCCESS","data":{"result":"# 산업 공정 예측 리포트\n\n## 1. 개요\n현재 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프의 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 압력 상승률은 +0.028 mTorr/분입니다.\n\n## 2. 예측 결과\n향후 90분간의 압력 및 진공 펌프 효율 예측 결과는 다음과 같습니다.\n\n| 시간 (UTC)          | 압력 (mTorr) | 진공 펌프 효율 (%) |\n|---------------------|--------------|---------------------|\n| 2025-05-01 14:25    | 93.83        | 90.07               |\n| 2025-05-01 14:30    | 93.58        | 89.92               |\n| 2025-05-01 14:35    | 92.86        | 90.07               |\n| 2025-05-01 14:40    | 94.16        | 89.94               |\n| 2025-05-01 14:45    | 93.57        | 90.02               |\n| 2025-05-01 14:50    | 92.54        | 90.03               |\n| 2025-05-01 14:55    | 92.48        | 90.06               |\n| 2025-05-01 15:00    | 92.94        | 90.04               |\n| 2025-05-01 15:05    | 92.26        | 89.95               |\n| 2025-05-01 15:10    | 93.24        | 90.11               |\n| 2025-05-01 15:15    | 93.72        | 89.99               |\n| 2025-05-01 15:20    | 93.45        | 90.05               |\n| 2025-05-01 15:25    | 92.64        | 90.04               |\n| 2025-05-01 15:30    | 93.90        | 89.93               |\n| 2025-05-01 15:35    | 92.63        | 90.09               |\n| 2025-05-01 15:40    | 93.12        | 90.04               |\n| 2025-05-01 15:45    | 93.21        | 89.95               |\n| 2025-05-01 15:50    | 93.18        | 89.97               |\n\n## 3. 임계치 도달 분석\n- **임계치(10.0 mTorr) 도달 시점**: 예측된 압력은 90분 후에도 10.0 mTorr에 도달하지 않을 것으로 보입니다. 그러나 현재 압력이 이미 정상 범위를 초과하고 있어, 지속적인 모니터링이 필요합니다.\n- **인터록 작동 가능성**: 현재 위험 수준은 \"높음\"으로 평가되며, 압력이 계속 상승할 경우 인터록 작동 가능성이 존재합니다. 따라서 즉각적인 조치가 필요합니다.\n\n## 4. 결론\n압력 상승이 지속되고 있으며, 진공 펌프의 효율 저하가 주요 원인으로 확인되었습니다. 향후 90분간의 예측 결과에 따르면, 압력이 10.0 mTorr에 도달하지는 않겠지만, 현재의 높은 위험 수준을 고려할 때 즉각적인 조치가 필요합니다.","raw":{"spec":{"taskId":"ETCH_TASK_20250501_002_2","query":"모니터링 결과 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 상승률(+0.028 mTorr/분)이 계속될 경우 향후 90분간 압력과 공정 품질이 어떻게 전개될지 예측해주세요. 특히 임계치(10.0 mTorr) 도달 시점과 인터록 작동 가능성을 분석해주세요.","timeRange":{"start":"2025-05-01T12:50:00Z","end":"2025-05-01T14:20:00Z"},"sensor_name":"CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4","target_cols":["PRESSURE","VACUUM_PUMP"],"feature_cols":["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE"],"prediction_horizon_minutes":90,"prediction_interval_minutes":5,"model_type":"lstm","confidence_level":0.95},"csv_path":"prism_prediction/Industrial_DB_sample/dataset_v3/test_scenarios/test_data/semiconductor/semiconductor_etch_002.csv","df_info":{"rows":5000,"cols":11},"feature_names":["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE","ETCH_RATE","BIAS_VOLTAGE","CHAMBER_HUMIDITY","GAS_COMPOSITION"],"enc_in":9,"target_col":"PRESSURE","target_idx_in_features":0,"pred_len":18,"confidence_level":0.95,"sensor_name":"CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4","timeRange":{"start":"2025-05-01T12:50:00Z","end":"2025-05-01T14:20:00Z"},"horizon_minutes":90,"interval_minutes":5,"requested_target_cols":["PRESSURE","VACUUM_PUMP"],"requested_feature_cols":["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE"],"taskId":"ETCH_TASK_20250501_002_2","query":"모니터링 결과 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 상승률(+0.028 mTorr/분)이 계속될 경우 향후 90분간 압력과 공정 품질이 어떻게 전개될지 예측해주세요. 특히 임계치(10.0 mTorr) 도달 시점과 인터록 작동 가능성을 분석해주세요.","modelSelected":{"PRESSURE":"TimesNet","VACUUM_PUMP":"TimesNet"},"prediction":{"PRESSURE":[93.834663,93.582802,92.861221,94.16069,93.567276,92.535767,92.482933,92.943977,92.256157,93.242165,93.722092,93.44825,92.642868,93.902344,92.625824,93.115143,93.213875,93.179535],"VACUUM_PUMP":[90.067444,89.917847,90.074051,89.935272,90.02018,90.028557,90.059013,90.035965,89.946655,90.112488,89.985809,90.050369,90.036674,89.931633,90.094383,90.04229,89.952187,89.973053]},"prediction_timestamps":["2025-05-01T14:25:00Z","2025-05-01T14:30:00Z","2025-05-01T14:35:00Z","2025-05-01T14:40:00Z","2025-05-01T14:45:00Z","2025-05-01T14:50:00Z","2025-05-01T14:55:00Z","2025-05-01T15:00:00Z","2025-05-01T15:05:00Z","2025-05-01T15:10:00Z","2025-05-01T15:15:00Z","2025-05-01T15:20:00Z","2025-05-01T15:25:00Z","2025-05-01T15:30:00Z","2025-05-01T15:35:00Z","2025-05-01T15:40:00Z","2025-05-01T15:45:00Z","2025-05-01T15:50:00Z"],"risk":{"riskLevel":"high","exceedsThreshold":true},"explanation":{"importantFeatures":["GAS_FLOW_RATE","ETCH_RATE","TEMPERATURE","RF_POWER","BIAS_VOLTAGE"],"method":"corr-proxy"}}},"metadata":{"timestamp":"2025-11-03T00:29:25Z","request_id":"req_6be6d296"}}
-```
+{
+  "code": "SUCCESS",
+  "data": {
+    "result": "# 산업 공정 예측 리포트\n\n## 1. 개요\n현재 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프의 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 압력 상승률은 +0.028 mTorr/분입니다.\n\n## 2. 예측 결과\n향후 90분간의 압력 및 진공 펌프 효율 예측 결과는 다음과 같습니다.\n\n| 시간 (UTC) | 압력 (mTorr) | 진공 펌프 효율 (%) |\n|-------------|--------------|---------------------|\n| 2025-05-01 14:25 | 93.83 | 90.07 |\n| 2025-05-01 14:30 | 93.58 | 89.92 |\n| 2025-05-01 14:35 | 92.86 | 90.07 |\n| 2025-05-01 14:40 | 94.16 | 89.94 |\n| 2025-05-01 14:45 | 93.57 | 90.02 |\n| 2025-05-01 14:50 | 92.54 | 90.03 |\n| 2025-05-01 14:55 | 92.48 | 90.06 |\n| 2025-05-01 15:00 | 92.94 | 90.04 |\n| 2025-05-01 15:05 | 92.26 | 89.95 |\n| 2025-05-01 15:10 | 93.24 | 90.11 |\n| 2025-05-01 15:15 | 93.72 | 89.99 |\n| 2025-05-01 15:20 | 93.45 | 90.05 |\n| 2025-05-01 15:25 | 92.64 | 90.04 |\n| 2025-05-01 15:30 | 93.90 | 89.93 |\n| 2025-05-01 15:35 | 92.63 | 90.09 |\n| 2025-05-01 15:40 | 93.12 | 90.04 |\n| 2025-05-01 15:45 | 93.21 | 89.95 |\n| 2025-05-01 15:50 | 93.18 | 89.97 |\n\n## 3. 임계치 도달 분석\n- **임계치(10.0 mTorr) 도달 시점**: 예측된 압력은 90분 후에도 10.0 mTorr에 도달하지 않을 것으로 보입니다. 그러나 현재 압력이 이미 정상 범위를 초과하고 있어, 지속적인 모니터링이 필요합니다.\n- **인터록 작동 가능성**: 현재 위험 수준은 \"높음\"으로 평가되며, 압력이 계속 상승할 경우 인터록 작동 가능성이 존재합니다. 따라서 즉각적인 조치가 필요합니다.\n\n## 4. 결론\n압력 상승이 지속되고 있으며, 진공 펌프의 효율 저하가 주요 원인으로 확인되었습니다. 향후 90분간의 예측 결과에 따르면, 압력이 10.0 mTorr에 도달하지는 않겠지만, 현재의 높은 위험 수준을 고려할 때 즉각적인 조치가 필요합니다.",
+    "raw": {
+      "spec": {
+        "taskId": "ETCH_TASK_20250501_002_2",
+        "query": "모니터링 결과 압력이 8.7 mTorr로 정상 범위(5.0-7.0 mTorr)를 24.3% 초과하여 지속 상승 중입니다. 진공 펌프 효율이 72.3%로 저하되어 압력 상승의 주요 원인으로 확인되었습니다. 현재 상승률(+0.028 mTorr/분)이 계속될 경우 향후 90분간 압력과 공정 품질이 어떻게 전개될지 예측해주세요. 특히 임계치(10.0 mTorr) 도달 시점과 인터록 작동 가능성을 분석해주세요.",
+        "timeRange": {
+          "start": "2025-05-01T12:50:00Z",
+          "end": "2025-05-01T14:20:00Z"
+        },
+        "sensor_name": "CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4",
+        "target_cols": ["PRESSURE", "VACUUM_PUMP"],
+        "feature_cols": ["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE"],
+        "prediction_horizon_minutes": 90,
+        "prediction_interval_minutes": 5,
+        "model_type": "lstm",
+        "confidence_level": 0.95
+      },
+      "csv_path": "prism_prediction/Industrial_DB_sample/dataset_v3/test_scenarios/test_data/semiconductor/semiconductor_etch_002.csv",
+      "df_info": { "rows": 5000, "cols": 11 },
+      "feature_names": ["PRESSURE","VACUUM_PUMP","GAS_FLOW_RATE","RF_POWER","TEMPERATURE","ETCH_RATE","BIAS_VOLTAGE","CHAMBER_HUMIDITY","GAS_COMPOSITION"],
+      "enc_in": 9,
+      "target_col": "PRESSURE",
+      "target_idx_in_features": 0,
+      "pred_len": 18,
+      "confidence_level": 0.95,
+      "sensor_name": "CHAMBER_E1,CHAMBER_E2,CHAMBER_E3,CHAMBER_E4",
+      "risk": { "riskLevel": "high", "exceedsThreshold": true },
+      "explanation": {
+        "importantFeatures": ["GAS_FLOW_RATE","ETCH_RATE","TEMPERATURE","RF_POWER","BIAS_VOLTAGE"],
+        "method": "corr-proxy"
+      }
+    }
+  },
+  "metadata": {
+    "timestamp": "2025-11-03T00:29:25Z",
+    "request_id": "req_6be6d296"
+  }
+}
