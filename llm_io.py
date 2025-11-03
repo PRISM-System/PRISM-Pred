@@ -1,37 +1,140 @@
-# llm_io.py
+# llm_io.py (drop-in 교체판)
 import os, json, requests, datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+_INSTITUTION_PRESETS = {
+    # 필요하면 주석 해제해서 바로 쓰세요. 보안상 .env 사용을 더 권장합니다.
+    # "서울대학교":      {"id": "seoul",       "pw": "seoul1234",       "user_id": "user_1111"},
+    # "한양대학교":      {"id": "hanyang",     "pw": "hanyang1234",     "user_id": "user_2222"},
+    "성균관대학교":    {"id": "sunkyunkwan", "pw": "sunkyunkwan1234", "user_id": "user_3333"},
+    # "카이스트":        {"id": "kaist",       "pw": "kaist1234",       "user_id": "user_4444"},
+}
+
+def _is_bimatrix_base(url: Optional[str]) -> bool:
+    if not url:
+        return False
+    u = url.rstrip("/")
+    return ("grnd.bimatrix.co.kr" in u) and ("/django/agi" in u)
 
 class LLMBridge:
-    def __init__(self, base_url=None, api_key=None, model=None):
-        # base_url 예: "http://147.47.39.144:8001/v1" (끝에 /v1 포함해도 됨)
-        self.base_url = (base_url or os.getenv("OPENAI_BASE_URL")).rstrip("/")
-        self.api_key  = api_key or os.getenv("OPENAI_API_KEY", "EMPTY")
-        self.model    = model  or os.getenv("OPENAI_MODEL", "Qwen/Qwen3-14B")
-        self.url      = f"{self.base_url}/chat/completions"
+    """
+    두 모드 자동 지원:
+      1) OpenAI 호환 서버:  base_url = ".../v1"  → POST {base_url}/chat/completions (Bearer)
+      2) BiMatrix 서버:     base_url = "https://grnd.bimatrix.co.kr/django/agi"
+                           → POST {base_url}/api/login/ (세션 로그인)
+                           → POST {base_url}/llm-agent  (세션 쿠키로 호출)
+    환경변수:
+      - OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL
+      - BIMATRIX_BASE_URL="https://grnd.bimatrix.co.kr/django/agi"
+      - BIMATRIX_ID, BIMATRIX_PW, BIMATRIX_VERIFY=true|false
+      - INSTITUTION="성균관대학교"  # 있으면 프리셋 자격증명 우선 적용 (env가 있으면 env 우선)
+    """
+    def __init__(self,
+                 base_url: Optional[str] = None,
+                 api_key: Optional[str] = None,
+                 model: Optional[str] = None,
+                 verify: Optional[bool] = None,
+                 institution: Optional[str] = None):
+        # 1) 기본값 확보
+        #   - 우선순위: 인자 > ENV > 프리셋/기본
+        #   - base_url은 OPENAI_BASE_URL 또는 BIMATRIX_BASE_URL 중 하나를 넣어주세요.
+        #     (BiMatrix 사용 시 BIMATRIX_BASE_URL로 지정)
+        env_openai_base = os.getenv("OPENAI_BASE_URL")
+        env_bimatrix_base = os.getenv("BIMATRIX_BASE_URL")
+        self.base_url = (base_url or env_bimatrix_base or env_openai_base or "").rstrip("/")
 
-    # 공통 POST 래퍼
-    def _chat(self, payload: dict) -> dict:
+        self._service_bimatrix = _is_bimatrix_base(self.base_url)
+        self.model = model or os.getenv("OPENAI_MODEL", "Qwen/Qwen3-14B")
+
+        # OpenAI 호환 모드용
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "EMPTY")
+        self._openai_url = f"{self.base_url}/chat/completions" if not self._service_bimatrix else None
+
+        # BiMatrix 모드용
+        if self._service_bimatrix:
+            self.login_url = f"{self.base_url}/api/login/"
+            # 공지에 따라 llm_agent 엔드포인트 변경됨:
+            #   기존: .../django/api/llm_agent/
+            #   변경: .../django/agi/llm-agent
+            self.llm_url   = f"{self.base_url}/llm-agent/"
+            # verify: 기본 True 권장 (없으면 env/BIMATRIX_VERIFY 참고)
+            if verify is None:
+                verify_env = os.getenv("BIMATRIX_VERIFY", "true").lower()
+                self.verify = (verify_env == "true")
+            else:
+                self.verify = bool(verify)
+            # 자격 증명 (institution 프리셋 → ENV 순)
+            self.institution = institution or os.getenv("INSTITUTION")
+            user = pw = None
+            if self.institution in _INSTITUTION_PRESETS:
+                user = _INSTITUTION_PRESETS[self.institution]["id"]
+                pw   = _INSTITUTION_PRESETS[self.institution]["pw"]
+            # ENV가 있으면 ENV 우선
+            self.username = os.getenv("BIMATRIX_ID", user or "")
+            self.password = os.getenv("BIMATRIX_PW", pw or "")
+            self.session  = requests.Session()
+            self.user_id: Optional[str] = None
+        else:
+            self.verify = True  # OpenAI 모드는 보통 공인 cert 사용
+
+    # =========================
+    # 내부 공통 POST 래퍼
+    # =========================
+    def _chat_openai(self, payload: dict) -> dict:
+        if not self._openai_url:
+            raise RuntimeError("OpenAI URL is not configured.")
         headers = {"Content-Type": "application/json"}
         if self.api_key and self.api_key != "EMPTY":
             headers["Authorization"] = f"Bearer {self.api_key}"
-        r = requests.post(self.url, json=payload, headers=headers, timeout=60)
+        r = requests.post(self._openai_url, json=payload, headers=headers, timeout=60, verify=self.verify)
         try:
             r.raise_for_status()
         except requests.HTTPError as e:
-            # 디버깅에 도움 되도록 서버 응답 앞부분 포함
             raise RuntimeError(
-                f"LLM request failed ({r.status_code}) to {self.url}: {r.text[:200]}"
+                f"LLM request failed ({r.status_code}) to {self._openai_url}: {r.text[:200]}"
             ) from e
         return r.json()
 
-    # -------------------------------
-    # (1) NL → JSON (툴콜 강제)
-    # -------------------------------
+    def _ensure_bimatrix_login(self) -> None:
+        if not self._service_bimatrix:
+            return
+        if not (self.username and self.password):
+            raise RuntimeError("BiMatrix credentials are missing. Set INSTITUTION or BIMATRIX_ID/BIMATRIX_PW.")
+        if getattr(self, "_logged_in", False):
+            return
+        headers = {"accept": "application/json"}
+        payload = {"username": self.username, "password": self.password}
+        resp = self.session.post(self.login_url, json=payload, headers=headers, timeout=60, verify=self.verify)
+        try:
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RuntimeError(f"BiMatrix login failed: {e} :: {resp.text[:200]}")
+        data = resp.json()
+        # 기대 응답 예: {"user_id": "user_3333", ...}
+        self.user_id = data.get("user_id")
+        self._logged_in = True
+
+    def _chat_bimatrix(self, payload: dict) -> dict:
+        self._ensure_bimatrix_login()
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+        resp = self.session.post(self.llm_url, json=payload, headers=headers, timeout=60, verify=self.verify)
+        try:
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RuntimeError(f"BiMatrix LLM request failed ({resp.status_code}): {resp.text[:200]}") from e
+        return resp.json()
+
+    # 외부에서 쓰는 단일 엔트리포인트 (서비스 타입 자동 분기)
+    def _chat(self, payload: dict) -> dict:
+        if self._service_bimatrix:
+            return self._chat_bimatrix(payload)
+        return self._chat_openai(payload)
+
+    # =========================
+    # 도메인 유틸
+    # =========================
     def _extract_json_from_text(self, nl_query: str) -> dict:
-        """
-        모델이 반드시 function call로만 응답하도록 강제 → arguments가 우리의 JSON이 됨
-        """
+        """(기존 그대로) NL → JSON (툴콜 강제)"""
         tool_schema = {
             "type": "function",
             "function": {
@@ -40,10 +143,10 @@ class LLMBridge:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "taskId":      {"type": "string", "description": "Unique task id"},
-                        "timeRange":   {"type": "string", "description": "e.g. 'YYYY-MM-DD HH:MM:SS ~ YYYY-MM-DD HH:MM:SS'"},
-                        "sensor_name": {"type": "string", "description": "Sensor group name, e.g. CMP"},
-                        "target_cols": {"type": "string", "description": "Target column name"},
+                        "taskId":      {"type": "string"},
+                        "timeRange":   {"type": "string"},
+                        "sensor_name": {"type": "string"},
+                        "target_cols": {"type": "string"},
                         "constraints": {"type": "object"},
                         "userRole":    {"type": "string"}
                     },
@@ -56,8 +159,7 @@ class LLMBridge:
             "model": self.model,
             "messages": [
                 {"role": "system", "content":
-                    "Return ONLY a function call to build_direct_spec. "
-                    "No prose, no <think>, no extra text."},
+                    "Return ONLY a function call to build_direct_spec. No prose, no <think>, no extra text."},
                 {"role": "user", "content": nl_query}
             ],
             "tools": [tool_schema],
@@ -70,7 +172,6 @@ class LLMBridge:
         msg = resp["choices"][0]["message"]
         calls = msg.get("tool_calls") or []
         if not calls:
-            # 폴백: 혹시 텍스트로 JSON이 왔으면 그걸 파싱 시도
             txt = msg.get("content") or ""
             s, e = txt.find("{"), txt.rfind("}")
             if s != -1 and e != -1:
@@ -79,37 +180,20 @@ class LLMBridge:
 
         args_str = calls[0]["function"]["arguments"]
         spec = json.loads(args_str)
-
-        # taskId 보정
         if not spec.get("taskId"):
             spec["taskId"] = "task_" + datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         return spec
-    
 
     def _narrate_en(self, payload: Dict[str, Any]) -> str:
-        """
-        Convert JSON payload into a natural English narrative.
-        Example style:
-        "This is the answer for the request ... We selected model ... The predictions are ..."
-        """
         try:
             system_msg = (
-            "You are a careful writer. Produce a natural English explanation using ONLY values present "
-            "in the JSON provided by the user. "
-            "NEVER reveal chain-of-thought, internal reasoning, analysis notes, or any <think> tags. "
-            "Output ONLY the final narrative text (no headers, no bullets, no tags, no code blocks). "
-            "If a field is missing in the JSON, write 'not specified' rather than guessing. "
-            "When describing predictions, list ALL values exactly as provided; "
-            "Keep it concise and fluent."
+                "You are a careful writer. Produce a natural English explanation using ONLY values present "
+                "in the JSON provided by the user. NEVER reveal chain-of-thought."
             )
-
             user_msg = (
-            "Rewrite this JSON result into a single, smooth paragraph with complete sentences. "
-            "Do not invent information. Use only what is present in the JSON. "
-            "If a field is missing, say 'not specified'.\n\n"
-            f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
-        )
-
+                "Rewrite this JSON into one paragraph. Use only what's present; "
+                "if missing say 'not specified'.\n\n" + json.dumps(payload, ensure_ascii=False, indent=2)
+            )
             data = {
                 "model": self.model,
                 "messages": [
@@ -123,12 +207,8 @@ class LLMBridge:
             return resp["choices"][0]["message"]["content"].strip()
         except Exception:
             return self._fallback_en(payload)
-        
 
     def _fallback_en(self, payload: Dict[str, Any]) -> str:
-        """
-        Deterministic fallback: generate a plain narrative without LLM.
-        """
         try:
             d = payload.get("data", {})
             taskId = d.get("taskId", "N/A")
@@ -138,70 +218,33 @@ class LLMBridge:
             model = d.get("modelSelected", "Unknown")
             preds = d.get("prediction", [])
             pred_len = len(preds) if isinstance(preds, list) else "N/A"
-
-            # prediction preview
             if isinstance(preds, list) and len(preds) > 10:
-                pred_text = f"first values {preds[:3]} ... last values {preds[-3:]} (total {len(preds)})"
+                pred_text = f"first {preds[:3]} ... last {preds[-3:]} (total {len(preds)})"
             else:
                 pred_text = str(preds)
-
             risk = d.get("risk", {})
             risk_level = risk.get("riskLevel", "unknown")
-
             return (
-                f"This is the answer for request {taskId}. "
-                f"The request covered {timeRange} on sensor {sensor}, targeting column {target}. "
-                f"We selected model {model}, which produced {pred_len} predictions: {pred_text}. "
-                f"The risk level was assessed as {risk_level}. "
-                f"Based on the data, the current state is considered {risk_level}, "
-                f"and no immediate action is required unless stated otherwise."
+                f"This is the answer for request {taskId}. The request covered {timeRange} on sensor {sensor}, "
+                f"targeting column {target}. We selected model {model}, which produced {pred_len} predictions: "
+                f"{pred_text}. The risk level was assessed as {risk_level}."
             )
         except Exception as e:
             return f"Could not generate narrative fallback: {e}"
 
-    # 아래는 한국어 설명에 대한 함수들 (TBU)
     def narrate_ko_markdown(self, payload: Dict[str, Any]) -> str:
-        """
-        JSON payload를 바탕으로 섹션/표가 포함된 한국어 Markdown 리포트를 생성한다.
-        - LLM 사용 (실패 시 _fallback_ko_md로 폴백)
-        - JSON에 '없는 값'은 만들지 말고 '정보 없음'으로 표기
-        - 예측값(prediction)은 가능한 한 모두 표시하되 길면 앞/뒤 5개만
-        """
         try:
             system_msg = (
                 "너는 제조 예측 시스템의 기술 라이터다. "
                 "사용자가 제공한 JSON 안의 값들만 사용해 한국어로 Markdown 리포트를 작성하라. "
-                "새로운 수치/사실/가정을 만들지 말고, 누락된 값은 '정보 없음'으로 표기하라. "
-                "아래 섹션 구조를 반드시 지켜라. 표가 있으면 Markdown 표로 작성하라. "
-                "절대 <think> 같은 내부 추론을 출력하지 마라."
+                "누락된 값은 '정보 없음'으로 표기하라. 절대 내부 추론을 노출하지 마라."
             )
-
-            # 샘플과 동일한 섹션 구조 유도
             user_msg = (
                 "다음 JSON을 바탕으로 한국어 Markdown 리포트를 작성하라.\n\n"
-                "섹션 구조:\n"
-                "### 예측 결과 요약\n"
-                "- 예측 기간/간격/신뢰수준/모델명 등 핵심 메타 요약\n\n"
-                "### 1) 예측 개요\n"
-                "- 시간 범위(timeRange), 예측 기간(horizon_minutes), 예측 간격(interval_minutes), "
-                "모델(modelSelected), 신뢰수준(confidence_level)을 한글로 정리\n\n"
-                "### 2) 타깃 지표 예측\n"
-                "- target_col을 제목으로 명시 (예: PRESSURE)\n"
-                "- 예측값이 길면 [앞 5] ... [뒤 5]와 총 개수를 함께 표기\n"
-                "- 가능하면 간단한 표 형태로 인덱스(1..N)와 예측값을 나란히 표시(표가 너무 길면 생략하고 요약)\n\n"
-                "### 3) 위험도 평가\n"
-                "- risk.riskLevel, exceedsThreshold 등 JSON에 있는 필드만 나열\n\n"
-                "### 4) 변수 기여도(설명)\n"
-                "- explanation.importantFeatures(최대 5개), method\n\n"
-                "### 5) 데이터/파이프라인 정보\n"
-                "- csv_path, df_info, feature_names(길면 앞 5개 + 총 개수), enc_in, pred_len 등\n"
-                "- events는 줄바꿈으로 항목별 정리\n\n"
-                "### 6) 결론\n"
-                "- 현재 상태 한 줄 요약(위험/주의/정상 등 JSON 근거로), 즉시 조치 필요 여부가 JSON에 있으면 언급\n\n"
-                "JSON:\n"
+                "### 예측 결과 요약\n\n### 1) 예측 개요\n\n### 2) 타깃 지표 예측\n\n"
+                "### 3) 위험도 평가\n\n### 4) 변수 기여도(설명)\n\n### 5) 데이터/파이프라인 정보\n\n### 6) 결론\n\n"
                 f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
             )
-
             data = {
                 "model": self.model,
                 "messages": [
@@ -217,28 +260,20 @@ class LLMBridge:
             return self._fallback_ko_md(payload)
 
     def _fallback_ko_md(self, payload: Dict[str, Any]) -> str:
-        """LLM 실패 시에도 같은 섹션 레이아웃을 유지하는 결정적 마크다운 폴백."""
         d = payload.get("data", {})
         md = []
-
-        # 헬퍼
         def fmt(v):
             if v is None: return "정보 없음"
             if isinstance(v, float): return f"{v:.6g}"
             return str(v)
-
         def head_tail(arr, k=5):
             if not isinstance(arr, list) or not arr:
                 return "정보 없음"
             if len(arr) <= 2*k:
                 return ", ".join(fmt(x) for x in arr) + f" (총 {len(arr)}개)"
-            return (
-                f"[앞 {k}] " + ", ".join(fmt(x) for x in arr[:k]) +
-                " / [뒤 {k}] " + ", ".join(fmt(x) for x in arr[-k:]) +
-                f" (총 {len(arr)}개)"
-            )
-
-        # 필드 추출
+            return f"[앞 {k}] " + ", ".join(fmt(x) for x in arr[:k]) + \
+                   f" / [뒤 {k}] " + ", ".join(fmt(x) for x in arr[-k:]) + \
+                   f" (총 {len(arr)}개)"
         time_range = d.get("timeRange", {})
         horizon = d.get("horizon_minutes")
         interval = d.get("interval_minutes")
@@ -251,7 +286,6 @@ class LLMBridge:
         feature_names = d.get("feature_names", [])
         events = d.get("events", [])
 
-        # --- Markdown 구성 ---
         md.append("### 예측 결과 요약")
         md.append(f"- 모델: **{fmt(model)}**, 신뢰수준: **{fmt(conf)}**")
         md.append(f"- 예측 기간/간격: **{fmt(horizon)}분 / {fmt(interval)}분**")
@@ -261,127 +295,50 @@ class LLMBridge:
         else:
             md.append(f"- 입력 구간: **{fmt(time_range)}**")
         md.append("")
-
         md.append("### 1) 예측 개요")
         md.append(f"- 모델: {fmt(model)}")
-        md.append(f"- 신뢰수준(confidence_level): {fmt(conf)}")
-        md.append(f"- 예측 길이(pred_len): {fmt(d.get('pred_len'))}")
-        md.append(f"- 예측 간격(interval_minutes): {fmt(interval)}")
+        md.append(f"- 신뢰수준: {fmt(conf)}")
         md.append("")
-
         md.append("### 2) 타깃 지표 예측")
         md.append(f"- 타깃 컬럼: **{fmt(target)}**")
         md.append(f"- 예측값 요약: {head_tail(preds, k=5)}")
-        # 길지 않게 10개까지만 표로
-        if isinstance(preds, list) and len(preds) > 0:
-            show = preds[:10]
-            md.append("")
-            md.append("| step | 예측값 |")
-            md.append("|---:|---:|")
-            for i, v in enumerate(show, 1):
-                md.append(f"| {i} | {fmt(v)} |")
-            if len(preds) > 10:
-                md.append(f"| ... | ... |")
         md.append("")
-
         md.append("### 3) 위험도 평가")
-        md.append(f"- 위험도(riskLevel): **{fmt(risk.get('riskLevel'))}**")
-        for k, v in risk.items():
-            if k == "riskLevel": 
-                continue
-            md.append(f"- {k}: {fmt(v)}")
+        md.append(f"- 위험도: **{fmt(risk.get('riskLevel'))}**")
         md.append("")
-
         md.append("### 4) 변수 기여도(설명)")
         feats = expl.get("importantFeatures", [])
         if feats:
             md.append("- 주요 변수(최대 5개): " + ", ".join(str(x) for x in feats[:5]))
         else:
             md.append("- 주요 변수: 정보 없음")
-        if "method" in expl:
-            md.append(f"- 산출 방식: {fmt(expl['method'])}")
         md.append("")
-
         md.append("### 5) 데이터/파이프라인 정보")
-        md.append(f"- CSV 경로: {fmt(d.get('csv_path'))}")
-        df_info = d.get("df_info", {})
-        if isinstance(df_info, dict):
-            md.append(f"- 데이터프레임: rows={fmt(df_info.get('rows'))}, cols={fmt(df_info.get('cols'))}")
-        md.append(f"- feature 시작 컬럼(1-based): {fmt(d.get('features_start_col_index_based'))}")
         if feature_names:
             if len(feature_names) > 8:
                 md.append(f"- feature_names: {', '.join(feature_names[:5])} ... (총 {len(feature_names)}개)")
             else:
                 md.append(f"- feature_names: {', '.join(feature_names)}")
-        md.append(f"- enc_in: {fmt(d.get('enc_in'))}")
-        md.append(f"- target_idx_in_features: {fmt(d.get('target_idx_in_features'))}")
-        md.append("")
-        md.append("- 처리 이벤트 타임라인:")
         if events:
+            md.append("- 처리 이벤트:")
             for e in events:
                 md.append(f"  - {e}")
-        else:
-            md.append("  - 정보 없음")
         md.append("")
-
         md.append("### 6) 결론")
         level = fmt(risk.get("riskLevel"))
         md.append(f"- 현재 상태 요약: **{level}**")
-        md.append("- 추가 조치: JSON에 근거 정보가 없는 경우 '특이 조치 없음'")
         return "\n".join(md)
+
     def _narrate(self, payload: Dict[str, Any]) -> str:
-        """
-        입력 JSON(payload)의 모든 필드를 '누락 없이' 한국어로 풀어쓴 설명문을 생성.
-        - 1순위: LLM으로 생성 (형식 엄격 유도)
-        - 실패 시: 결정적 폴백 포맷터로 즉시 반환
-        """
         try:
             system_msg = (
-                "너의 임무는 제조 예측 파이프라인의 JSON 결과를 한국어로 "
-                "필드 누락 없이 그대로 설명문으로 풀어쓰는 것이다. "
-                "절대 새로운 가정/수치/해석을 추가하지 말고 JSON에 있는 값만 사용하라. "
-                "각 필드는 사람이 즉시 이해할 수 있도록 간결하게 항목별로 써라. "
-                "출력은 순수 텍스트이며 Markdown 불릿을 사용하되 표나 코드블록은 쓰지 마라."
+                "너의 임무는 제조 예측 파이프라인의 JSON 결과를 한국어로 필드 누락 없이 그대로 설명하는 것이다. "
+                "절대 새로운 가정이나 수치를 만들지 마라."
             )
             user_msg = (
-                "다음 JSON의 모든 항목을 한국어로 자세히 설명하되, 아래 출력 형식을 지켜라.\n\n"
-                "출력 형식:\n"
-                "제목: PRISM 예측 결과 상세 보고\n"
-                "\n"
-                "섹션1: 요청 정보\n"
-                "- taskId: ...\n"
-                "- timeRange: ... (없으면 '정보 없음')\n"
-                "- sensor_name / target_col(또는 target_cols): ...\n"
-                "\n"
-                "섹션2: 모델/예측\n"
-                "- modelSelected: ...\n"
-                "- pred_len: ...\n"
-                "- prediction: 값이 많으면 앞 5개와 뒤 5개, 전체 개수 표기. (예: [앞 5] 1,2,3,4,5 / [뒤 5] ... / 총 N개)\n"
-                "\n"
-                "섹션3: 위험도\n"
-                "- risk.riskLevel: ...\n"
-                "- risk.exceedsThreshold 등 부가 필드가 있으면 모두 명시\n"
-                "- suggestedActions가 있으면 모두 나열, 없으면 '정보 없음'\n"
-                "\n"
-                "섹션4: 변수 기여(설명)\n"
-                "- explanation.importantFeatures: 이름과(있으면) 기여도, 최대 5개\n"
-                "- explanation.method: ... (있으면)\n"
-                "\n"
-                "섹션5: 데이터/파이프라인 정보\n"
-                "- csv_path, df_info(rows, cols), features_start_col_index_1based 등 데이터 관련 모든 필드 표시\n"
-                "- feature_names는 개수가 많으면 첫 5개 + 총 개수 표기\n"
-                "\n"
-                "섹션6: 처리 이벤트 타임라인\n"
-                "- events 전체를 시간순으로 한 줄씩 간결히 설명 (없으면 '정보 없음')\n"
-                "\n"
-                "섹션7: 결론\n"
-                "- 현재 상태(정상/주의/위험 등 JSON 근거로) 한 줄\n"
-                "- 바로 취해야 할 조치(있으면), 없으면 '특이 조치 없음'\n"
-                "\n"
-                "JSON:\n"
-                f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+                "다음 JSON의 모든 항목을 한국어로 항목별로 써라. 표/코드블록 금지.\n\n" +
+                json.dumps(payload, ensure_ascii=False, indent=2)
             )
-
             data = {
                 "model": self.model,
                 "messages": [
@@ -390,26 +347,20 @@ class LLMBridge:
                 ],
                 "temperature": 0.0,
                 "max_tokens": 1200,
-                
             }
             resp = self._chat(data)
             return resp["choices"][0]["message"]["content"].strip()
         except Exception:
             return self._fallback_ko(payload)
 
-    # deterministic fallback formatter
     def _fallback_ko(self, payload: Dict[str, Any]) -> str:
         lines: List[str] = []
         lines.append("PRISM 예측 결과 상세 보고 (폴백 모드)")
         lines.append("")
-
         def fmt_scalar(v: Any) -> str:
-            if v is None:
-                return "정보 없음"
-            if isinstance(v, float):
-                return f"{v:.6g}"
+            if v is None: return "정보 없음"
+            if isinstance(v, float): return f"{v:.6g}"
             return str(v)
-
         def walk(key: str, val: Any, indent: int = 0):
             pad = "  " * indent
             bullet = "- "
@@ -434,18 +385,30 @@ class LLMBridge:
                             lines.append(f"{pad}  {joined}")
                     else:
                         for i, item in enumerate(val):
-                            item_key = f"{key}[{i}]"
-                            walk(item_key, item, indent + 1)
+                            walk(f"{key}[{i}]", item, indent + 1)
             else:
                 lines.append(f"{pad}{bullet}{key}: {fmt_scalar(val)}")
-
-        top_keys = list(payload.keys())
-        for first in ("data", "metadata", "code"):
-            if first in top_keys:
-                top_keys.remove(first)
-                top_keys.insert(0, first)
-
-        for k in top_keys:
-            walk(k, payload[k], 0)
-
+        for k, v in payload.items():
+            walk(k, v, 0)
         return "\n".join(lines)
+
+    # 편의용 별칭
+    def narrate(self, text: str) -> str:
+        data = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content":
+                    "너는 산업 제어 및 공정 최적화 분야의 분석 전문가다. "
+                    "사용자가 제공하는 제어 후보군을 공정 특성 상식으로 평가하라."},
+                {"role": "user", "content": text}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 10000,
+            "top_p": 1.0,
+            "stream": False
+        }
+        resp = self._chat(data)
+        try:
+            return resp["choices"][0]["message"]["content"]
+        except Exception:
+            return json.dumps(resp, ensure_ascii=False, indent=2)
