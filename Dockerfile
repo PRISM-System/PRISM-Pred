@@ -24,8 +24,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 파일 복사
 COPY . .
 
-# 포트 노출 (README.md에서 8001 포트 사용)
-EXPOSE 8001
+# 포트 노출 (README.md에서 8003 포트 사용)
+EXPOSE 8003
 
 # uvicorn으로 FastAPI 서버 실행
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]

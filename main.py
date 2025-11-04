@@ -6,6 +6,7 @@ from io import StringIO
 import pathlib
 
 import pandas as pd
+import requests
 from fastapi import FastAPI, Body, HTTPException, Query
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field
@@ -61,8 +62,8 @@ logger.info(f"ENV Loaded: OPENAI_MODEL={os.getenv('OPENAI_MODEL')}")
 llm = None
 if LLMBridge:
     try:
+        # Let LLMBridge auto-detect base_url from env (BIMATRIX_BASE_URL > OPENAI_BASE_URL)
         llm = LLMBridge(
-            base_url=os.getenv("OPENAI_BASE_URL"),
             model=os.getenv("OPENAI_MODEL"),
             api_key=os.getenv("OPENAI_API_KEY"),
         )
@@ -94,6 +95,43 @@ from datetime import datetime, timezone
 # ==== Add near top-level globals (logger 선언 아래쯤) ====
 _last_llm_status = {"ok": None, "ts": None, "error": None, "model": None}
 
+def _register_agent():
+    """PRISM-Core에 prediction_agent를 등록합니다."""
+    try:
+        prism_core_url = os.getenv("PRISM_CORE_BASE_URL")
+        if not prism_core_url:
+            logger.error("PRISM_CORE_BASE_URL environment variable is not set")
+            return
+        # URL 끝의 슬래시 제거
+        prism_core_url = prism_core_url.rstrip('/')
+        logger.info(f"Registering prediction_agent to PRISM-Core at {prism_core_url}")
+
+        agent_data = {
+            "name": "prediction_agent",
+            "description": "제조 공정의 미래 변화를 예측하고 이상치 발생 가능성을 분석하는 예측 에이전트",
+            "role_prompt": (
+                "당신은 예측 에이전트입니다. 멀티모달 전문가 모델(테이블, 이미지, 텍스트, 시계열 데이터)을 활용하여 "
+                "제조 공정의 미래 변화를 예측합니다. 자연어 쿼리를 처리하고, 신뢰도 관리 및 불확실성 측정을 통해 "
+                "예측 결과의 신뢰성을 정량화하며, 위험 평가 시스템으로 이상치 발생 가능성을 분석합니다. "
+                "목표 정확도는 5% 이내의 예측 오차입니다. 과거 데이터를 바탕으로 센서 값의 미래 변화를 예측하고 "
+                "이상치 발생 가능성이 높은 부분을 명확히 제시하세요."
+            ),
+            "tools": []
+        }
+
+        response = requests.post(
+            f"{prism_core_url}/api/agents",
+            json=agent_data,
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            logger.info("✅ prediction_agent registered successfully to PRISM-Core")
+        else:
+            logger.warning(f"⚠️ prediction_agent registration failed: {response.status_code} - {response.text}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register prediction_agent: {str(e)}")
+
 def _llm_ping_sync():
     global _last_llm_status
     if llm is None:
@@ -123,6 +161,8 @@ def _llm_ping_sync():
 async def _startup_llm_ping():
     # 서버 포트 바인딩 직후, 이벤트 루프에서 비동기로 실행 (서버 기동을 막지 않음)
     asyncio.create_task(asyncio.to_thread(_llm_ping_sync))
+    # PRISM-Core에 prediction_agent 등록
+    asyncio.create_task(asyncio.to_thread(_register_agent))
 
 
 
@@ -628,4 +668,4 @@ import sys
 # ------------------------------ Local run ------------------------------
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)

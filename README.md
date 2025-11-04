@@ -75,7 +75,7 @@ OPENAI_API_KEY = .
 
 ### 3-3. 이 후, 서버를 실행합니다.
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn main:app --host 0.0.0.0 --port 8003 --reload
 ```
 
 서버 시작 시 LLM 연결 상태가 로그로 표시됩니다:
@@ -89,13 +89,13 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 
 ```
-curl -X POST "http://localhost:8001/api/v1/prediction/run-direct"   -H "Content-Type: application/json"   --data @scenarios/scenario02.json
+curl -X POST "http://localhost:8003/api/v1/prediction/run-direct"   -H "Content-Type: application/json"   --data @scenarios/scenario02.json
 
 ```
 ### 4-2. 서버를 실행한 이후,직접 입력을 넣으셔도 작동합니다.
 
 ```bash
-curl -X POST http://localhost:8001/api/v1/prediction/run-direct   -H "Content-Type: application/json"   --data-binary @- <<'JSON'
+curl -X POST http://localhost:8003/api/v1/prediction/run-direct   -H "Content-Type: application/json"   --data-binary @- <<'JSON'
 {
   "step_4_orchestration_to_prediction": {
     "from": "Orchestration",

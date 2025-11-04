@@ -5,9 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: prism-pred
     ports:
-      - "8004:8001"  # Prediction API server (호스트 8004 → 컨테이너 8001)
+      - "8003:8003"  # Prediction API server (호스트 8003 → 컨테이너 8003)
     volumes:
       - ./main.py:/app/main.py
+      - ./utils.py:/app/utils.py
       - ./module.py:/app/module.py
       - ./llm_io.py:/app/llm_io.py
       - ./run.py:/app/run.py

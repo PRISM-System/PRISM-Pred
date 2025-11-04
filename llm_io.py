@@ -14,7 +14,9 @@ def _is_bimatrix_base(url: Optional[str]) -> bool:
     if not url:
         return False
     u = url.rstrip("/")
-    return ("grnd.bimatrix.co.kr" in u) and ("/django/agi" in u)
+    # BiMatrix SaaS or Local BiMatrix Core
+    return (("grnd.bimatrix.co.kr" in u) and ("/django/agi" in u)) or \
+           (u.startswith("http://147.47.39.144:8000"))
 
 class LLMBridge:
     """
@@ -23,9 +25,11 @@ class LLMBridge:
       2) BiMatrix 서버:     base_url = "https://grnd.bimatrix.co.kr/django/agi"
                            → POST {base_url}/api/login/ (세션 로그인)
                            → POST {base_url}/llm-agent  (세션 쿠키로 호출)
+      3) Local BiMatrix Core: base_url = "http://147.47.39.144:8000"
+                           → POST {base_url}/api/generate (인증 없음)
     환경변수:
       - OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL
-      - BIMATRIX_BASE_URL="https://grnd.bimatrix.co.kr/django/agi"
+      - BIMATRIX_BASE_URL="https://grnd.bimatrix.co.kr/django/agi" 또는 "http://147.47.39.144:8000"
       - BIMATRIX_ID, BIMATRIX_PW, BIMATRIX_VERIFY=true|false
       - INSTITUTION="성균관대학교"  # 있으면 프리셋 자격증명 우선 적용 (env가 있으면 env 우선)
     """
@@ -44,6 +48,7 @@ class LLMBridge:
         self.base_url = (base_url or env_bimatrix_base or env_openai_base or "").rstrip("/")
 
         self._service_bimatrix = _is_bimatrix_base(self.base_url)
+        self._local_bimatrix = self.base_url.startswith("http://147.47.39.144:8000") if self.base_url else False
         self.model = model or os.getenv("OPENAI_MODEL", "Qwen/Qwen3-14B")
 
         # OpenAI 호환 모드용
@@ -52,28 +57,39 @@ class LLMBridge:
 
         # BiMatrix 모드용
         if self._service_bimatrix:
-            self.login_url = f"{self.base_url}/api/login/"
-            # 공지에 따라 llm_agent 엔드포인트 변경됨:
-            #   기존: .../django/api/llm_agent/
-            #   변경: .../django/agi/llm-agent
-            self.llm_url   = f"{self.base_url}/llm-agent/"
-            # verify: 기본 True 권장 (없으면 env/BIMATRIX_VERIFY 참고)
-            if verify is None:
-                verify_env = os.getenv("BIMATRIX_VERIFY", "true").lower()
-                self.verify = (verify_env == "true")
+            # Local BiMatrix Core는 /api/generate 사용, 로그인 불필요
+            if self._local_bimatrix:
+                self.llm_url = f"{self.base_url}/api/generate"
+                self.login_url = None
+                self.verify = False
+                self.username = None
+                self.password = None
+                self.session = requests.Session()
+                self.user_id = None
             else:
-                self.verify = bool(verify)
-            # 자격 증명 (institution 프리셋 → ENV 순)
-            self.institution = institution or os.getenv("INSTITUTION")
-            user = pw = None
-            if self.institution in _INSTITUTION_PRESETS:
-                user = _INSTITUTION_PRESETS[self.institution]["id"]
-                pw   = _INSTITUTION_PRESETS[self.institution]["pw"]
-            # ENV가 있으면 ENV 우선
-            self.username = os.getenv("BIMATRIX_ID", user or "")
-            self.password = os.getenv("BIMATRIX_PW", pw or "")
-            self.session  = requests.Session()
-            self.user_id: Optional[str] = None
+                # Remote BiMatrix SaaS
+                self.login_url = f"{self.base_url}/api/login/"
+                # 공지에 따라 llm_agent 엔드포인트 변경됨:
+                #   기존: .../django/api/llm_agent/
+                #   변경: .../django/agi/llm-agent
+                self.llm_url   = f"{self.base_url}/llm-agent/"
+                # verify: 기본 True 권장 (없으면 env/BIMATRIX_VERIFY 참고)
+                if verify is None:
+                    verify_env = os.getenv("BIMATRIX_VERIFY", "true").lower()
+                    self.verify = (verify_env == "true")
+                else:
+                    self.verify = bool(verify)
+                # 자격 증명 (institution 프리셋 → ENV 순)
+                self.institution = institution or os.getenv("INSTITUTION")
+                user = pw = None
+                if self.institution in _INSTITUTION_PRESETS:
+                    user = _INSTITUTION_PRESETS[self.institution]["id"]
+                    pw   = _INSTITUTION_PRESETS[self.institution]["pw"]
+                # ENV가 있으면 ENV 우선
+                self.username = os.getenv("BIMATRIX_ID", user or "")
+                self.password = os.getenv("BIMATRIX_PW", pw or "")
+                self.session  = requests.Session()
+                self.user_id: Optional[str] = None
         else:
             self.verify = True  # OpenAI 모드는 보통 공인 cert 사용
 
@@ -97,6 +113,9 @@ class LLMBridge:
 
     def _ensure_bimatrix_login(self) -> None:
         if not self._service_bimatrix:
+            return
+        # Local BiMatrix Core는 로그인 불필요
+        if self._local_bimatrix:
             return
         if not (self.username and self.password):
             raise RuntimeError("BiMatrix credentials are missing. Set INSTITUTION or BIMATRIX_ID/BIMATRIX_PW.")

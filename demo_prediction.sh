@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="http://127.0.0.1:8001"
+BASE="http://127.0.0.1:8003"
 CT='Content-Type: application/json'
 
 echo "1) create task"
