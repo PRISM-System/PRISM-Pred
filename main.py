@@ -120,7 +120,7 @@ def _register_agent():
         }
 
         response = requests.post(
-            f"{prism_core_url}/api/agents",
+            f"{prism_core_url}/core/api/agents",
             json=agent_data,
             timeout=5
         )
