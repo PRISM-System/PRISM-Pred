@@ -319,7 +319,11 @@ def step_discover_data(req: DiscoverDataRequest):
             csv_path = resolve_csv_path(spec)
         else:
             csv_path = spec_in.get("csv_path") or ""
+    except ValueError as e:
+        # taskId validation error - invalid input
+        raise HTTPException(status_code=400, detail=str(e))
     except FileNotFoundError as e:
+        # actual file not found error
         raise HTTPException(status_code=404, detail=str(e))
 
     if not csv_path or not os.path.exists(csv_path):
@@ -431,24 +435,38 @@ def _run_predictor_with_csv(
         "--seq_len", "48", "--label_len", "24", "--pred_len", str(pred_len),
         "--epochs", "1", "--batch_size", "8",
         "--models", "Autoformer,DLinear,TimesNet,LightTS",
-        "--device", "cpu",
+        "--device", "cuda",
         "--auto_eval_idx",
     ]
     # eval 채널이 이미 known이면 명시적으로 전달 (오토와 일치 보장)
     if eval_channel_idx is not None:
         cmd += ["--eval_channel_idx", str(int(eval_channel_idx))]
 
-    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=script_dir)
+    try:
+        # Log the prediction process start
+        logger.info(f"[PREDICTOR-START] Starting run.py for target={target_col_name}, models=Autoformer,DLinear,TimesNet,LightTS, epochs=1, pred_len={pred_len}")
+        logger.info(f"[PREDICTOR-CMD] {' '.join(cmd)}")
 
-    if proc.returncode != 0:
-        raise HTTPException(status_code=500, detail=f"predictor failed: {proc.stderr}")
+        # Add 300 second timeout to prevent blocking (increased from 120s)
+        proc = subprocess.run(cmd, capture_output=True, text=True, cwd=script_dir, timeout=300)
 
-    if not os.path.exists(out_path):
-        tail = proc.stdout[-400:] if proc.stdout else ""
-        raise HTTPException(status_code=500, detail=f"predictor did not produce {out_path}. tail={tail}")
+        logger.info(f"[PREDICTOR-DONE] run.py completed for target={target_col_name}, returncode={proc.returncode}")
 
-    with open(out_path, "r") as f:
-        return json.load(f)
+        if proc.returncode != 0:
+            logger.error(f"[PREDICTOR-ERROR] stderr: {proc.stderr[:500]}")
+            raise HTTPException(status_code=500, detail=f"predictor failed: {proc.stderr}")
+
+        if not os.path.exists(out_path):
+            tail = proc.stdout[-400:] if proc.stdout else ""
+            raise HTTPException(status_code=500, detail=f"predictor did not produce {out_path}. tail={tail}")
+
+        with open(out_path, "r") as f:
+            return json.load(f)
+            
+    except subprocess.TimeoutExpired:
+        # Timeout occurred - return fallback prediction (empty, will trigger linear extrapolation in step_predict)
+        logger.warning(f"[PREDICTOR-TIMEOUT] run.py timed out after 300s for target={target_col_name}, using fallback")
+        return {"best_model": "fallback (timeout)", "prediction": []}
 
 
 @app.post("/api/v1/steps/predict", response_model=PredictResponse, tags=["Steps"])
@@ -608,10 +626,23 @@ def step_narrate(req: NarrateRequest):
             "max_tokens": 1400,
         }
         resp = llm._chat(prompt)
-        report = (resp["choices"][0]["message"]["content"] or "").strip()
+
+        # BiMatrix Core API는 {"text": "..."} 형식, OpenAI 호환은 {"choices": [...]} 형식
+        if "text" in resp:
+            # BiMatrix Core API 응답 형식
+            report = (resp.get("text") or "").strip()
+        elif "choices" in resp:
+            # OpenAI 호환 형식
+            report = (resp["choices"][0]["message"]["content"] or "").strip()
+        else:
+            # 알 수 없는 형식
+            logger.warning(f"[LLM] Unknown response format: {list(resp.keys())}")
+            report = ""
+
         if not report:
             report = "### 예측 보고서\n\n(LLM 응답이 비어 있어 기본 메시지를 표시합니다.)"
     except Exception as e:
+        logger.error(f"[LLM] Error during narration generation: {e}")
         report = f"### 예측 보고서\n\n(LLM 호출 실패: {e})"
 
     return {"code":"SUCCESS","data":{"result":report}, "metadata":{"timestamp":now_iso(),"request_id":rid()}}

@@ -173,7 +173,7 @@ def resolve_csv_path(spec: PredictionInputSpec) -> str:
         if os.path.exists(path):
             return path
 
-    raise FileNotFoundError(
+    raise ValueError(
         f"Cannot resolve CSV from taskId='{task_id}'. No pattern matched in TASK_TO_SENSOR_KEY."
     )
 
